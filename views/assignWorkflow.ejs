@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Add Workflow</title>
+  <link rel="stylesheet" href="/styles/task.css">
+</head>
+<body>
+  <div class="form-container">
+    <h1>Add Workflow</h1>
+    <form action="/postWorkflow" method="POST">
+      
+      <div class="form-row">
+        <label for="WorkflowName">Workflow Name</label>
+        <input type="text" name="WorkflowName" id="WorkflowName" required>
+      </div>
+
+      <div class="form-row">
+        <label for="usrID">Select User</label>
+        <select name="usrID" id="usrID" required>
+          <% users.forEach(user => { %>
+            <option value="<%= user.usrID %>"><%= user.usrDesc %></option>
+          <% }) %>
+        </select>
+      </div>
+
+      <div class="form-row">
+        <label for="TaskID">Select Task</label>
+        <select name="TaskID" id="TaskID" required>
+          <% tasks.forEach(task => { %>
+            <option value="<%= task.TaskID %>"><%= task.TaskName %></option>
+          <% }) %>
+        </select>
+      </div>
+
+      <div class="form-row">
+        <label for="PkgeID">Select Package</label>
+        <select name="PkgeID" id="PkgeID" required>
+          <% packages.forEach(pkg => { %>
+            <option value="<%= pkg.PkgeID %>"><%= pkg.PkgeName %></option>
+          <% }) %>
+        </select>
+      </div>
+
+      <div class="form-row">
+        <label for="TimeStarted">Time Started</label>
+        <input type="datetime-local" name="TimeStarted" id="TimeStarted">
+      </div>
+
+      <div class="form-row">
+        <label for="TimeFinished">Time Finished</label>
+        <input type="datetime-local" name="TimeFinished" id="TimeFinished">
+      </div>
+
+      <div class="form-actions">
+        <button type="submit">Create Workflow</button>
+      </div>
+    </form>
+  </div>
+</body>
+</html>

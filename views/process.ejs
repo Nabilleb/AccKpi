@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="/styles/process.css">
+  <title>Add Process</title>
+</head>
+<body>
+  <h1>Add New Process</h1>
+  <form action="/postProcess" method="POST">
+    <div>
+      <label for="ProcessName">Process Name:</label>
+      <input type="text" name="ProcessName" id="ProcessName" required>
+    </div>
+
+    <div>
+      <label for="Departments">Assign to Departments:</label>
+      <select name="Departments" id="Departments" multiple required>
+        <% departments.forEach(dept => { %>
+          <option value="<%= dept.DepartmentID %>"><%= dept.DeptName %></option>
+        <% }); %>
+      </select>
+    </div>
+
+    <button type="submit">Save Process</button>
+  </form>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const deptSelect = document.getElementById('Departments');
+    
+    // Style options on page load (for pre-selected values if any)
+    styleSelectedOptions();
+    
+    // Update styles when selection changes
+    deptSelect.addEventListener('change', styleSelectedOptions);
+    
+    function styleSelectedOptions() {
+      Array.from(deptSelect.options).forEach(opt => {
+        if (opt.selected) {
+          opt.style.backgroundColor = '#2b6cb0';
+          opt.style.color = 'white';
+          opt.style.fontWeight = '500';
+        } else {
+          opt.style.backgroundColor = '';
+          opt.style.color = '';
+          opt.style.fontWeight = '';
+        }
+      });
+      
+      // Update selected count display
+      updateSelectedCount();
+    }
+    
+    // Create and display selected count
+    const countDisplay = document.createElement('div');
+    countDisplay.style.marginTop = '5px';
+    countDisplay.style.fontSize = '0.8rem';
+    countDisplay.style.color = '#4a5568';
+    deptSelect.parentNode.insertBefore(countDisplay, deptSelect.nextSibling);
+    
+    function updateSelectedCount() {
+      const selectedCount = Array.from(deptSelect.selectedOptions).length;
+      countDisplay.textContent = `${selectedCount} department${selectedCount !== 1 ? 's' : ''} selected`;
+      
+      // Visual pulse effect when changing selection
+      if (selectedCount > 0) {
+        countDisplay.style.fontWeight = '600';
+        setTimeout(() => {
+          countDisplay.style.fontWeight = '400';
+        }, 200);
+      }
+    }
+    
+    // Add keyboard navigation help
+    const helpText = document.createElement('small');
+    helpText.textContent = 'Hold Ctrl/Cmd to select multiple, Shift for range selection';
+    helpText.style.display = 'block';
+    helpText.style.marginTop = '5px';
+    helpText.style.color = '#718096';
+    deptSelect.parentNode.appendChild(helpText);
+  });
+</script>
+</body>
+</html>

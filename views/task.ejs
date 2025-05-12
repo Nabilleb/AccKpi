@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/styles/task.css">
+  <title>Add New Task</title>
+</head>
+<body>
+  <div class="form-container">
+    <div class="logo-header">
+      <img src="/images/accLogo.jpeg" alt="Company Logo" class="company-logo">
+      <h1>Add New Task</h1>
+    </div>
+
+    <form action="/postTask" method="POST">
+      <div class="form-row">
+        <label for="taskName">Task Name</label>
+        <input type="text" id="taskName" name="TaskName" maxlength="150" required>
+      </div>
+
+      <div class="form-row">
+        <label for="taskPlanned">Task Planned</label>
+        <textarea id="taskPlanned" name="TaskPlanned" rows="4"></textarea>
+      </div>
+
+      <div class="form-row">
+        <label for="taskActual">Task Actual</label>
+        <textarea id="taskActual" name="TaskActual" rows="4"></textarea>
+      </div>
+
+      <div class="checkbox-container">
+        <input type="checkbox" id="isTaskSelected" name="IsTaskSelected" value="1">
+        <label for="isTaskSelected">Is Task Selected</label>
+      </div>
+
+      <div class="checkbox-container">
+        <input type="checkbox" id="isDateFixed" name="IsDateFixed" value="1">
+        <label for="isDateFixed">Is Date Fixed</label>
+      </div>
+
+      <div class="form-row">
+        <label for="plannedDate">Planned Date</label>
+        <input type="datetime-local" id="plannedDate" name="PlannedDate">
+      </div>
+<div class="form-row">
+  <label for="departmentId">Assign to Department</label>
+  <select id="departmentId" name="DepartmentID" required>
+    <option value="">-- Select Department --</option>
+    <option value="19">Procurement</option>
+    <option value="20">HR</option>
+    <option value="21">IT</option>
+    <option value="22">Finance</option>
+    <option value="23">Logistics</option>
+  </select>
+</div>
+
+      <div class="form-actions">
+        <input type="submit" value="Save Task">
+      </div>
+    </form>
+  </div>
+</body>
+</html>
