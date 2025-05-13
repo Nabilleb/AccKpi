@@ -1,4 +1,3 @@
-Great! Here's a sample **`README.md`** you can use for your GitHub repository. It explains how to set up and run your project, assuming your collaborator is a developer familiar with Node.js and SQL Server:
 
 ---
 
