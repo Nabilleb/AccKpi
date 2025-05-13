@@ -3,142 +3,169 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Homepage Dashboard</title>
-  <link rel="stylesheet" href="/styles/homepage.css" />
+  <title>Engineering Project Dashboard</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="/styles/homepage.css">
 </head>
 <body>
   <header class="dashboard-header">
-    <img src="/images/accNewLog.webp" alt="Logo" class="logo" />
+    <img src="/images/accNewLog.webp" alt="Company Logo" class="logo" />
     <div class="header-right">
-        <div>
-      <select id="projectSelect">
-        <option value="1">Project A</option>
-        <option value="2">Project B</option>
-      </select>
-      <a href="/logout" class="logout-btn">Log out</a>
+      <div>
+        <select id="projectSelect">
+          <option value="1">Downtown Tower Project</option>
+          <option value="2">Coastal Bridge Project</option>
+        </select>
+        <a href="/logout" class="logout-btn">
+          <i class="fas fa-sign-out-alt"></i> Log out
+        </a>
       </div>
-            <p>Welcome: Rashid Khreiss</p>
-
+      <p>Welcome: Rashid Khreiss (Project Manager)</p>
     </div>
   </header>
 
   <nav class="main-nav">
-    <a href="#">Procurement</a>
-    <a href="#">Contract</a>
-    <a href="#">QS</a>
-    <a href="#">Accounting</a>
-    <a href="#">Logistics</a>
-    <a href="#">Reports</a>
+    <a href="#"><i class="fas fa-shopping-cart"></i> Procurement</a>
+    <a href="#"><i class="fas fa-file-contract"></i> Contract</a>
+    <a href="#"><i class="fas fa-calculator"></i> QS</a>
+    <a href="#"><i class="fas fa-calculator"></i> Accounting</a>
+    <a href="#"><i class="fas fa-truck"></i> Logistics</a>
+    <a href="#"><i class="fas fa-chart-bar"></i> Reports</a>
   </nav>
 
-  <section class="quick-actions">
-    <h3>Quick Actions</h3>
-    <div class="actions-grid">
-      <a href="/add-task" class="action-btn">+ Add Task</a>
-      <a href="/add-package" class="action-btn">+ Add Package</a>
-      <a href="/add-process" class="action-btn">+ Add Process</a>
-      <a href="/add-workflow" class="action-btn">▶ Start Workflow</a>
-    </div>
-  </section>
+  <main class="main-content">
+    <section class="quick-actions">
+      <h3 class="section-title"><i class="fas fa-bolt"></i> Quick Actions</h3>
+      <div class="actions-grid">
+        <a href="/add-task" class="action-btn">
+          <i class="fas fa-tasks"></i> Add Task
+        </a>
+        <a href="/add-package" class="action-btn">
+          <i class="fas fa-box-open"></i> Add Package
+        </a>
+        <a href="/add-process" class="action-btn">
+          <i class="fas fa-cogs"></i> Add Process
+        </a>
+        <a href="/add-workflow" class="action-btn">
+          <i class="fas fa-play"></i> Start Workflow
+        </a>
+      </div>
+    </section>
 
-  <section class="activity-table">
-    <div>
-        <label for="package">Item Description:</label>
-        <input type="text" name="package" value="package" disabled>
-        <label for="time">Time Requested for completion</label>
-        <input type="number" name="time" value="" disabled>
-        <label for="delay">Delay days: </label>
-        <input type="number " name="delay" value="">
-        <label for="duration"> Duration:</label>
-        <input type="text" name="duration" value="" disabled>
-        <label for="actual">Actual Duration Days</label>
-        <input type="text" name="actual" value="" disabled>
-    </div>
-    <table>
-      <thead>
-        <tr>
-          <th>Step</th>
-          <th>Planned Date</th>
-          <th>Days Required</th>
-          <th>Actual Date</th>
-          <th>Delay</th>
-          <th>Reason</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>RFQ</td>
-          <td>2024-04-01</td>
-          <td>1</td>
-          <td>2024-04-02</td>
-          <td>1</td>
-          <td>Vendor delay</td>
-        </tr>
-        <tr>
-          <td>Comparison Sheet</td>
-          <td>2024-04-03</td>
-          <td>2</td>
-          <td>2024-04-05</td>
-          <td>0</td>
-          <td></td>
-        </tr>
-        <!-- Add more rows as needed -->
-      </tbody>
-    </table>
-  </section>
-</body>
-<script>
-    app.get("/api/package/:id", async (req, res) => {
-  const packageId = req.params.id;
+    <section class="activity-table">
+           <div class="package-info">
+        <div class="info-row">
+          <span class="info-label">Item Description:</span>
+          <div class="info-value">
+            <input type="text" value="Structural Steel Beams" disabled>
+          </div>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Time Requested (days):</span>
+          <div class="info-value">
+            <input type="number" value="14" disabled>
+          </div>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Delay (days):</span>
+          <div class="info-value">
+            <input type="number" value="2">
+          </div>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Planned Duration:</span>
+          <div class="info-value">
+            <input type="text" value="14 days" disabled>
+          </div>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Actual Duration:</span>
+          <div class="info-value">
+            <input type="text" value="16 days" disabled>
+          </div>
+        </div>
+      </div>
 
-  try {
-    const packageResult = await pool.request()
-      .input('PackageID', sql.Int, packageId)
-      .query(`
-        SELECT 
-          PackageName, 
-          Duration AS RequestedDuration
-        FROM tblPackages 
-        WHERE PackageID = @PackageID
-      `);
+      <h3 class="section-title"><i class="fas fa-clipboard-list"></i> Procurement Activities</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Step</th>
+            <th>Planned Date</th>
+            <th>Days Required</th>
+            <th>Actual Date</th>
+            <th>Status</th>
+            <th>Reason</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>RFQ Preparation</td>
+            <td>2024-04-01</td>
+            <td>3</td>
+            <td>2024-04-04</td>
+            <td><span class="status-badge status-delayed">Delayed 1 day</span></td>
+            <td>Vendor response delay</td>
+          </tr>
+          <tr>
+            <td>Technical Evaluation</td>
+            <td>2024-04-05</td>
+            <td>2</td>
+            <td>2024-04-06</td>
+            <td><span class="status-badge status-on-time">On time</span></td>
+            <td></td>
+          </tr>
+          <tr>
+            <td>Commercial Evaluation</td>
+            <td>2024-04-07</td>
+            <td>2</td>
+            <td>2024-04-09</td>
+            <td><span class="status-badge status-on-time">On time</span></td>
+            <td></td>
+          </tr>
+          <tr>
+            <td>Approval Process</td>
+            <td>2024-04-10</td>
+            <td>3</td>
+            <td>2024-04-14</td>
+            <td><span class="status-badge status-delayed">Delayed 1 day</span></td>
+            <td>Manager approval pending</td>
+          </tr>
+          <tr>
+            <td>PO Issuance</td>
+            <td>2024-04-15</td>
+            <td>1</td>
+            <td>2024-04-15</td>
+            <td><span class="status-badge status-on-time">On time</span></td>
+            <td></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
 
-    const tasksResult = await pool.request()
-      .input('PackageID', sql.Int, packageId)
-      .query(`
-        SELECT 
-          TaskName,
-          PlannedDate,
-          DateFinished,
-          DATEDIFF(DAY, PlannedDate, DateFinished) AS ActualDuration,
-          CASE 
-            WHEN DateFinished > PlannedDate THEN DATEDIFF(DAY, PlannedDate, DateFinished) 
-            ELSE 0 
-          END AS DelayDays,
-          TaskActual AS Reason
-        FROM tblTasks 
-        WHERE PackageID = @PackageID
-      `);
-
-    const packageData = packageResult.recordset[0];
-    const tasks = tasksResult.recordset;
-
-    const totalActualDuration = tasks.reduce((sum, task) => sum + (task.ActualDuration || 0), 0);
-    const totalDelay = tasks.reduce((sum, task) => sum + (task.DelayDays || 0), 0);
-
-    res.json({
-      package: {
-        name: packageData.PackageName,
-        requestedDuration: packageData.RequestedDuration,
-        actualDuration: totalActualDuration,
-        totalDelay: totalDelay
-      },
-      tasks
+  <script>
+    // Dynamic project select with localStorage persistence
+    document.getElementById('projectSelect').addEventListener('change', function() {
+      localStorage.setItem('selectedProject', this.value);
     });
-  } catch (err) {
-    console.error("Fetch package data failed:", err);
-    res.status(500).json({ error: "Internal server error" });
-  }
-});
-
-</script>
+    
+    // Set initial project from localStorage if available
+    const savedProject = localStorage.getItem('selectedProject');
+    if (savedProject) {
+      document.getElementById('projectSelect').value = savedProject;
+    }
+    
+    // Animate table rows on load
+    document.addEventListener('DOMContentLoaded', () => {
+      const rows = document.querySelectorAll('tbody tr');
+      rows.forEach((row, i) => {
+        setTimeout(() => {
+          row.style.opacity = '1';
+          row.style.transform = 'translateY(0)';
+        }, i * 100);
+      });
+    });
+  </script>
+</body>
 </html>

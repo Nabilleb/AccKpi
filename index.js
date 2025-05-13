@@ -50,14 +50,6 @@ async function initializeDatabase() {
 
 initializeDatabase();
 
-function formatToSQLDate(date) {
-  const d = new Date(date);
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const dd = String(d.getDate()).padStart(2, '0');
-  return `${yyyy}-${mm}-${dd} 00:00:00.000`;
-}
-
 
 
 // Route to render the package form
@@ -70,6 +62,9 @@ app.get("/addTask", async (req, res) => {
   res.render("task.ejs");
 });
 
+app.get("/", (req, res) =>{
+  res.render("homepage.ejs");
+})
 app.get("/addProcess", async (req, res) => {
   try {
     const result = await pool.request().query("SELECT DepartmentID, DeptName FROM tblDepartments");
@@ -98,57 +93,7 @@ app.get("/addWorkflow", async (req, res) => {
   }
 });
 
-app.get("/api/package/:id", async (req, res) => {
-  const packageId = parseInt(req.params.id);
 
-  try {
-    const packageResult = await pool.request()
-      .input('PackageID', sql.Int, packageId)
-      .query(`
-        SELECT 
-          PkgeName, 
-          Duration AS RequestedDuration
-        FROM tblPackages 
-        WHERE PkgeID = @PackageID
-      `);
-
-    const tasksResult = await pool.request()
-      .input('PackageID', sql.Int, packageId)
-      .query(`
-        SELECT 
-          TaskName,
-          PlannedDate,
-          DateFinished,
-          DATEDIFF(DAY, PlannedDate, DateFinished) AS ActualDuration,
-          CASE 
-            WHEN DateFinished > PlannedDate THEN DATEDIFF(DAY, PlannedDate, DateFinished) 
-            ELSE 0 
-          END AS DelayDays,
-          TaskActual AS Reason
-        FROM tblTasks 
-        WHERE PkgeID = @PackageID
-      `);
-
-    const packageData = packageResult.recordset[0];
-    const tasks = tasksResult.recordset;
-
-    const totalActualDuration = tasks.reduce((sum, task) => sum + (task.ActualDuration || 0), 0);
-    const totalDelay = tasks.reduce((sum, task) => sum + (task.DelayDays || 0), 0);
-
-    res.json({
-      package: {
-        name: packageData.PackageName,
-        requestedDuration: packageData.RequestedDuration,
-        actualDuration: totalActualDuration,
-        totalDelay: totalDelay
-      },
-      tasks
-    });
-  } catch (err) {
-    console.error("Fetch package data failed:", err);
-    res.status(500).json({ error: "Internal server error" });
-  }
-});
 
 app.post("/addPackage", async (req, res) => {
   const {
