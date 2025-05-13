@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Homepage Dashboard</title>
+  <link rel="stylesheet" href="/styles/homepage.css" />
+</head>
+<body>
+  <header class="dashboard-header">
+    <img src="/images/accNewLog.webp" alt="Logo" class="logo" />
+    <div class="header-right">
+        <div>
+      <select id="projectSelect">
+        <option value="1">Project A</option>
+        <option value="2">Project B</option>
+      </select>
+      <a href="/logout" class="logout-btn">Log out</a>
+      </div>
+            <p>Welcome: Rashid Khreiss</p>
+
+    </div>
+  </header>
+
+  <nav class="main-nav">
+    <a href="#">Procurement</a>
+    <a href="#">Contract</a>
+    <a href="#">QS</a>
+    <a href="#">Accounting</a>
+    <a href="#">Logistics</a>
+    <a href="#">Reports</a>
+  </nav>
+
+  <section class="quick-actions">
+    <h3>Quick Actions</h3>
+    <div class="actions-grid">
+      <a href="/add-task" class="action-btn">+ Add Task</a>
+      <a href="/add-package" class="action-btn">+ Add Package</a>
+      <a href="/add-process" class="action-btn">+ Add Process</a>
+      <a href="/add-workflow" class="action-btn">▶ Start Workflow</a>
+    </div>
+  </section>
+
+  <section class="activity-table">
+    <div>
+        <label for="package">Item Description:</label>
+        <input type="text" name="package" value="package" disabled>
+        <label for="time">Time Requested for completion</label>
+        <input type="number" name="time" value="" disabled>
+        <label for="delay">Delay days: </label>
+        <input type="number " name="delay" value="">
+        <label for="duration"> Duration:</label>
+        <input type="text" name="duration" value="" disabled>
+        <label for="actual">Actual Duration Days</label>
+        <input type="text" name="actual" value="" disabled>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Step</th>
+          <th>Planned Date</th>
+          <th>Days Required</th>
+          <th>Actual Date</th>
+          <th>Delay</th>
+          <th>Reason</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>RFQ</td>
+          <td>2024-04-01</td>
+          <td>1</td>
+          <td>2024-04-02</td>
+          <td>1</td>
+          <td>Vendor delay</td>
+        </tr>
+        <tr>
+          <td>Comparison Sheet</td>
+          <td>2024-04-03</td>
+          <td>2</td>
+          <td>2024-04-05</td>
+          <td>0</td>
+          <td></td>
+        </tr>
+        <!-- Add more rows as needed -->
+      </tbody>
+    </table>
+  </section>
+</body>
+<script>
+    app.get("/api/package/:id", async (req, res) => {
+  const packageId = req.params.id;
+
+  try {
+    const packageResult = await pool.request()
+      .input('PackageID', sql.Int, packageId)
+      .query(`
+        SELECT 
+          PackageName, 
+          Duration AS RequestedDuration
+        FROM tblPackages 
+        WHERE PackageID = @PackageID
+      `);
+
+    const tasksResult = await pool.request()
+      .input('PackageID', sql.Int, packageId)
+      .query(`
+        SELECT 
+          TaskName,
+          PlannedDate,
+          DateFinished,
+          DATEDIFF(DAY, PlannedDate, DateFinished) AS ActualDuration,
+          CASE 
+            WHEN DateFinished > PlannedDate THEN DATEDIFF(DAY, PlannedDate, DateFinished) 
+            ELSE 0 
+          END AS DelayDays,
+          TaskActual AS Reason
+        FROM tblTasks 
+        WHERE PackageID = @PackageID
+      `);
+
+    const packageData = packageResult.recordset[0];
+    const tasks = tasksResult.recordset;
+
+    const totalActualDuration = tasks.reduce((sum, task) => sum + (task.ActualDuration || 0), 0);
+    const totalDelay = tasks.reduce((sum, task) => sum + (task.DelayDays || 0), 0);
+
+    res.json({
+      package: {
+        name: packageData.PackageName,
+        requestedDuration: packageData.RequestedDuration,
+        actualDuration: totalActualDuration,
+        totalDelay: totalDelay
+      },
+      tasks
+    });
+  } catch (err) {
+    console.error("Fetch package data failed:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+</script>
+</html>
