@@ -3,16 +3,20 @@ import bodyParser from "body-parser";
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import sql from 'mssql';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 // Get the directory name using import.meta.url
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+const port = process.env.PORT || 3000;
 const config = {
-  user: 'sa',
-  password: 'sa',
-  server: 'localhost',
-  database: 'AccDBF',
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  server: process.env.DB_SERVER,
+  database: process.env.DB_DATABASE,
   options: {
     encrypt: false,
     trustServerCertificate: true
@@ -20,7 +24,6 @@ const config = {
 };
 
 const app = express();
-const port = 3000;
 
 // Create a global connection pool
 let pool;
