@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Engineering Project Dashboard</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="/styles/homepage.css">
+<link rel="stylesheet" href= "/styles/homepage.css">
 </head>
 <body>
   <header class="dashboard-header">
@@ -33,52 +33,65 @@
     <a href="#"><i class="fas fa-chart-bar"></i> Reports</a>
   </nav>
 
+  <button class="mobile-nav-toggle" id="mobileNavToggle">
+    <i class="fas fa-bars"></i>
+  </button>
+
+  <div class="mobile-nav" id="mobileNav">
+    <a href="#"><i class="fas fa-shopping-cart"></i> Procurement</a>
+    <a href="#"><i class="fas fa-file-contract"></i> Contract</a>
+    <a href="#"><i class="fas fa-calculator"></i> QS</a>
+    <a href="#"><i class="fas fa-calculator"></i> Accounting</a>
+    <a href="#"><i class="fas fa-truck"></i> Logistics</a>
+    <a href="#"><i class="fas fa-chart-bar"></i> Reports</a>
+  </div>
+
   <main class="main-content">
     <section class="quick-actions">
       <h3 class="section-title"><i class="fas fa-bolt"></i> Quick Actions</h3>
       <div class="actions-grid">
-        <a href="/add-task" class="action-btn">
+        <a href="/addTask" class="action-btn">
           <i class="fas fa-tasks"></i> Add Task
         </a>
-        <a href="/add-package" class="action-btn">
+        <a href="/addPackage" class="action-btn">
           <i class="fas fa-box-open"></i> Add Package
         </a>
-        <a href="/add-process" class="action-btn">
+        <a href="/addProcess" class="action-btn">
           <i class="fas fa-cogs"></i> Add Process
         </a>
-        <a href="/add-workflow" class="action-btn">
+        <a href="/addWorkflow" class="action-btn">
           <i class="fas fa-play"></i> Start Workflow
         </a>
       </div>
     </section>
 
     <section class="activity-table">
-           <div class="package-info">
-        <div class="info-row">
+      <div class="package-info">
+        <div class="package-item">
           <span class="info-label">Item Description:</span>
           <div class="info-value">
             <input type="text" value="Structural Steel Beams" disabled>
           </div>
         </div>
-        <div class="info-row">
+        <div class="package-item">
           <span class="info-label">Time Requested (days):</span>
           <div class="info-value">
             <input type="number" value="14" disabled>
           </div>
         </div>
-        <div class="info-row">
+        <div class="package-item">
           <span class="info-label">Delay (days):</span>
           <div class="info-value">
-            <input type="number" value="2">
+            <input type="number" value="2" disabled>
           </div>
         </div>
-        <div class="info-row">
+        <div class="package-item">
           <span class="info-label">Planned Duration:</span>
           <div class="info-value">
             <input type="text" value="14 days" disabled>
           </div>
         </div>
-        <div class="info-row">
+        <div class="package-item">
           <span class="info-label">Actual Duration:</span>
           <div class="info-value">
             <input type="text" value="16 days" disabled>
@@ -145,18 +158,15 @@
   </main>
 
   <script>
-    // Dynamic project select with localStorage persistence
     document.getElementById('projectSelect').addEventListener('change', function() {
       localStorage.setItem('selectedProject', this.value);
     });
     
-    // Set initial project from localStorage if available
     const savedProject = localStorage.getItem('selectedProject');
     if (savedProject) {
       document.getElementById('projectSelect').value = savedProject;
     }
     
-    // Animate table rows on load
     document.addEventListener('DOMContentLoaded', () => {
       const rows = document.querySelectorAll('tbody tr');
       rows.forEach((row, i) => {
@@ -164,6 +174,14 @@
           row.style.opacity = '1';
           row.style.transform = 'translateY(0)';
         }, i * 100);
+      });
+      
+      // Mobile nav toggle
+      const mobileNavToggle = document.getElementById('mobileNavToggle');
+      const mobileNav = document.getElementById('mobileNav');
+      
+      mobileNavToggle.addEventListener('click', () => {
+        mobileNav.classList.toggle('active');
       });
     });
   </script>

@@ -1,3 +1,4 @@
+  
     :root {
       --primary: #005bab;
       --primary-dark: #003f7f;
@@ -32,7 +33,6 @@
       flex-direction: column;
     }
 
-    /* Modern Header with Glass Effect */
     .dashboard-header {
       display: flex;
       justify-content: space-between;
@@ -116,7 +116,6 @@
       box-shadow: 0 0 0 3px rgba(0, 91, 171, 0.1);
     }
 
-    /* Animated Navigation */
     .main-nav {
       display: flex;
       justify-content: space-between;
@@ -160,7 +159,40 @@
       width: 60%;
     }
 
-    /* Main Content */
+    .mobile-nav-toggle {
+      display: none;
+      background: none;
+      border: none;
+      color: white;
+      font-size: 1.5rem;
+      cursor: pointer;
+      padding: 0.5rem;
+    }
+
+    .mobile-nav {
+      display: none;
+      flex-direction: column;
+      background-color: var(--primary-dark);
+      padding: 1rem;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .mobile-nav a {
+      color: white;
+      padding: 0.75rem 1rem;
+      text-decoration: none;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .mobile-nav a:last-child {
+      border-bottom: none;
+    }
+
     .main-content {
       flex: 1;
       padding: 1.5rem;
@@ -169,7 +201,6 @@
       margin: 0 auto;
     }
 
-    /* Card-based Layout */
     .quick-actions, 
     .activity-table {
       background-color: var(--white);
@@ -199,7 +230,6 @@
       color: var(--accent);
     }
 
-    /* Grid Actions */
     .actions-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -229,8 +259,10 @@
       box-shadow: 0 4px 12px rgba(0, 122, 204, 0.3);
     }
 
-    /* Package Info Section */
-     .package-info {
+    .package-info {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 1rem;
       background-color: var(--white);
       margin-bottom: 1.5rem;
       padding: 1.5rem;
@@ -238,31 +270,20 @@
       box-shadow: var(--shadow);
     }
 
-    .info-row {
+    .package-item {
       display: flex;
-      align-items: center;
-      padding: 0.75rem 0;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .info-row:last-child {
-      border-bottom: none;
+      flex-direction: column;
+      gap: 0.5rem;
     }
 
     .info-label {
-      width: 220px;
       font-size: 0.9rem;
       color: var(--text-light);
       font-weight: 500;
     }
 
-    .info-value {
-      flex: 1;
-    }
-
     .info-value input {
       width: 100%;
-      max-width: 300px;
       padding: 0.5rem;
       border: 1px solid var(--border);
       border-radius: 4px;
@@ -274,25 +295,6 @@
       background-color: #f5f5f5;
       color: var(--text);
     }
-
-    /* Responsive adjustments for rows */
-    @media (max-width: 768px) {
-      .info-row {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.25rem;
-        padding: 0.5rem 0;
-      }
-
-      .info-label {
-        width: 100%;
-      }
-
-      .info-value input {
-        max-width: 100%;
-      }
-    }
-
 
     /* Enhanced Table */
     .activity-table table {
@@ -328,7 +330,6 @@
       background-color: rgba(0, 91, 171, 0.05);
     }
 
-    /* Status Badges */
     .status-badge {
       display: inline-block;
       padding: 0.25rem 0.75rem;
@@ -347,7 +348,6 @@
       color: var(--danger);
     }
 
-    /* Responsive Design */
     @media (max-width: 1024px) {
       .main-nav {
         flex-wrap: wrap;
@@ -357,6 +357,10 @@
       
       .activity-table th {
         top: 133px;
+      }
+      
+      .package-info {
+        grid-template-columns: repeat(3, 1fr);
       }
     }
 
@@ -375,8 +379,15 @@
       }
       
       .main-nav {
-        position: relative;
-        top: auto;
+        display: none;
+      }
+      
+      .mobile-nav-toggle {
+        display: block;
+      }
+      
+      .mobile-nav.active {
+        display: flex;
       }
       
       .package-info {
@@ -407,3 +418,4 @@
         white-space: nowrap;
       }
     }
+  
