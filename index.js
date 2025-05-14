@@ -96,6 +96,35 @@ app.get("/addWorkflow", async (req, res) => {
   }
 });
 
+app.get("/addUser", async (req, res) => {
+  try {
+    const result = await pool.request().query(`
+      SELECT DepartmentID, DeptName FROM tblDepartments
+    `);
+    const departments = result.recordset;
+
+    res.render("addUser", { departments }); 
+  } catch (err) {
+    console.error("Failed to load departments:", err);
+    res.status(500).send("Error loading form");
+  }
+});
+
+app.get("/userpage", (req, res) =>{
+  res.render("userpage.ejs");
+})
+
+app.get("/api/departments", async (req, res) => {
+  try {
+    const result = await pool.request().query(`
+      SELECT DepartmentID, DeptName FROM tblDepartments
+    `);
+    res.json(result.recordset);
+  } catch (err) {
+    console.error("Error loading departments:", err);
+    res.status(500).json({ error: "Failed to load departments" });
+  }
+});
 
 
 app.post("/addPackage", async (req, res) => {
@@ -244,6 +273,61 @@ app.post("/postWorkflow", async (req, res) => {
   } catch (err) {
     console.error('SQL error:', err);
     res.status(500).send({ error: 'Database insert failed' });
+  }
+});
+
+app.post("/addUser", async (req, res) => {
+  const {
+    usrID,
+    usrDesc,
+    usrPWD,
+    usrAdmin,
+    usrSTID,
+    DepartmentID,
+    AllowAccess,
+    Export,
+    usrEmail,
+    usrSignature,
+    emailSignature,
+    usrReadPolicy
+  } = req.body;
+
+  const insertDate = new Date();
+  const lastUpdate = new Date();
+
+  try {
+    await pool.request()
+      .input("usrID", sql.VarChar(10), usrID)
+      .input("usrDesc", sql.VarChar(40), usrDesc)
+      .input("usrPWD", sql.VarChar(15), usrPWD)
+      .input("usrAdmin", sql.Bit, usrAdmin ? 1 : 0)
+      .input("usrSTID", sql.SmallInt, usrSTID || null)
+      .input("DepartmentID", sql.Int, parseInt(DepartmentID))
+      .input("AllowAccess", sql.Bit, AllowAccess ? 1 : 0)
+      .input("Export", sql.SmallInt, Export || 0)
+      .input("LastUpdate", sql.DateTime, lastUpdate)
+      .input("usrEmail", sql.VarChar(50), usrEmail)
+      .input("usrSignature", sql.VarChar(100), usrSignature)
+      .input("emailSignature", sql.Text, emailSignature)
+      .input("usrReadPolicy", sql.TinyInt, usrReadPolicy || 0)
+      .input("insertDate", sql.DateTime, insertDate)
+      .query(`
+        INSERT INTO tblUsers (
+          usrID, usrDesc, usrPWD, usrAdmin, usrSTID, DepartmentID,
+          AllowAccess, Export, LastUpdate, usrEmail, usrSignature,
+          emailSignature, usrReadPolicy, insertDate
+        )
+        VALUES (
+          @usrID, @usrDesc, @usrPWD, @usrAdmin, @usrSTID, @DepartmentID,
+          @AllowAccess, @Export, @LastUpdate, @usrEmail, @usrSignature,
+          @emailSignature, @usrReadPolicy, @insertDate
+        )
+      `);
+
+    res.status(201).send("User added successfully.");
+  } catch (err) {
+    console.error("Error inserting user:", err);
+    res.status(500).send("Failed to add user.");
   }
 });
 

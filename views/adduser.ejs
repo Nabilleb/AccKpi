@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Add New User | Engineering System</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href= "/styles/adduser.css">
+</head>
+<body>
+  <div class="form-container">
+    <h1><i class="fas fa-user-plus"></i> Add New User</h1>
+    
+    <form action="/addUser" method="POST" class="form-grid">
+      <div class="form-group">
+        <label for="usrID">User ID</label>
+        <input type="text" id="usrID" name="usrID" required>
+      </div>
+      
+      <div class="form-group">
+        <label for="usrDesc">Description</label>
+        <input type="text" id="usrDesc" name="usrDesc">
+      </div>
+      
+      <div class="form-group">
+        <label for="usrPWD">Password</label>
+        <input type="password" id="usrPWD" name="usrPWD">
+      </div>
+      
+      <div class="form-group">
+        <label for="usrEmail">Email</label>
+        <input type="email" id="usrEmail" name="usrEmail">
+      </div>
+      
+      <div class="form-group">
+        <label for="departmentSelect">Department</label>
+        <select id="departmentSelect" name="DepartmentID" required>
+        </select>
+      </div>
+      
+      <div class="form-group">
+        <label for="usrSTID">Status ID</label>
+        <input type="number" id="usrSTID" name="usrSTID">
+      </div>
+      
+      <div class="form-group">
+        <label for="Export">Export Level</label>
+        <input type="number" id="Export" name="Export">
+      </div>
+      
+      <div class="form-group">
+        <label for="usrReadPolicy">Read Policy (0-255)</label>
+        <input type="number" id="usrReadPolicy" name="usrReadPolicy" min="0" max="255">
+      </div>
+      
+      <div class="form-group">
+        <label for="usrSignature">Signature</label>
+        <input type="text" id="usrSignature" name="usrSignature">
+      </div>
+      
+      <div class="form-group">
+        <label for="emailSignature">Email Signature</label>
+        <textarea id="emailSignature" name="emailSignature"></textarea>
+      </div>
+      
+      <div class="checkbox-group">
+        <input type="checkbox" id="usrAdmin" name="usrAdmin" value="1">
+        <label for="usrAdmin">Admin User</label>
+      </div>
+      
+      <div class="checkbox-group">
+        <input type="checkbox" id="AllowAccess" name="AllowAccess" value="1">
+        <label for="AllowAccess">Allow Access</label>
+      </div>
+      
+      <div class="form-actions">
+        <button type="reset" class="btn btn-secondary">
+          <i class="fas fa-undo"></i> Reset
+        </button>
+        <button type="submit" class="btn btn-primary">
+          <i class="fas fa-save"></i> Add User
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    async function loadDepartments() {
+      try {
+        const res = await fetch('/api/departments');
+        if (!res.ok) throw new Error('Failed to load departments');
+        
+        const departments = await res.json();
+        const select = document.getElementById('departmentSelect');
+        
+        // Add default empty option
+        const defaultOption = document.createElement('option');
+        defaultOption.value = '';
+        defaultOption.textContent = 'Select Department';
+        defaultOption.disabled = true;
+        defaultOption.selected = true;
+        select.appendChild(defaultOption);
+        
+        // Add department options
+        departments.forEach(dept => {
+          const option = document.createElement('option');
+          option.value = dept.DepartmentID;
+          option.textContent = dept.DeptName;
+          select.appendChild(option);
+        });
+      } catch (error) {
+        console.error('Error loading departments:', error);
+        const select = document.getElementById('departmentSelect');
+        const errorOption = document.createElement('option');
+        errorOption.textContent = 'Error loading departments';
+        select.appendChild(errorOption);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadDepartments);
+  </script>
+</body>
+</html>

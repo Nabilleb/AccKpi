@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Tasks | Engineering System</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="/styles/userpage.css">
+
+</head>
+<body>
+  <header class="dashboard-header">
+    <div class="header-left">
+      <img src="/images/accNewLog.webp" alt="Company Logo" class="logo">
+      <h1>Task Management</h1>
+    </div>
+    <div class="user-info">
+      <div class="user-avatar">RK</div>
+      <div>
+        <p>Rashid Khreiss</p>
+        <small>Procurement Department</small>
+      </div>
+      <button class="logout-btn">Logout</button>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <section class="process-selection">
+      <h2 class="section-title">
+        <i class="fas fa-project-diagram"></i>
+        Select Process
+      </h2>
+      <div class="process-grid">
+        <div class="process-card active">
+          <h3 class="process-name">Material Procurement</h3>
+          <p class="process-desc">Process for acquiring construction materials</p>
+        </div>
+        <div class="process-card">
+          <h3 class="process-name">Vendor Evaluation</h3>
+          <p class="process-desc">Process for assessing potential vendors</p>
+        </div>
+        <div class="process-card">
+          <h3 class="process-name">Contract Management</h3>
+          <p class="process-desc">Process for handling vendor contracts</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="tasks-section">
+      <h2 class="section-title">
+        <i class="fas fa-tasks"></i>
+        My Tasks
+      </h2>
+      <table class="tasks-table">
+        <thead>
+          <tr>
+            <th>Task Name</th>
+            <th>Due Date</th>
+            <th>Status</th>
+            <th>Priority</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Prepare RFQ for Steel Beams</td>
+            <td>2024-04-15</td>
+            <td><span class="status-badge status-in-progress">In Progress</span></td>
+            <td>High</td>
+            <td><button class="action-btn">Start</button></td>
+          </tr>
+          <tr>
+            <td>Review Vendor Proposals</td>
+            <td>2024-04-18</td>
+            <td><span class="status-badge status-pending">Pending</span></td>
+            <td>Medium</td>
+            <td><button class="action-btn" disabled>Start</button></td>
+          </tr>
+          <tr>
+            <td>Submit Purchase Requisition</td>
+            <td>2024-04-10</td>
+            <td><span class="status-badge status-overdue">Overdue</span></td>
+            <td>High</td>
+            <td><button class="action-btn">Complete</button></td>
+          </tr>
+          <tr>
+            <td>Update Material Tracking Sheet</td>
+            <td>2024-04-20</td>
+            <td><span class="status-badge status-pending">Pending</span></td>
+            <td>Low</td>
+            <td><button class="action-btn" disabled>Start</button></td>
+          </tr>
+          <tr>
+            <td>Coordinate Delivery Schedule</td>
+            <td>2024-04-12</td>
+            <td><span class="status-badge status-completed">Completed</span></td>
+            <td>Medium</td>
+            <td><button class="action-btn" disabled>View</button></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+
+  <script>
+    // Process selection functionality
+    document.querySelectorAll('.process-card').forEach(card => {
+      card.addEventListener('click', () => {
+        document.querySelectorAll('.process-card').forEach(c => {
+          c.classList.remove('active');
+        });
+        card.classList.add('active');
+        // Here you would load tasks for the selected process
+      });
+    });
+  </script>
+</body>
+</html>
