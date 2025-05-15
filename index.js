@@ -34,6 +34,7 @@ app.set('views', __dirname + '/views');
 
 app.use(express.static("public"));
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.json());
 
 // Connect to SQL Server when starting the app
 async function initializeDatabase() {
@@ -110,9 +111,127 @@ app.get("/addUser", async (req, res) => {
   }
 });
 
-app.get("/userpage", (req, res) =>{
-  res.render("userpage.ejs");
-})
+app.get('/userpage', async (req, res) => {
+    const userId = req.query.id;
+
+    try {
+        // Fetch user details
+        const userResult = await pool
+            .request()
+            .input('userId', userId)
+            .query('SELECT usrDesc, DepartmentID FROM tblUsers WHERE usrID = @userId');
+
+        const usrDetails = userResult.recordset[0];
+
+        if (!usrDetails) {
+            return res.status(404).send('User not found');
+        }
+
+        const { usrDesc, DepartmentID } = usrDetails;
+
+        const deptResult = await pool
+            .request()
+            .input('DepId', DepartmentID)
+            .query('SELECT DeptName FROM tblDepartments WHERE DepartmentID = @DepId');
+
+        const deptDetails = deptResult.recordset[0];
+
+        if (!deptDetails) {
+            return res.status(404).send('Department not found');
+        }
+
+        const processResult = await pool
+            .request()
+            .input('DepId', DepartmentID)
+            .query(`
+                SELECT P.ProcessName, P.processDesc,P.NumberOfProccessID
+                FROM tblProcess P
+                JOIN tblProcessDepartment PD ON P.NumberOfProccessID = PD.ProcessID
+                WHERE PD.DepartmentID = @DepId
+            `);
+
+        const processes = processResult.recordset;
+
+        res.render('userpage', {
+            userId,
+            usrDesc: usrDetails.usrDesc,
+            department: deptDetails.DeptName,
+            processes 
+        });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('Server error');
+    }
+});
+
+app.get('/process/:processId/tasks', async (req, res) => {
+  const processId = req.params.processId;
+  const userId = req.query.userId;
+
+  try {
+    // Step 1: Get user's department
+    const userResult = await pool
+      .request()
+      .input('userId', userId)
+      .query('SELECT DepartmentID FROM tblUsers WHERE usrID = @userId');
+
+    if (userResult.recordset.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const userDeptId = userResult.recordset[0].DepartmentID;
+
+    // Step 2: Verify department is in process
+    const isDeptInProcess = await pool
+      .request()
+      .input('processId', processId)
+      .input('departmentId', userDeptId)
+      .query(`
+        SELECT * FROM tblProcessDepartment
+        WHERE ProcessID = @processId AND DepartmentID = @departmentId
+      `);
+
+    if (isDeptInProcess.recordset.length === 0) {
+      return res.status(403).json({ error: 'User not in process-related department' });
+    }
+
+    // Step 3: Fetch tasks with workflow info
+    const tasksResult = await pool
+      .request()
+      .input('processId', processId)
+      .input('departmentId', userDeptId)
+      .input('userId', userId)
+      .query(`
+        SELECT 
+          t.TaskID, 
+          t.TaskName, 
+          t.TaskPlanned, 
+          t.PlannedDate, 
+          t.IsDateFixed,
+          w.TimeFinished, 
+          w.Delay, 
+          w.DelayReason
+        FROM tblDepartmentTask dt
+        JOIN tblTasks t ON dt.TaskID = t.TaskID
+        LEFT JOIN tblWorkflow w ON w.TaskID = t.TaskID AND w.usrID = @userId
+        WHERE dt.ProcessID = @processId AND dt.DepartmentID = @departmentId
+      `);
+    console.log(tasksResult.recordset);
+    res.json(tasksResult.recordset);
+  } catch (error) {
+    console.error('Error fetching tasks:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+
+
+
+
+
+
+
 
 app.get("/api/departments", async (req, res) => {
   try {
@@ -125,6 +244,29 @@ app.get("/api/departments", async (req, res) => {
     res.status(500).json({ error: "Failed to load departments" });
   }
 });
+
+
+
+
+app.post('/tasks/:id/update', async (req, res) => {
+  const { id } = req.params;
+  const { PlannedDate, DelayReason } = req.body;
+
+  try {
+    await sql.query`
+      UPDATE tblTasks
+      SET
+        PlannedDate = CASE WHEN IsDateFixed = 0 THEN ${PlannedDate} ELSE PlannedDate END,
+        DelayReason = ${DelayReason}
+      WHERE TaskID = ${id}
+    `;
+    res.status(200).send('Task updated');
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Database update failed');
+  }
+});
+
 
 
 app.post("/addPackage", async (req, res) => {
@@ -238,12 +380,12 @@ app.post("/postProcess", async (req, res) => {
 app.post("/postWorkflow", async (req, res) => {
   const { WorkflowName, usrID, TaskID, PkgeID, TimeStarted, TimeFinished } = req.body;
 
-  // Validate inputs
-  if (!WorkflowName || !usrID || !TaskID || !PkgeID) {
+  if (!WorkflowName || !TaskID || !PkgeID) {
     return res.status(400).send({ error: 'Missing required fields' });
   }
 
-  // Format datetime values
+  const usrIDValue = usrID && usrID.trim() !== '' ? usrID : null;
+
   const timeStartedFormatted = TimeStarted
     ? new Date(TimeStarted).toISOString().slice(0, 19).replace('T', ' ')
     : null;
@@ -255,7 +397,7 @@ app.post("/postWorkflow", async (req, res) => {
   try {
     await pool.request()
       .input('WorkflowName', sql.VarChar(100), WorkflowName)
-      .input('usrID', sql.VarChar(10), usrID)
+      .input('usrID', sql.VarChar(10), usrIDValue)  // allow null here
       .input('TaskID', sql.Int, TaskID)
       .input('PkgeID', sql.Int, PkgeID)
       .input('TimeStarted', sql.DateTime, timeStartedFormatted)

@@ -17,8 +17,8 @@
     <div class="user-info">
       <div class="user-avatar">RK</div>
       <div>
-        <p>Rashid Khreiss</p>
-        <small>Procurement Department</small>
+        <p><%=usrDesc %></p>
+        <small><%=department %> Department</small>
       </div>
       <button class="logout-btn">Logout</button>
     </div>
@@ -30,89 +30,106 @@
         <i class="fas fa-project-diagram"></i>
         Select Process
       </h2>
-      <div class="process-grid">
-        <div class="process-card active">
-          <h3 class="process-name">Material Procurement</h3>
-          <p class="process-desc">Process for acquiring construction materials</p>
-        </div>
-        <div class="process-card">
-          <h3 class="process-name">Vendor Evaluation</h3>
-          <p class="process-desc">Process for assessing potential vendors</p>
-        </div>
-        <div class="process-card">
-          <h3 class="process-name">Contract Management</h3>
-          <p class="process-desc">Process for handling vendor contracts</p>
-        </div>
-      </div>
+    <div class="process-grid">
+  <% processes.forEach(process => { %>
+    <div class="process-card"  data-process-id="<%= process.NumberOfProccessID %>">
+      <h3 class="process-name"><%= process.ProcessName %></h3>
+      <p class="process-desc"><%= process.processDesc %></p>
+    </div>
+  <% }) %>
+</div>
     </section>
 
-    <section class="tasks-section">
-      <h2 class="section-title">
-        <i class="fas fa-tasks"></i>
-        My Tasks
-      </h2>
-      <table class="tasks-table">
-        <thead>
-          <tr>
-            <th>Task Name</th>
-            <th>Due Date</th>
-            <th>Status</th>
-            <th>Priority</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>Prepare RFQ for Steel Beams</td>
-            <td>2024-04-15</td>
-            <td><span class="status-badge status-in-progress">In Progress</span></td>
-            <td>High</td>
-            <td><button class="action-btn">Start</button></td>
-          </tr>
-          <tr>
-            <td>Review Vendor Proposals</td>
-            <td>2024-04-18</td>
-            <td><span class="status-badge status-pending">Pending</span></td>
-            <td>Medium</td>
-            <td><button class="action-btn" disabled>Start</button></td>
-          </tr>
-          <tr>
-            <td>Submit Purchase Requisition</td>
-            <td>2024-04-10</td>
-            <td><span class="status-badge status-overdue">Overdue</span></td>
-            <td>High</td>
-            <td><button class="action-btn">Complete</button></td>
-          </tr>
-          <tr>
-            <td>Update Material Tracking Sheet</td>
-            <td>2024-04-20</td>
-            <td><span class="status-badge status-pending">Pending</span></td>
-            <td>Low</td>
-            <td><button class="action-btn" disabled>Start</button></td>
-          </tr>
-          <tr>
-            <td>Coordinate Delivery Schedule</td>
-            <td>2024-04-12</td>
-            <td><span class="status-badge status-completed">Completed</span></td>
-            <td>Medium</td>
-            <td><button class="action-btn" disabled>View</button></td>
-          </tr>
-        </tbody>
-      </table>
-    </section>
+<section class="tasks-section">
+  <h2 class="section-title">
+    <i class="fas fa-tasks"></i>
+    My Tasks
+  </h2>
+  <table class="tasks-table">
+    <thead>
+      <tr>
+        <th>Task Name</th>
+        <th>Task Description</th>
+        <th>Planned Date</th>
+        <th>Date Finished</th>
+        <th>Status</th>
+        <th>Days Delay</th>
+        <th>Delay Reason</th>
+      </tr>
+    </thead>
+    <tbody>
+   
+        <td>Coordinate Delivery Schedule</td>
+        <td>Schedule coordination with logistics for material delivery.</td>
+        <td>2024-04-10</td>
+        <td>2024-04-11</td>
+        <td><span class="status-badge status-completed">Completed</span></td>
+        <td>1</td>
+        <td>Logistics rescheduling</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+
   </main>
 
-  <script>
-    // Process selection functionality
-    document.querySelectorAll('.process-card').forEach(card => {
-      card.addEventListener('click', () => {
-        document.querySelectorAll('.process-card').forEach(c => {
-          c.classList.remove('active');
-        });
-        card.classList.add('active');
-        // Here you would load tasks for the selected process
+<script>
+  const userId = "<%= userId %>";
+
+  document.querySelectorAll('.process-card').forEach(card => {
+    card.addEventListener('click', async function () {
+      document.querySelectorAll('.process-card').forEach(c => c.classList.remove('active'));
+      this.classList.add('active');
+
+      const processId = this.dataset.processId;
+      const res = await fetch(`/process/${processId}/tasks?userId=${userId}`);
+      const tasks = await res.json();
+
+      const tbody = document.querySelector('.tasks-table tbody');
+      tbody.innerHTML = ''; // Clear previous rows
+
+      if (tasks.length === 0) {
+        const row = document.createElement('tr');
+        row.innerHTML = `<td colspan="7" style="text-align: center;">No tasks found for this process.</td>`;
+        tbody.appendChild(row);
+        return;
+      }
+
+      tasks.forEach(task => {
+        const tr = document.createElement('tr');
+
+        // Status badge logic
+        let status = '';
+        if (!task.TimeFinished) {
+          status = `<span class="status-badge status-pending">Pending</span>`;
+        } else if (task.Delay > 0) {
+          status = `<span class="status-badge status-overdue">Overdue</span>`;
+        } else {
+          status = `<span class="status-badge status-completed">Completed</span>`;
+        }
+
+      const plannedDate = task.PlannedDate ? task.PlannedDate.split('T')[0] : '';
+
+const plannedDateCell = task.IsDateFixed
+  ? `<td>${plannedDate}</td>`
+  : `<td><input type="date" value="${plannedDate}" data-task-id="${task.TaskID}" class="editable-date"></td>`;
+
+tr.innerHTML = `
+  <td>${task.TaskName || ''}</td>
+  <td>${task.TaskPlanned || ''}</td>
+  ${plannedDateCell}
+  <td>${task.TimeFinished ? task.TimeFinished.split('T')[0] : ''}</td>
+  <td>${status}</td>
+  <td>${task.Delay !== null ? task.Delay : 0}</td>
+  <td>${task.DelayReason || ''}</td>
+`;
+
+        tbody.appendChild(tr);
       });
     });
-  </script>
+  });
+</script>
+
 </body>
 </html>
