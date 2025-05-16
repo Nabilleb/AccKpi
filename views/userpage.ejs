@@ -59,16 +59,11 @@
     </thead>
     <tbody>
    
-        <td>Coordinate Delivery Schedule</td>
-        <td>Schedule coordination with logistics for material delivery.</td>
-        <td>2024-04-10</td>
-        <td>2024-04-11</td>
-        <td><span class="status-badge status-completed">Completed</span></td>
-        <td>1</td>
-        <td>Logistics rescheduling</td>
-      </tr>
+    
     </tbody>
   </table>
+
+
 </section>
 
 
@@ -76,6 +71,7 @@
 
 <script>
   const userId = "<%= userId %>";
+  const tbody = document.querySelector('.tasks-table tbody'); // ✅ Move this to global scope
 
   document.querySelectorAll('.process-card').forEach(card => {
     card.addEventListener('click', async function () {
@@ -86,12 +82,11 @@
       const res = await fetch(`/process/${processId}/tasks?userId=${userId}`);
       const tasks = await res.json();
 
-      const tbody = document.querySelector('.tasks-table tbody');
-      tbody.innerHTML = ''; // Clear previous rows
+      tbody.innerHTML = ''; 
 
       if (tasks.length === 0) {
         const row = document.createElement('tr');
-        row.innerHTML = `<td colspan="7" style="text-align: center;">No tasks found for this process.</td>`;
+        row.innerHTML = `<td colspan="8" style="text-align: center;">No tasks found for this process.</td>`;
         tbody.appendChild(row);
         return;
       }
@@ -99,7 +94,6 @@
       tasks.forEach(task => {
         const tr = document.createElement('tr');
 
-        // Status badge logic
         let status = '';
         if (!task.TimeFinished) {
           status = `<span class="status-badge status-pending">Pending</span>`;
@@ -109,27 +103,80 @@
           status = `<span class="status-badge status-completed">Completed</span>`;
         }
 
-      const plannedDate = task.PlannedDate ? task.PlannedDate.split('T')[0] : '';
+        const plannedDate = task.PlannedDate ? task.PlannedDate.split('T')[0] : '';
 
-const plannedDateCell = task.IsDateFixed
-  ? `<td>${plannedDate}</td>`
-  : `<td><input type="date" value="${plannedDate}" data-task-id="${task.TaskID}" class="editable-date"></td>`;
+        const plannedDateCell = task.IsDateFixed
+          ? `<td>${plannedDate}</td>`
+          : `<td><input type="date" value="${plannedDate}" data-task-id="${task.TaskID}" class="editable-date"></td>`;
 
-tr.innerHTML = `
-  <td>${task.TaskName || ''}</td>
-  <td>${task.TaskPlanned || ''}</td>
-  ${plannedDateCell}
-  <td>${task.TimeFinished ? task.TimeFinished.split('T')[0] : ''}</td>
-  <td>${status}</td>
-  <td>${task.Delay !== null ? task.Delay : 0}</td>
-  <td>${task.DelayReason || ''}</td>
-`;
+        tr.innerHTML = `
+          <td>${task.TaskName || ''}</td>
+          <td>${task.TaskPlanned || ''}</td>
+          ${plannedDateCell}
+          <td>${task.TimeFinished ? task.TimeFinished.split('T')[0] : ''}</td>
+          <td>${status}</td>
+          <td>${task.Delay !== null ? task.Delay : 0}</td>
+          <td><input type="text" value="${task.DelayReason || ''}" class="delay-reason-input" data-task-id="${task.TaskID}"></td>
+          <td><button class="row-save-btn" data-task-id="${task.TaskID}">Save</button></td>
+        `;
 
         tbody.appendChild(tr);
       });
     });
   });
+
+  // ✅ Now this works since tbody is in global scope
+  tbody.addEventListener('click', async (e) => {
+    if (e.target.classList.contains('row-save-btn')) {
+      const taskId = e.target.dataset.taskId;
+      const row = e.target.closest('tr');
+      const delayInput = row.querySelector('.delay-reason-input');
+      const dateInput = row.querySelector('.editable-date');
+
+      const updates = [];
+
+      if (delayInput) {
+        updates.push({
+          taskId,
+          field: 'delayReason',
+          value: delayInput.value,
+          usrID: userId
+        });
+      }
+
+      if (dateInput) {
+        updates.push({
+          taskId,
+          field: 'plannedDate',
+          value: dateInput.value,
+          usrID: userId
+        });
+      }
+console.log(updates)
+      try {
+        const res = await fetch('/save-task-updates', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ updates })
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+          alert('Row saved successfully');
+        } else {
+          alert(`Error: ${data.error}`);
+        }
+      } catch (err) {
+        console.error('Row save error:', err);
+        alert('Failed to save row');
+      }
+    }
+  });
 </script>
+
+
 
 </body>
 </html>

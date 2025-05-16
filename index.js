@@ -249,23 +249,31 @@ app.get("/api/departments", async (req, res) => {
 
 
 app.post('/tasks/:id/update', async (req, res) => {
-  const { id } = req.params;
-  const { PlannedDate, DelayReason } = req.body;
+  const { id } = req.params; // TaskID
+  const { PlannedDate, DelayReason, usrID } = req.body;
 
   try {
+    // Update PlannedDate in tblTasks if not fixed
     await sql.query`
       UPDATE tblTasks
-      SET
-        PlannedDate = CASE WHEN IsDateFixed = 0 THEN ${PlannedDate} ELSE PlannedDate END,
-        DelayReason = ${DelayReason}
+      SET PlannedDate = CASE WHEN IsDateFixed = 0 THEN ${PlannedDate} ELSE PlannedDate END
       WHERE TaskID = ${id}
     `;
-    res.status(200).send('Task updated');
+
+    // Update DelayReason in tblWorkflow for this user and task
+    await sql.query`
+      UPDATE tblWorkflow
+      SET DelayReason = ${DelayReason}
+      WHERE TaskID = ${id} AND usrID = ${usrID}
+    `;
+
+    res.status(200).send('Task and workflow updated');
   } catch (err) {
     console.error(err);
-    res.status(500).send('Database update failed');
+    res.status(500).send('Update failed');
   }
 });
+
 
 
 
@@ -472,6 +480,128 @@ app.post("/addUser", async (req, res) => {
     res.status(500).send("Failed to add user.");
   }
 });
+
+
+app.get('/process/:processId/tasks', async (req, res) => {
+  const processId = req.params.processId;
+  const userId = req.query.userId;
+
+  try {
+    // Step 1: Get user's department
+    const userResult = await pool
+      .request()
+      .input('userId', userId)
+      .query('SELECT DepartmentID FROM tblUsers WHERE usrID = @userId');
+
+    if (userResult.recordset.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const userDeptId = userResult.recordset[0].DepartmentID;
+
+    // Step 2: Verify department is in process
+    const isDeptInProcess = await pool
+      .request()
+      .input('processId', processId)
+      .input('departmentId', userDeptId)
+      .query(`
+        SELECT * FROM tblProcessDepartment
+        WHERE ProcessID = @processId AND DepartmentID = @departmentId
+      `);
+
+    if (isDeptInProcess.recordset.length === 0) {
+      return res.status(403).json({ error: 'User not in process-related department' });
+    }
+
+    // Step 3: Fetch tasks and show latest workflow info (not user-specific)
+    const tasksResult = await pool
+      .request()
+      .input('processId', processId)
+      .input('departmentId', userDeptId)
+      .query(`
+        SELECT 
+          t.TaskID, 
+          t.TaskName, 
+          t.TaskPlanned, 
+          t.PlannedDate, 
+          t.IsDateFixed,
+          w.TimeFinished, 
+          w.Delay, 
+          w.DelayReason
+        FROM tblDepartmentTask dt
+        JOIN tblTasks t ON dt.TaskID = t.TaskID
+        LEFT JOIN (
+          SELECT TaskID, MAX(TimeFinished) AS TimeFinished, Delay, DelayReason
+          FROM tblWorkflow
+          GROUP BY TaskID, Delay, DelayReason
+        ) w ON w.TaskID = t.TaskID
+        WHERE dt.ProcessID = @processId AND dt.DepartmentID = @departmentId
+      `);
+
+    res.json(tasksResult.recordset);
+  } catch (error) {
+    console.error('Error fetching tasks:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+app.put('/save-task-updates', async (req, res) => {
+  const { updates } = req.body;
+
+  try {
+    for (const update of updates) {
+      const { taskId, field, value, usrID } = update;
+
+      if (field === 'plannedDate') {
+        const check = await pool
+          .request()
+          .input('taskId', taskId)
+          .query('SELECT IsDateFixed FROM tblTasks WHERE TaskID = @taskId');
+
+        const isFixed = check.recordset[0]?.IsDateFixed;
+
+        if (isFixed === false) {
+          await pool
+            .request()
+            .input('taskId', taskId)
+            .input('value', sql.DateTime, new Date(value))
+            .query('UPDATE tblTasks SET PlannedDate = @value WHERE TaskID = @taskId');
+
+          console.log(`PlannedDate updated for TaskID ${taskId}`);
+        } else {
+          console.log(`TaskID ${taskId}: Date is fixed, not updated.`);
+        }
+      }
+
+      if (field === 'delayReason') {
+        await pool
+          .request()
+          .input('taskId', taskId)
+          .input('usrID', usrID)
+          .input('value', value)
+          .query(`
+            UPDATE tblWorkflow
+            SET DelayReason = @value
+            WHERE TaskID = @taskId AND usrID = @usrID AND WorkflowID = (
+              SELECT TOP 1 WorkflowID
+              FROM tblWorkflow
+              WHERE TaskID = @taskId AND usrID = @usrID
+              ORDER BY WorkflowID DESC
+            )
+          `);
+
+        console.log(`Delay reason updated for TaskID ${taskId}`);
+      }
+    }
+
+    res.json({ success: true });
+
+  } catch (err) {
+    console.error('Error saving updates:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+
 
 
 // Listen on the defined port
