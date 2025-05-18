@@ -225,7 +225,33 @@ app.get('/process/:processId/tasks', async (req, res) => {
   }
 });
 
+ 
+app.get("/getWorkflow", async (req, res) => {
+  const { TaskID, PkgeID } = req.query;
 
+  if (!TaskID || !PkgeID) {
+    return res.status(400).send({ error: "Missing TaskID or PkgeID" });
+  }
+
+  try {
+    const result = await pool.request()
+      .input("TaskID", sql.Int, TaskID)
+      .input("PkgeID", sql.Int, PkgeID)
+      .query(`
+        SELECT TOP 1 * FROM tblWorkflow
+        WHERE TaskID = @TaskID AND PkgeID = @PkgeID
+      `);
+
+    if (result.recordset.length === 0) {
+      return res.status(200).send(null); // no existing workflow
+    }
+
+    res.status(200).send(result.recordset[0]);
+  } catch (err) {
+    console.error("Error fetching workflow:", err);
+    res.status(500).send({ error: "Database error" });
+  }
+});
 
 
 
@@ -388,7 +414,7 @@ app.post("/postProcess", async (req, res) => {
 app.post("/postWorkflow", async (req, res) => {
   const { WorkflowName, usrID, TaskID, PkgeID, TimeStarted, TimeFinished } = req.body;
 
-  if (!WorkflowName || !TaskID || !PkgeID) {
+  if (!WorkflowName || !TaskID || !PkgeID || !TimeStarted) {
     return res.status(400).send({ error: 'Missing required fields' });
   }
 
@@ -403,28 +429,70 @@ app.post("/postWorkflow", async (req, res) => {
     : null;
 
   try {
-    await pool.request()
-      .input('WorkflowName', sql.VarChar(100), WorkflowName)
-      .input('usrID', sql.VarChar(10), usrIDValue)  // allow null here
+    const existing = await pool.request()
       .input('TaskID', sql.Int, TaskID)
       .input('PkgeID', sql.Int, PkgeID)
-      .input('TimeStarted', sql.DateTime, timeStartedFormatted)
-      .input('TimeFinished', sql.DateTime, timeFinishedFormatted)
       .query(`
-        INSERT INTO tblWorkflow (
-          WorkflowName, usrID, TaskID, PkgeID, TimeStarted, TimeFinished
-        )
-        VALUES (
-          @WorkflowName, @usrID, @TaskID, @PkgeID, @TimeStarted, @TimeFinished
-        )
+        SELECT TOP 1 * FROM tblWorkflow 
+        WHERE TaskID = @TaskID AND PkgeID = @PkgeID
       `);
 
-    res.status(201).send({ message: 'Workflow created successfully' });
+    if (existing.recordset.length > 0) {
+      const existingWorkflow = existing.recordset[0];
+
+      const shouldUpdate =
+        (timeFinishedFormatted && timeFinishedFormatted !== existingWorkflow.TimeFinished?.toISOString().slice(0, 19).replace('T', ' ')) ||
+        (usrIDValue !== existingWorkflow.usrID) ||
+        (timeStartedFormatted !== existingWorkflow.TimeStarted?.toISOString().slice(0, 19).replace('T', ' '));
+
+      if (shouldUpdate) {
+        await pool.request()
+          .input('WorkflowName', sql.VarChar(100), WorkflowName)
+          .input('usrID', sql.VarChar(10), usrIDValue)
+          .input('TimeStarted', sql.DateTime, timeStartedFormatted)
+          .input('TimeFinished', sql.DateTime, timeFinishedFormatted)
+          .input('TaskID', sql.Int, TaskID)
+          .input('PkgeID', sql.Int, PkgeID)
+          .query(`
+            UPDATE tblWorkflow
+            SET WorkflowName = @WorkflowName,
+                usrID = @usrID,
+                TimeStarted = @TimeStarted,
+                TimeFinished = @TimeFinished
+            WHERE TaskID = @TaskID AND PkgeID = @PkgeID
+          `);
+
+        return res.status(200).send({ message: 'Workflow updated successfully' });
+      } else {
+        return res.status(200).send({ message: 'No changes detected; workflow remains unchanged' });
+      }
+    } else {
+      await pool.request()
+        .input('WorkflowName', sql.VarChar(100), WorkflowName)
+        .input('usrID', sql.VarChar(10), usrIDValue)
+        .input('TaskID', sql.Int, TaskID)
+        .input('PkgeID', sql.Int, PkgeID)
+        .input('TimeStarted', sql.DateTime, timeStartedFormatted)
+        .input('TimeFinished', sql.DateTime, timeFinishedFormatted)
+        .query(`
+          INSERT INTO tblWorkflow (
+            WorkflowName, usrID, TaskID, PkgeID, TimeStarted, TimeFinished
+          )
+          VALUES (
+            @WorkflowName, @usrID, @TaskID, @PkgeID, @TimeStarted, @TimeFinished
+          )
+        `);
+
+      return res.status(201).send({ message: 'Workflow created successfully' });
+    }
   } catch (err) {
     console.error('SQL error:', err);
-    res.status(500).send({ error: 'Database insert failed' });
+    res.status(500).send({ error: 'Database operation failed' });
   }
 });
+
+
+
 
 app.post("/addUser", async (req, res) => {
   const {
@@ -513,7 +581,7 @@ app.get('/process/:processId/tasks', async (req, res) => {
       return res.status(403).json({ error: 'User not in process-related department' });
     }
 
-    // Step 3: Fetch tasks and show latest workflow info (not user-specific)
+    // Step 3: Fetch tasks and latest workflow info using OUTER APPLY
     const tasksResult = await pool
       .request()
       .input('processId', processId)
@@ -525,16 +593,17 @@ app.get('/process/:processId/tasks', async (req, res) => {
           t.TaskPlanned, 
           t.PlannedDate, 
           t.IsDateFixed,
-          w.TimeFinished, 
-          w.Delay, 
-          w.DelayReason
+          wf.TimeFinished, 
+          wf.Delay, 
+          wf.DelayReason
         FROM tblDepartmentTask dt
         JOIN tblTasks t ON dt.TaskID = t.TaskID
-        LEFT JOIN (
-          SELECT TaskID, MAX(TimeFinished) AS TimeFinished, Delay, DelayReason
+        OUTER APPLY (
+          SELECT TOP 1 TimeFinished, Delay, DelayReason
           FROM tblWorkflow
-          GROUP BY TaskID, Delay, DelayReason
-        ) w ON w.TaskID = t.TaskID
+          WHERE TaskID = t.TaskID
+          ORDER BY WorkflowID DESC
+        ) wf
         WHERE dt.ProcessID = @processId AND dt.DepartmentID = @departmentId
       `);
 
@@ -544,6 +613,7 @@ app.get('/process/:processId/tasks', async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 });
+
 app.put('/save-task-updates', async (req, res) => {
   const { updates } = req.body;
 

@@ -17,7 +17,7 @@
 
       <div class="form-row">
         <label for="usrID">Select User</label>
-        <select name="usrID" id="usrID" required>
+        <select name="usrID" id="usrID" >
            <option value="">-- None --</option>
           <% users.forEach(user => { %>
             <option value="<%= user.usrID %>"><%= user.usrDesc %></option>
@@ -45,7 +45,7 @@
 
       <div class="form-row">
         <label for="TimeStarted">Time Started</label>
-        <input type="datetime-local" name="TimeStarted" id="TimeStarted">
+        <input type="datetime-local" name="TimeStarted" id="TimeStarted" required>
       </div>
 
       <div class="form-row">
@@ -59,4 +59,39 @@
     </form>
   </div>
 </body>
+<script>
+  const taskSelect = document.getElementById("TaskID");
+  const packageSelect = document.getElementById("PkgeID");
+
+  async function fetchAndFillWorkflow() {
+    const taskID = taskSelect.value;
+    const pkgeID = packageSelect.value;
+
+    if (!taskID || !pkgeID) return;
+
+    const res = await fetch(`/getWorkflow?TaskID=${taskID}&PkgeID=${pkgeID}`);
+    const data = await res.json();
+
+    if (data) {
+      document.getElementById("WorkflowName").value = data.WorkflowName || "";
+      document.getElementById("usrID").value = data.usrID || "";
+      document.getElementById("TimeStarted").value = data.TimeStarted
+        ? new Date(data.TimeStarted).toISOString().slice(0, 16)
+        : "";
+      document.getElementById("TimeFinished").value = data.TimeFinished
+        ? new Date(data.TimeFinished).toISOString().slice(0, 16)
+        : "";
+    } else {
+      // Clear fields if no existing workflow
+      document.getElementById("WorkflowName").value = "";
+      document.getElementById("usrID").value = "";
+      document.getElementById("TimeStarted").value = "";
+      document.getElementById("TimeFinished").value = "";
+    }
+  }
+
+  taskSelect.addEventListener("change", fetchAndFillWorkflow);
+  packageSelect.addEventListener("change", fetchAndFillWorkflow);
+</script>
+
 </html>
