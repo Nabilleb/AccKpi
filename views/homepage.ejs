@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Engineering Project Dashboard</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<link rel="stylesheet" href= "/styles/homepage.css">
+  <link rel="stylesheet" href="/styles/homepage.css">
 </head>
 <body>
   <header class="dashboard-header">
@@ -26,9 +26,9 @@
 
   <nav class="main-nav">
     <a href="#"><i class="fas fa-shopping-cart"></i> Procurement</a>
-    <a href="#"><i class="fas fa-file-contract"></i> Contract</a>
-    <a href="#"><i class="fas fa-calculator"></i> QS</a>
-    <a href="#"><i class="fas fa-calculator"></i> Accounting</a>
+    <a href="#"><i class="fas fa-file-contract"></i> Finance</a>
+    <a href="#"><i class="fas fa-calculator"></i> HR</a>
+    <a href="#"><i class="fas fa-calculator"></i> IT</a>
     <a href="#"><i class="fas fa-truck"></i> Logistics</a>
     <a href="#"><i class="fas fa-chart-bar"></i> Reports</a>
   </nav>
@@ -39,9 +39,9 @@
 
   <div class="mobile-nav" id="mobileNav">
     <a href="#"><i class="fas fa-shopping-cart"></i> Procurement</a>
-    <a href="#"><i class="fas fa-file-contract"></i> Contract</a>
-    <a href="#"><i class="fas fa-calculator"></i> QS</a>
-    <a href="#"><i class="fas fa-calculator"></i> Accounting</a>
+    <a href="#"><i class="fas fa-file-contract"></i> Finance</a>
+    <a href="#"><i class="fas fa-calculator"></i> HR</a>
+    <a href="#"><i class="fas fa-calculator"></i> IT</a>
     <a href="#"><i class="fas fa-truck"></i> Logistics</a>
     <a href="#"><i class="fas fa-chart-bar"></i> Reports</a>
   </div>
@@ -50,18 +50,11 @@
     <section class="quick-actions">
       <h3 class="section-title"><i class="fas fa-bolt"></i> Quick Actions</h3>
       <div class="actions-grid">
-        <a href="/addTask" class="action-btn">
-          <i class="fas fa-tasks"></i> Add Task
-        </a>
-        <a href="/addPackage" class="action-btn">
-          <i class="fas fa-box-open"></i> Add Package
-        </a>
-        <a href="/addProcess" class="action-btn">
-          <i class="fas fa-cogs"></i> Add Process
-        </a>
-        <a href="/addWorkflow" class="action-btn">
-          <i class="fas fa-play"></i> Start Workflow
-        </a>
+        <a href="/addTask" class="action-btn"><i class="fas fa-tasks"></i> Add Task</a>
+        <a href="/addPackage" class="action-btn"><i class="fas fa-box-open"></i> Add Package</a>
+        <a href="/addProcess" class="action-btn"><i class="fas fa-cogs"></i> Add Process</a>
+        <a href="/addWorkflow" class="action-btn"><i class="fas fa-play"></i> Start Workflow</a>
+        <a href="/addUser" class="action-btn"><i class="fas fa-user-plus"></i> Add User</a>
       </div>
     </section>
 
@@ -99,7 +92,7 @@
         </div>
       </div>
 
-      <h3 class="section-title"><i class="fas fa-clipboard-list"></i> Procurement Activities</h3>
+      <h3 id="activityTitle" class="section-title"><i class="fas fa-clipboard-list"></i> Procurement Activities</h3>
       <table>
         <thead>
           <tr>
@@ -158,16 +151,19 @@
   </main>
 
   <script>
-    document.getElementById('projectSelect').addEventListener('change', function() {
-      localStorage.setItem('selectedProject', this.value);
-    });
-    
-    const savedProject = localStorage.getItem('selectedProject');
-    if (savedProject) {
-      document.getElementById('projectSelect').value = savedProject;
-    }
-    
     document.addEventListener('DOMContentLoaded', () => {
+      const projectSelect = document.getElementById('projectSelect');
+      if (projectSelect) {
+        projectSelect.addEventListener('change', function () {
+          localStorage.setItem('selectedProject', this.value);
+        });
+
+        const savedProject = localStorage.getItem('selectedProject');
+        if (savedProject) {
+          projectSelect.value = savedProject;
+        }
+      }
+
       const rows = document.querySelectorAll('tbody tr');
       rows.forEach((row, i) => {
         setTimeout(() => {
@@ -175,15 +171,86 @@
           row.style.transform = 'translateY(0)';
         }, i * 100);
       });
-      
-      // Mobile nav toggle
+
       const mobileNavToggle = document.getElementById('mobileNavToggle');
       const mobileNav = document.getElementById('mobileNav');
-      
-      mobileNavToggle.addEventListener('click', () => {
-        mobileNav.classList.toggle('active');
+      if (mobileNavToggle && mobileNav) {
+        mobileNavToggle.addEventListener('click', () => {
+          mobileNav.classList.toggle('active');
+        });
+      }
+
+      const navLinks = document.querySelectorAll('.main-nav a, .mobile-nav a');
+      const activityTitle = document.getElementById('activityTitle');
+
+      navLinks.forEach(link => {
+        link.addEventListener("click", (e) => {
+          e.preventDefault();
+          const departmentName = e.target.textContent.trim();
+          activityTitle.innerHTML = `<i class="fas fa-clipboard-list"></i> ${departmentName} Activities`;
+              fetchDepartmentTasks(departmentName);
+        });
       });
+       function fetchDepartmentTasks(departmentName) {
+  console.log("Fetching tasks for:", departmentName);
+
+  const departmentMap = {
+    'Procurement': 19,
+    'Finance': 20,
+    'HR': 21, 
+    'IT': 22,
+    'Logistics': 23,
+  };
+
+  const departmentID = departmentMap[departmentName];
+  if (!departmentID) {
+    alert("Department not found.");
+    return;
+  }
+
+  fetch(`/api/tasks/by-department/${departmentID}`)
+    .then(res => res.json())
+    .then(data => {
+      const tbody = document.querySelector("tbody");
+      tbody.innerHTML = ""; // Clear existing rows
+
+      data.forEach(task => {
+        const row = document.createElement("tr");
+
+        const plannedDate = task.PlannedDate
+          ? new Date(task.PlannedDate).toISOString().split("T")[0]
+          : "-";
+        const finishedDate = task.DateFinished
+          ? new Date(task.DateFinished).toISOString().split("T")[0]
+          : "-";
+
+        const status = task.Delay === null
+          ? `<span class="status-badge status-pending">Pending</span>`
+          : task.Delay > 0
+            ? `<span class="status-badge status-delayed">Delayed ${task.Delay} day(s)</span>`
+            : `<span class="status-badge status-on-time">On time</span>`;
+
+        row.innerHTML = `
+          <td>${task.TaskName}</td>
+          <td>${plannedDate}</td>
+          <td>-</td>
+          <td>${finishedDate}</td>
+          <td>${status}</td>
+          <td>${task.DelayReason || ""}</td>
+        `;
+
+        tbody.appendChild(row);
+      });
+    })
+    .catch(err => {
+      console.error("Error fetching tasks:", err);
+    });
+}
+
     });
   </script>
+
+  </script>
+
 </body>
 </html>

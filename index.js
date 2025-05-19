@@ -7,7 +7,6 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-// Get the directory name using import.meta.url
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
@@ -25,10 +24,8 @@ const config = {
 
 const app = express();
 
-// Create a global connection pool
 let pool;
 
-// Set up EJS
 app.set('view engine', 'ejs');
 app.set('views', __dirname + '/views');
 
@@ -42,13 +39,12 @@ async function initializeDatabase() {
     pool = await sql.connect(config);
     console.log('Connected to database');
     
-    // Start the server only after database connection is established
     app.listen(port, () => {
       console.log("Listening on port", port);
     });
   } catch (err) {
     console.error("SQL connection error", err);
-    process.exit(1); // Exit if we can't connect to the database
+    process.exit(1); 
   }
 }
 
@@ -56,12 +52,10 @@ initializeDatabase();
 
 
 
-// Route to render the package form
 app.get("/addPackage", async (req, res) => {
 res.render("packagefrom.ejs");
 });
 
-// Route to render the task form
 app.get("/addTask", async (req, res) => {
   res.render("task.ejs");
 });
@@ -79,6 +73,36 @@ app.get("/addProcess", async (req, res) => {
     res.status(500).send("Error loading departments.");
   }
 });
+
+app.get('/api/tasks/by-department/:departmentID', async (req, res) => {
+  const { departmentID } = req.params;
+
+  const query = `
+    SELECT 
+      T.TaskName,
+      T.PlannedDate,
+      W.TimeFinished AS DateFinished,
+      W.DelayReason,
+      W.Delay
+    FROM tblDepartmentTask DPT
+    JOIN tblTasks T ON DPT.TaskID = T.TaskID
+    LEFT JOIN tblWorkflow W ON T.TaskID = W.TaskID
+    WHERE DPT.DepartmentID = @departmentID
+  `;
+
+  try {
+    const result = await pool.request()
+      .input('departmentID', sql.Int, departmentID)
+      .query(query);
+
+    res.json(result.recordset);
+    console.log(result.recordset)
+  } catch (err) {
+    console.error('Error fetching tasks by department:', err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
 
 app.get("/addWorkflow", async (req, res) => {
   try {
@@ -170,7 +194,6 @@ app.get('/process/:processId/tasks', async (req, res) => {
   const userId = req.query.userId;
 
   try {
-    // Step 1: Get user's department
     const userResult = await pool
       .request()
       .input('userId', userId)
@@ -182,7 +205,6 @@ app.get('/process/:processId/tasks', async (req, res) => {
 
     const userDeptId = userResult.recordset[0].DepartmentID;
 
-    // Step 2: Verify department is in process
     const isDeptInProcess = await pool
       .request()
       .input('processId', processId)
@@ -196,12 +218,10 @@ app.get('/process/:processId/tasks', async (req, res) => {
       return res.status(403).json({ error: 'User not in process-related department' });
     }
 
-    // Step 3: Fetch tasks with workflow info
     const tasksResult = await pool
       .request()
       .input('processId', processId)
       .input('departmentId', userDeptId)
-      .input('userId', userId)
       .query(`
         SELECT 
           t.TaskID, 
@@ -209,21 +229,28 @@ app.get('/process/:processId/tasks', async (req, res) => {
           t.TaskPlanned, 
           t.PlannedDate, 
           t.IsDateFixed,
+          w.TimeStarted,
           w.TimeFinished, 
           w.Delay, 
-          w.DelayReason
+          w.DelayReason,
+          w.usrID AS LastUpdatedBy
         FROM tblDepartmentTask dt
         JOIN tblTasks t ON dt.TaskID = t.TaskID
-        LEFT JOIN tblWorkflow w ON w.TaskID = t.TaskID AND w.usrID = @userId
+        LEFT JOIN (
+          SELECT *,
+                 ROW_NUMBER() OVER (PARTITION BY TaskID ORDER BY TimeFinished DESC) AS rn
+          FROM tblWorkflow
+        ) w ON w.TaskID = t.TaskID AND w.rn = 1
         WHERE dt.ProcessID = @processId AND dt.DepartmentID = @departmentId
       `);
-    console.log(tasksResult.recordset);
+
     res.json(tasksResult.recordset);
   } catch (error) {
     console.error('Error fetching tasks:', error);
     res.status(500).json({ error: 'Server error' });
   }
 });
+
 
  
 app.get("/getWorkflow", async (req, res) => {
@@ -243,7 +270,7 @@ app.get("/getWorkflow", async (req, res) => {
       `);
 
     if (result.recordset.length === 0) {
-      return res.status(200).send(null); // no existing workflow
+      return res.status(200).send(null); 
     }
 
     res.status(200).send(result.recordset[0]);
@@ -255,7 +282,9 @@ app.get("/getWorkflow", async (req, res) => {
 
 
 
-
+app.get("/adminpage", (req,res) =>{
+  res.render("homepage.ejs")
+})
 
 
 
@@ -279,14 +308,12 @@ app.post('/tasks/:id/update', async (req, res) => {
   const { PlannedDate, DelayReason, usrID } = req.body;
 
   try {
-    // Update PlannedDate in tblTasks if not fixed
     await sql.query`
       UPDATE tblTasks
       SET PlannedDate = CASE WHEN IsDateFixed = 0 THEN ${PlannedDate} ELSE PlannedDate END
       WHERE TaskID = ${id}
     `;
 
-    // Update DelayReason in tblWorkflow for this user and task
     await sql.query`
       UPDATE tblWorkflow
       SET DelayReason = ${DelayReason}
@@ -382,18 +409,15 @@ try {
 app.post("/postProcess", async (req, res) => {
   const { ProcessName, Departments } = req.body;
 
-  // Ensure Departments is an array
   const departmentIDs = Array.isArray(Departments) ? Departments : [Departments];
 
   try {
-    // Insert into tblProcess and get the inserted ID
     const processResult = await pool.request()
       .input("ProcessName", sql.VarChar(100), ProcessName)
       .query("INSERT INTO tblProcess (ProcessName) OUTPUT INSERTED.NumberOfProccessID AS ProcessID VALUES (@ProcessName)");
 
     const ProcessID = processResult.recordset[0].ProcessID;
 
-    // Insert each department into tblProcessDepartment
     for (const deptID of departmentIDs) {
       await pool.request()
         .input("ProcessID", sql.Int, ProcessID)
