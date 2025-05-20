@@ -4,6 +4,7 @@ import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import sql from 'mssql';
 import dotenv from 'dotenv';
+import session from 'express-session';
 
 dotenv.config();
 
@@ -22,6 +23,8 @@ const config = {
   }
 };
 
+
+
 const app = express();
 
 let pool;
@@ -33,7 +36,6 @@ app.use(express.static("public"));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.json());
 
-// Connect to SQL Server when starting the app
 async function initializeDatabase() {
   try {
     pool = await sql.connect(config);
@@ -50,7 +52,54 @@ async function initializeDatabase() {
 
 initializeDatabase();
 
+function ensureAuthenticated(req, res, next) {
+  if (req.session && req.session.user) {
+    return next(); // User is logged in
+  }
+  res.redirect('/login'); // Not logged in
+}
 
+
+
+app.use(session({
+  secret: 'cat keyboard 10',
+  resave: false,
+  saveUninitialized: true,
+}));
+
+
+app.get("/login", (req,res) =>{
+  res.render("login.ejs")
+})
+
+app.post("/login", async (req, res) => {
+  const {username, password} = req.body;
+
+  try {
+    const result = await pool.request()
+      .input('username', sql.VarChar, username)
+      .input('password', sql.VarChar, password) 
+      .query(`SELECT usrID, usrDesc, usrAdmin FROM tblUsers WHERE usrEmail = @username AND usrPWD = @password`);
+
+    if (result.recordset.length === 1) {
+      req.session.user = {
+        id: result.recordset[0].usrID,
+        name: result.recordset[0].usrDesc,
+        usrAdmin: result.recordset[0].usrAdmin
+      };            
+      console.log(result.recordset[0].usrAdmin)
+      res.redirect(result.recordset[0].usrAdmin ? "/adminpage" : `/userpage?id=${result.recordset[0].usrID}`);
+
+    }
+    else{
+      res.status(401).send("invalid")
+    }
+
+  }catch(err){
+    console.log("login falied",err)
+    res.status(500).send("Internal server error")
+  }
+})
 
 app.get("/addPackage", async (req, res) => {
 res.render("packagefrom.ejs");
@@ -60,9 +109,7 @@ app.get("/addTask", async (req, res) => {
   res.render("task.ejs");
 });
 
-app.get("/", (req, res) =>{
-  res.render("homepage.ejs");
-})
+
 app.get("/addProcess", async (req, res) => {
   try {
     const result = await pool.request().query("SELECT DepartmentID, DeptName FROM tblDepartments");
@@ -135,14 +182,19 @@ app.get("/addUser", async (req, res) => {
   }
 });
 
-app.get('/userpage', async (req, res) => {
-    const userId = req.query.id;
+app.get('/userpage', ensureAuthenticated, async (req, res) => {
+    const sessionUserId = req.session.user.id
+    const queryUserId = req.query.id;
+    console.log(queryUserId)
+console.log(sessionUserId)
+    if (sessionUserId !== queryUserId) {
+        return res.status(403).send("Access denied");
+    }
 
     try {
-        // Fetch user details
         const userResult = await pool
             .request()
-            .input('userId', userId)
+            .input('userId', sessionUserId)
             .query('SELECT usrDesc, DepartmentID FROM tblUsers WHERE usrID = @userId');
 
         const usrDetails = userResult.recordset[0];
@@ -168,7 +220,7 @@ app.get('/userpage', async (req, res) => {
             .request()
             .input('DepId', DepartmentID)
             .query(`
-                SELECT P.ProcessName, P.processDesc,P.NumberOfProccessID
+                SELECT P.ProcessName, P.processDesc, P.NumberOfProccessID
                 FROM tblProcess P
                 JOIN tblProcessDepartment PD ON P.NumberOfProccessID = PD.ProcessID
                 WHERE PD.DepartmentID = @DepId
@@ -177,10 +229,10 @@ app.get('/userpage', async (req, res) => {
         const processes = processResult.recordset;
 
         res.render('userpage', {
-            userId,
-            usrDesc: usrDetails.usrDesc,
+            userId: sessionUserId,
+            usrDesc,
             department: deptDetails.DeptName,
-            processes 
+            processes
         });
 
     } catch (error) {
@@ -188,6 +240,7 @@ app.get('/userpage', async (req, res) => {
         res.status(500).send('Server error');
     }
 });
+
 
 app.get('/process/:processId/tasks', async (req, res) => {
   const processId = req.params.processId;
@@ -281,11 +334,15 @@ app.get("/getWorkflow", async (req, res) => {
 });
 
 
+app.get("/adminpage", ensureAuthenticated, (req, res) => {
+  const user = req.session.user;
 
-app.get("/adminpage", (req,res) =>{
-  res.render("homepage.ejs")
-})
-
+  if (user && user.usrAdmin) {
+    res.render("homepage.ejs", { user });
+  } else {
+    res.status(403).send("Forbidden: Admins only");
+  }
+});
 
 
 app.get("/api/departments", async (req, res) => {
@@ -301,6 +358,10 @@ app.get("/api/departments", async (req, res) => {
 });
 
 
+app.get("/logout", (req, res) => {
+  req.session.destroy();
+  res.redirect("/login");
+});
 
 
 app.post('/tasks/:id/update', async (req, res) => {
@@ -579,7 +640,6 @@ app.get('/process/:processId/tasks', async (req, res) => {
   const userId = req.query.userId;
 
   try {
-    // Step 1: Get user's department
     const userResult = await pool
       .request()
       .input('userId', userId)
@@ -591,7 +651,6 @@ app.get('/process/:processId/tasks', async (req, res) => {
 
     const userDeptId = userResult.recordset[0].DepartmentID;
 
-    // Step 2: Verify department is in process
     const isDeptInProcess = await pool
       .request()
       .input('processId', processId)
@@ -605,7 +664,6 @@ app.get('/process/:processId/tasks', async (req, res) => {
       return res.status(403).json({ error: 'User not in process-related department' });
     }
 
-    // Step 3: Fetch tasks and latest workflow info using OUTER APPLY
     const tasksResult = await pool
       .request()
       .input('processId', processId)
@@ -698,7 +756,6 @@ app.put('/save-task-updates', async (req, res) => {
 
 
 
-// Listen on the defined port
 app.listen(port, () => {
   console.log("Listening on port", port);
 });

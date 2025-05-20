@@ -212,7 +212,7 @@
     .then(res => res.json())
     .then(data => {
       const tbody = document.querySelector("tbody");
-      tbody.innerHTML = ""; // Clear existing rows
+      tbody.innerHTML = ""; 
 
       data.forEach(task => {
         const row = document.createElement("tr");

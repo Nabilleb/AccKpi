@@ -2,23 +2,25 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Add Workflow</title>
-  <link rel="stylesheet" href="/styles/task.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Add Workflow | Engineering System</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="/styles/workflow.css">
 </head>
 <body>
   <div class="form-container">
-    <h1>Add Workflow</h1>
-    <form action="/postWorkflow" method="POST">
-      
+    <h1><i class="fas fa-project-diagram"></i> Add Workflow</h1>
+    
+    <form action="/postWorkflow" method="POST" class="form-grid">
       <div class="form-row">
         <label for="WorkflowName">Workflow Name</label>
-        <input type="text" name="WorkflowName" id="WorkflowName" required>
+        <input type="text" name="WorkflowName" id="WorkflowName" required placeholder="Enter workflow name">
       </div>
 
       <div class="form-row">
-        <label for="usrID">Select User</label>
-        <select name="usrID" id="usrID" >
-           <option value="">-- None --</option>
+        <label for="usrID">Finished by</label>
+        <select name="usrID" id="usrID">
+          <option value="">-- Select User --</option>
           <% users.forEach(user => { %>
             <option value="<%= user.usrID %>"><%= user.usrDesc %></option>
           <% }) %>
@@ -26,8 +28,9 @@
       </div>
 
       <div class="form-row">
-        <label for="TaskID">Select Task</label>
+        <label for="TaskID">Task</label>
         <select name="TaskID" id="TaskID" required>
+          <option value="">-- Select Task --</option>
           <% tasks.forEach(task => { %>
             <option value="<%= task.TaskID %>"><%= task.TaskName %></option>
           <% }) %>
@@ -35,8 +38,9 @@
       </div>
 
       <div class="form-row">
-        <label for="PkgeID">Select Package</label>
+        <label for="PkgeID">Package</label>
         <select name="PkgeID" id="PkgeID" required>
+          <option value="">-- Select Package --</option>
           <% packages.forEach(pkg => { %>
             <option value="<%= pkg.PkgeID %>"><%= pkg.PkgeName %></option>
           <% }) %>
@@ -44,54 +48,95 @@
       </div>
 
       <div class="form-row">
-        <label for="TimeStarted">Time Started</label>
+        <label for="TimeStarted">Start Date & Time</label>
         <input type="datetime-local" name="TimeStarted" id="TimeStarted" required>
       </div>
 
       <div class="form-row">
-        <label for="TimeFinished">Time Finished</label>
+        <label for="TimeFinished">Completion Date & Time (optional)</label>
         <input type="datetime-local" name="TimeFinished" id="TimeFinished">
       </div>
 
       <div class="form-actions">
-        <button type="submit">Create Workflow</button>
+        <button type="reset" class="btn btn-secondary">
+          <i class="fas fa-undo"></i> Reset
+        </button>
+        <button type="submit" class="btn btn-primary">
+          <i class="fas fa-save"></i> Create Workflow
+        </button>
       </div>
     </form>
   </div>
-</body>
-<script>
-  const taskSelect = document.getElementById("TaskID");
-  const packageSelect = document.getElementById("PkgeID");
 
-  async function fetchAndFillWorkflow() {
-    const taskID = taskSelect.value;
-    const pkgeID = packageSelect.value;
+  <script>
+    const taskSelect = document.getElementById("TaskID");
+    const packageSelect = document.getElementById("PkgeID");
+    const form = document.querySelector("form");
 
-    if (!taskID || !pkgeID) return;
+    async function fetchAndFillWorkflow() {
+      const taskID = taskSelect.value;
+      const pkgeID = packageSelect.value;
 
-    const res = await fetch(`/getWorkflow?TaskID=${taskID}&PkgeID=${pkgeID}`);
-    const data = await res.json();
+      if (!taskID || !pkgeID) return;
 
-    if (data) {
-      document.getElementById("WorkflowName").value = data.WorkflowName || "";
-      document.getElementById("usrID").value = data.usrID || "";
-      document.getElementById("TimeStarted").value = data.TimeStarted
-        ? new Date(data.TimeStarted).toISOString().slice(0, 16)
-        : "";
-      document.getElementById("TimeFinished").value = data.TimeFinished
-        ? new Date(data.TimeFinished).toISOString().slice(0, 16)
-        : "";
-    } else {
-      // Clear fields if no existing workflow
-      document.getElementById("WorkflowName").value = "";
-      document.getElementById("usrID").value = "";
-      document.getElementById("TimeStarted").value = "";
-      document.getElementById("TimeFinished").value = "";
+      try {
+        const res = await fetch(`/getWorkflow?TaskID=${taskID}&PkgeID=${pkgeID}`);
+        const data = await res.json();
+
+        if (data) {
+          document.getElementById("WorkflowName").value = data.WorkflowName || "";
+          document.getElementById("usrID").value = data.usrID || "";
+          
+          if (data.TimeStarted) {
+            const startDate = new Date(data.TimeStarted);
+            document.getElementById("TimeStarted").value = startDate.toISOString().slice(0, 16);
+          }
+          
+          if (data.TimeFinished) {
+            const endDate = new Date(data.TimeFinished);
+            document.getElementById("TimeFinished").value = endDate.toISOString().slice(0, 16);
+          }
+        } else {
+          document.getElementById("WorkflowName").value = "";
+          document.getElementById("usrID").value = "";
+          document.getElementById("TimeStarted").value = "";
+          document.getElementById("TimeFinished").value = "";
+        }
+      } catch (error) {
+        console.error("Error fetching workflow:", error);
+      }
     }
-  }
 
-  taskSelect.addEventListener("change", fetchAndFillWorkflow);
-  packageSelect.addEventListener("change", fetchAndFillWorkflow);
-</script>
+    // Form submission handler
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      
+      const submitBtn = form.querySelector('button[type="submit"]');
+      submitBtn.classList.add('loading');
+      submitBtn.innerHTML = '<i class="fas fa-spinner"></i> Creating...';
+      
+      try {
+        const response = await fetch(form.action, {
+          method: 'POST',
+          body: new FormData(form)
+        });
+        
+        if (response.ok) {
+          window.location.href = '/workflows?success=true';
+        } else {
+          alert('Error creating workflow');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('Failed to create workflow');
+      } finally {
+        submitBtn.classList.remove('loading');
+        submitBtn.innerHTML = '<i class="fas fa-save"></i> Create Workflow';
+      }
+    });
 
+    taskSelect.addEventListener("change", fetchAndFillWorkflow);
+    packageSelect.addEventListener("change", fetchAndFillWorkflow);
+  </script>
+</body>
 </html>

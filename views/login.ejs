@@ -14,16 +14,16 @@
             <p>Precision. Innovation. Efficiency.</p>
         </div>
 
-        <form class="login-form">
+      <form method="POST" action="/login">
             <div class="input-group">
                 <label for="username">Username / Email</label>
-                <input type="text" id="username" placeholder="e.g., john.doe@domain.com" required>
+                <input type="text" id="username" placeholder="e.g., john.doe@domain.com" name="username" required>
             </div>
 
             <div class="input-group">
                 <label for="password">Password</label>
                 <div class="password-wrapper">
-                  <input type="password" id="password" placeholder="••••••••••••" required>
+                  <input type="password" id="password" placeholder="••••••••••••" name="password" required>
                   <span class="toggle-password">
                     <i class="eye-icon">👁️</i> 
                   </span>
@@ -32,16 +32,12 @@
               </div>
 
             <div class="options">
-                <label>
-                    <input type="checkbox" name="remember"> Remember Me
-                </label>
                 <button type="submit" class="login-button">Sign In</button>
             </div>
         </form>
 
         <div class="login-footer">
-            <a href="#">Forgot Password?</a>
-            <a href="/signup">First-Time User? Register</a>
+            <a href="#">Forgot Password?</a>            
             <a href="#">Contact IT Support</a>
         </div>
     </div>
