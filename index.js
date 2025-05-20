@@ -54,11 +54,22 @@ initializeDatabase();
 
 function ensureAuthenticated(req, res, next) {
   if (req.session && req.session.user) {
-    return next(); // User is logged in
+    return next();
   }
-  res.redirect('/login'); // Not logged in
+  res.redirect('/login'); 
 }
 
+function isAdmin(req, res, next) {
+  if (!req.session || !req.session.user) {
+    return res.status(401).send("Unauthorized: Please log in.");
+  }
+
+  if (!req.session.user.usrAdmin) {
+    return res.status(403).send("Forbidden: Admins only.");
+  }
+
+  next();
+}
 
 
 app.use(session({
@@ -101,16 +112,16 @@ app.post("/login", async (req, res) => {
   }
 })
 
-app.get("/addPackage", async (req, res) => {
+app.get("/addPackage", isAdmin,async (req, res) => {
 res.render("packagefrom.ejs");
 });
 
-app.get("/addTask", async (req, res) => {
+app.get("/addTask",isAdmin, async (req, res) => {
   res.render("task.ejs");
 });
 
 
-app.get("/addProcess", async (req, res) => {
+app.get("/addProcess", isAdmin, async (req, res) => {
   try {
     const result = await pool.request().query("SELECT DepartmentID, DeptName FROM tblDepartments");
     const departments = result.recordset;
@@ -151,7 +162,7 @@ app.get('/api/tasks/by-department/:departmentID', async (req, res) => {
 });
 
 
-app.get("/addWorkflow", async (req, res) => {
+app.get("/addWorkflow", isAdmin, async (req, res) => {
   try {
     const users = await pool.request().query("SELECT usrID, usrDesc FROM tblUsers");
     const tasks = await pool.request().query("SELECT TaskID, TaskName FROM tblTasks");
@@ -168,7 +179,7 @@ app.get("/addWorkflow", async (req, res) => {
   }
 });
 
-app.get("/addUser", async (req, res) => {
+app.get("/addUser", isAdmin, async (req, res) => {
   try {
     const result = await pool.request().query(`
       SELECT DepartmentID, DeptName FROM tblDepartments
