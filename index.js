@@ -59,6 +59,13 @@ function ensureAuthenticated(req, res, next) {
   res.redirect('/login'); 
 }
 
+function checkIfInSession(req, res, next){
+  if(req.session && req.session.user){
+    return res.redirect(req.session.user.usrAdmin ? "/adminpage":`/userpage?id=${req.session.user.id}`);
+  }
+  next();
+}
+
 function isAdmin(req, res, next) {
   if (!req.session || !req.session.user) {
     return res.status(401).send("Unauthorized: Please log in.");
@@ -79,7 +86,7 @@ app.use(session({
 }));
 
 
-app.get("/login", (req,res) =>{
+app.get("/login",checkIfInSession ,(req,res) =>{
   res.render("login.ejs")
 })
 
