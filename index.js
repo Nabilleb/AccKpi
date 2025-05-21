@@ -33,8 +33,9 @@ app.set('view engine', 'ejs');
 app.set('views', __dirname + '/views');
 
 app.use(express.static("public"));
-app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.json());
+
+app.use(bodyParser.urlencoded({ extended: true }));
 
 async function initializeDatabase() {
   try {
@@ -383,7 +384,7 @@ app.get("/logout", (req, res) => {
 
 
 app.post('/tasks/:id/update', async (req, res) => {
-  const { id } = req.params; // TaskID
+  const { id } = req.params; 
   const { PlannedDate, DelayReason, usrID } = req.body;
 
   try {
@@ -516,7 +517,7 @@ app.post("/postProcess", async (req, res) => {
 
 app.post("/postWorkflow", async (req, res) => {
   const { WorkflowName, usrID, TaskID, PkgeID, TimeStarted, TimeFinished } = req.body;
-
+console.log(WorkflowName)
   if (!WorkflowName || !TaskID || !PkgeID || !TimeStarted) {
     return res.status(400).send({ error: 'Missing required fields' });
   }
@@ -749,14 +750,15 @@ app.put('/save-task-updates', async (req, res) => {
           .input('usrID', usrID)
           .input('value', value)
           .query(`
-            UPDATE tblWorkflow
-            SET DelayReason = @value
-            WHERE TaskID = @taskId AND usrID = @usrID AND WorkflowID = (
-              SELECT TOP 1 WorkflowID
-              FROM tblWorkflow
-              WHERE TaskID = @taskId AND usrID = @usrID
-              ORDER BY WorkflowID DESC
-            )
+         UPDATE tblWorkflow
+SET DelayReason = @value
+WHERE TaskID = @taskId AND WorkflowID = (
+  SELECT TOP 1 WorkflowID
+  FROM tblWorkflow
+  WHERE TaskID = @taskId
+  ORDER BY WorkflowID DESC
+);
+
           `);
 
         console.log(`Delay reason updated for TaskID ${taskId}`);

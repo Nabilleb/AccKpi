@@ -110,3 +110,83 @@ git commit -m "Add project README"
 git push
 ````
 
+
+
+
+CREATE TABLE tblAlerts (
+    AlertID INT IDENTITY(1,1) PRIMARY KEY,
+    Message NVARCHAR(MAX),
+    FromDepartmentID INT,
+    ToDepartmentID INT,
+    TaskID INT,
+    AlertDate DATETIME,
+    IsRead BIT
+);
+CREATE TABLE tblDepartments (
+    DepartmentID INT IDENTITY(1,1) PRIMARY KEY,
+    DeptName NVARCHAR(100),
+    DeptEmail NVARCHAR(100)
+);
+CREATE TABLE tblDepartmentTask (
+    DepartmentTaskID INT IDENTITY(1,1) PRIMARY KEY,
+    DepartmentID INT,
+    TaskID INT,
+    ProcessID INT
+);
+CREATE TABLE tblPackages (
+    PkgeID INT IDENTITY(1,1) PRIMARY KEY,
+    PkgeName NVARCHAR(100),
+    Selected BIT,
+    Duration INT,
+    Division NVARCHAR(100),
+    Standard NVARCHAR(100),
+    Trade NVARCHAR(100),
+    FilePath NVARCHAR(255),
+    IsSynched BIT,
+    insertDate DATETIME
+);
+CREATE TABLE tblProcess (
+    NumberOfProccessID INT IDENTITY(1,1) PRIMARY KEY,
+    ProcessName NVARCHAR(100),
+    processDesc NVARCHAR(MAX)
+);
+CREATE TABLE tblProcessDepartment (
+    ProcessID INT,
+    DepartmentID INT
+);
+CREATE TABLE tblTasks (
+    TaskID INT IDENTITY(1,1) PRIMARY KEY,
+    TaskName NVARCHAR(100),
+    TaskPlanned INT,
+    TaskActual INT,
+    IsTaskSelected BIT,
+    IsDateFixed BIT,
+    PlannedDate DATETIME
+);
+CREATE TABLE tblUsers (
+    usrID INT IDENTITY(1,1) PRIMARY KEY,
+    usrDesc NVARCHAR(100),
+    usrPWD NVARCHAR(100),
+    usrAdmin BIT,
+    usrSTID INT,
+    DepartmentID INT,
+    AllowAccess BIT,
+    Export BIT,
+    LastUpdate DATETIME,
+    usrEmail NVARCHAR(100),
+    usrSignature NVARCHAR(MAX),
+    emailSignature NVARCHAR(MAX),
+    usrReadPolicy BIT,
+    insertDate DATETIME
+);
+CREATE TABLE tblWorkflow (
+    WorkflowID INT IDENTITY(1,1) PRIMARY KEY,
+    WorkflowName NVARCHAR(100),
+    usrID INT,
+    TaskID INT,
+    PkgeID INT,
+    TimeStarted DATETIME,
+    TimeFinished DATETIME,
+    Delay INT,
+    DelayReason NVARCHAR(MAX)
+);
