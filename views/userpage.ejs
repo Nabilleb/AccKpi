@@ -13,6 +13,15 @@
     <div class="header-left">
       <img src="/images/accNewLog.webp" alt="Company Logo" class="logo">
       <h1>Task Management</h1>
+      <p>project name</p>
+      <p>package name</p>
+     <select name="project" id="project">
+  <option value="none">none</option>
+  <% projects.forEach(project => { %>
+    <option value="<%= project.projectID %>"><%= project.projectName %></option>
+  <% }) %>
+</select>
+
     </div>
     <div class="user-info">
       <div class="user-avatar">RK</div>
@@ -71,12 +80,13 @@
 
 <script>
   const userId = "<%= userId %>";
+  const deptId = "<%=departmentID%>"
   const tbody = document.querySelector('.tasks-table tbody');
-
   document.querySelectorAll('.process-card').forEach(card => {
     card.addEventListener('click', async function () {
       document.querySelectorAll('.process-card').forEach(c => c.classList.remove('active'));
       this.classList.add('active');
+console.log("jdhfg")
 
       const processId = this.dataset.processId;
       const res = await fetch(`/process/${processId}/tasks?userId=${userId}`);
@@ -180,6 +190,128 @@
       }
     }
   });
+document.getElementById('project').addEventListener('change', async function () {
+  const selectedProjectId = this.value;
+
+  if (selectedProjectId !== 'none') {
+    try {
+      const response = await fetch('/get-project-processes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectId: selectedProjectId, departmentId:deptId }),
+      });
+
+      const data = await response.json();
+
+      console.log('Processes for selected project:', data);
+
+      // Update the processes container
+      const processGrid = document.querySelector('.process-grid');
+      processGrid.innerHTML = ''; 
+
+      if (data.length === 0) {
+        processGrid.innerHTML = '<p>No processes found for this project.</p>';
+        return;
+      }
+
+      data.forEach(process => {
+        const div = document.createElement('div');
+        div.classList.add('process-card');
+        div.dataset.processId = process.NumberOfProccessID || process.processID || process.ProcessID; // confirm your DB column name
+
+        div.innerHTML = `
+          <h3 class="process-name">${process.ProcessName || ''}</h3>
+          <p class="process-desc">${process.processDesc || ''}</p>
+        `;
+
+        div.addEventListener('click', async function () {
+          document.querySelectorAll('.process-card').forEach(c => c.classList.remove('active'));
+          this.classList.add('active');
+
+          const processId = this.dataset.processId;
+          const res = await fetch(`/process/${processId}/tasks?userId=${userId}`);
+          const tasks = await res.json();
+
+          tbody.innerHTML = '';
+
+          if (tasks.length === 0) {
+            const row = document.createElement('tr');
+            row.innerHTML = `<td colspan="8" style="text-align: center;">No tasks found for this process.</td>`;
+            tbody.appendChild(row);
+            return;
+          }
+
+          tasks.forEach(task => {
+div.addEventListener('click', async function () {
+  // Remove active class from all cards
+  document.querySelectorAll('.process-card').forEach(c => c.classList.remove('active'));
+  this.classList.add('active');
+
+  const processId = this.dataset.processId;
+  const res = await fetch(`/process/${processId}/tasks?userId=${userId}`);
+  const tasks = await res.json();
+
+  tbody.innerHTML = '';
+
+  if (tasks.length === 0) {
+    const row = document.createElement('tr');
+    row.innerHTML = `<td colspan="8" style="text-align: center;">No tasks found for this process.</td>`;
+    tbody.appendChild(row);
+    return;
+  }
+
+  tasks.forEach(task => {
+    const tr = document.createElement('tr');
+
+    let status = '';
+    if (!task.TimeFinished) {
+      status = `<span class="status-badge status-pending">Pending</span>`;
+    } else if (task.Delay > 0) {
+      status = `<span class="status-badge status-overdue">Overdue</span>`;
+    } else {
+      status = `<span class="status-badge status-completed">Completed</span>`;
+    }
+
+    const plannedDate = task.PlannedDate ? task.PlannedDate.split('T')[0] : '';
+    const finishDate = task.TimeFinished ? task.TimeFinished.split('T')[0] : '';
+    const delayReason = task.DelayReason || '';
+    const delayByUser = task.LastUpdatedBy ? ` (by User ${task.LastUpdatedBy})` : '';
+
+    const plannedDateCell = task.IsDateFixed
+      ? `<td>${plannedDate}</td>`
+      : `<td><input type="date" value="${plannedDate}" data-task-id="${task.TaskID}" class="editable-date"></td>`;
+
+    tr.innerHTML = `
+      <td>${task.TaskName || ''}</td>
+      <td>${task.TaskPlanned || ''}</td>
+      ${plannedDateCell}
+      <td>${finishDate}</td>
+      <td>${status}</td>
+      <td>${task.Delay !== null ? task.Delay : 0}</td>
+      <td>
+        <input type="text" value="${delayReason}" class="delay-reason-input" data-task-id="${task.TaskID}">
+        <br><small>${delayByUser}</small>
+      </td>
+      <td><button class="row-save-btn" data-task-id="${task.TaskID}">Save</button></td>
+    `;
+
+    tbody.appendChild(tr);
+  });
+});
+
+            
+          });
+        });
+
+        processGrid.appendChild(div);
+      });
+
+    } catch (error) {
+      console.error('Error fetching project data:', error);
+    }
+  }
+});
+
 </script>
 
 

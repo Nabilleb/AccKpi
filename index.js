@@ -227,7 +227,7 @@ console.log(sessionUserId)
         const deptResult = await pool
             .request()
             .input('DepId', DepartmentID)
-            .query('SELECT DeptName FROM tblDepartments WHERE DepartmentID = @DepId');
+            .query('SELECT DeptName DepartmentID FROM tblDepartments WHERE DepartmentID = @DepId');
 
         const deptDetails = deptResult.recordset[0];
 
@@ -246,12 +246,19 @@ console.log(sessionUserId)
             `);
 
         const processes = processResult.recordset;
+       
+        const getProjects = await pool
+                                 .request()
+                                 .query('SELECT * FROM tblProject');
+        const projects = getProjects.recordset;
 
         res.render('userpage', {
             userId: sessionUserId,
+            departmentID: DepartmentID,
             usrDesc,
             department: deptDetails.DeptName,
-            processes
+            processes,
+            projects
         });
 
     } catch (error) {
@@ -290,31 +297,20 @@ app.get('/process/:processId/tasks', async (req, res) => {
       return res.status(403).json({ error: 'User not in process-related department' });
     }
 
-    const tasksResult = await pool
-      .request()
-      .input('processId', processId)
-      .input('departmentId', userDeptId)
-      .query(`
-        SELECT 
-          t.TaskID, 
-          t.TaskName, 
-          t.TaskPlanned, 
-          t.PlannedDate, 
-          t.IsDateFixed,
-          w.TimeStarted,
-          w.TimeFinished, 
-          w.Delay, 
-          w.DelayReason,
-          w.usrID AS LastUpdatedBy
-        FROM tblDepartmentTask dt
-        JOIN tblTasks t ON dt.TaskID = t.TaskID
-        LEFT JOIN (
-          SELECT *,
-                 ROW_NUMBER() OVER (PARTITION BY TaskID ORDER BY TimeFinished DESC) AS rn
-          FROM tblWorkflow
-        ) w ON w.TaskID = t.TaskID AND w.rn = 1
-        WHERE dt.ProcessID = @processId AND dt.DepartmentID = @departmentId
-      `);
+   const tasksResult = await pool
+  .request()
+  .input('processId', processId)
+  .input('departmentId', userDeptId)
+  .query(
+    `SELECT T.TaskID,T.TaskName,T.TaskPlanned, T.PlannedDate,T.isTaskSelected, T.isDateFixed, T.Delay, W.TimeFinished, W.DelayReason
+     FROM tblTasks T
+     JOIN tblWorkflow W ON W.TaskID = T.TaskID
+     JOIN tblProcessDepartment P ON P.DepartmentID = @departmentId AND P.ProcessID = @processId
+     WHERE T.DepId = @departmentId
+    `
+  );
+
+     console.log(tasksResult.recordset)
 
     res.json(tasksResult.recordset);
   } catch (error) {
@@ -714,6 +710,31 @@ app.get('/process/:processId/tasks', async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 });
+
+app.post('/get-project-processes', async (req, res) => {
+  const { projectId, departmentId } = req.body; 
+  try {
+    const result = await pool
+      .request()
+      .input('projectId', sql.Int, projectId)
+      .input('departmentId', sql.Int, departmentId)
+      .query(`
+        SELECT DISTINCT P.NumberOfProccessID, P.ProcessName, P.processDesc
+        FROM tblProcess P
+        JOIN tblProcessWorkflow PW ON P.NumberOfProccessID = PW.processID
+        JOIN tblProcessDepartment PD ON P.NumberOfProccessID = PD.ProcessID
+        WHERE PW.projectID = @projectId
+          AND PD.DepartmentID = @departmentId
+      `);
+
+    res.json(result.recordset);
+  } catch (err) {
+    console.error('Error fetching processes:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+
 
 app.put('/save-task-updates', async (req, res) => {
   const { updates } = req.body;

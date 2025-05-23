@@ -283,7 +283,149 @@
 .save-btn i {
   font-size: 0.9rem;
 }
+/* Project Select Dropdown */
+#project {
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background-color: var(--white);
+  color: var(--text);
+  font-size: 0.9rem;
+  margin-left: 1rem;
+  transition: var(--transition);
+}
 
+#project:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.2);
+}
+
+/* Header Text Styling */
+.header-left h1 {
+  font-size: 1.5rem;
+  color: var(--primary-dark);
+  font-weight: 600;
+}
+
+.header-left p {
+  font-size: 0.9rem;
+  color: var(--text-light);
+  margin-left: 0.5rem;
+}
+
+/* User Info Styling */
+.user-info p {
+  font-weight: 600;
+  color: var(--primary-dark);
+}
+
+.user-info small {
+  font-size: 0.8rem;
+  color: var(--text-light);
+  display: block;
+}
+
+/* Logout Link Styling */
+.logout-btn a {
+  color: var(--white);
+  text-decoration: none;
+}
+
+/* Row Save Button */
+.row-save-btn {
+  padding: 0.5rem 1rem;
+  background-color: var(--success);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.row-save-btn:hover {
+  background-color: #218838;
+}
+
+/* Tasks Section */
+.tasks-section {
+  background-color: var(--white);
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+}
+
+/* Small Text in Delay Reason */
+.tasks-table small {
+  font-size: 0.75rem;
+  color: var(--text-light);
+  display: block;
+  margin-top: 0.25rem;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .dashboard-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1rem;
+  }
+  
+  .header-left {
+    flex-wrap: wrap;
+  }
+  
+  .user-info {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .process-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  #project {
+    margin-left: 0;
+    margin-top: 0.5rem;
+    width: 100%;
+  }
+}
+
+/* No Tasks Message */
+.tasks-table .no-tasks {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-light);
+  font-style: italic;
+}
+
+/* Loading State */
+.loading-spinner {
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: var(--white);
+  animation: spin 1s ease-in-out infinite;
+  margin-left: 0.5rem;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Error Message */
+.error-message {
+  color: var(--danger);
+  background-color: rgba(220, 53, 69, 0.1);
+  padding: 0.75rem;
+  border-radius: 4px;
+  margin: 1rem 0;
+  font-size: 0.9rem;
+}
 /* Responsive adjustments */
 @media (max-width: 1024px) {
   .tasks-table th {
