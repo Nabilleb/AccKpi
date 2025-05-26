@@ -13,8 +13,8 @@
     <div class="header-left">
       <img src="/images/accNewLog.webp" alt="Company Logo" class="logo">
       <h1>Task Management</h1>
-      <p>project name</p>
-      <p>package name</p>
+      <p id="projectName">project name</p>
+      <p id="packageName">package name</p>
      <select name="project" id="project">
   <option value="none">none</option>
   <% projects.forEach(project => { %>
@@ -29,7 +29,7 @@
         <p><%=usrDesc %></p>
         <small><%=department %> Department</small>
       </div>
-      <button class="logout-btn"> <a href="/logout">>Logout</a></button>
+      <button class="logout-btn"> <a href="/logout">Logout</a></button>
     </div>
   </header>
 
@@ -80,179 +80,21 @@
 
 <script>
   const userId = "<%= userId %>";
-  const deptId = "<%=departmentID%>"
-  const tbody = document.querySelector('.tasks-table tbody');
-  document.querySelectorAll('.process-card').forEach(card => {
-    card.addEventListener('click', async function () {
-      document.querySelectorAll('.process-card').forEach(c => c.classList.remove('active'));
-      this.classList.add('active');
-console.log("jdhfg")
+const deptId = "<%= departmentID %>";
+const tbody = document.querySelector('.tasks-table tbody');
+let activeProcessId = null;
 
-      const processId = this.dataset.processId;
-      const res = await fetch(`/process/${processId}/tasks?userId=${userId}`);
-      const tasks = await res.json();
-
-      tbody.innerHTML = ''; 
-
-      if (tasks.length === 0) {
-        const row = document.createElement('tr');
-        row.innerHTML = `<td colspan="8" style="text-align: center;">No tasks found for this process.</td>`;
-        tbody.appendChild(row);
-        return;
-      }
-
-      tasks.forEach(task => {
-        const tr = document.createElement('tr');
-
-        let status = '';
-        if (!task.TimeFinished) {
-          status = `<span class="status-badge status-pending">Pending</span>`;
-        } else if (task.Delay > 0) {
-          status = `<span class="status-badge status-overdue">Overdue</span>`;
-        } else {
-          status = `<span class="status-badge status-completed">Completed</span>`;
-        }
-
-        const plannedDate = task.PlannedDate ? task.PlannedDate.split('T')[0] : '';
-        const startDate = task.TimeStarted ? task.TimeStarted.split('T')[0] : '';
-        const finishDate = task.TimeFinished ? task.TimeFinished.split('T')[0] : '';
-        const delayReason = task.DelayReason || '';
-        const delayByUser = task.LastUpdatedBy ? ` (by User ${task.LastUpdatedBy})` : '';
-
-        const plannedDateCell = task.IsDateFixed
-          ? `<td>${plannedDate}</td>`
-          : `<td><input type="date" value="${plannedDate}" data-task-id="${task.TaskID}" class="editable-date"></td>`;
-
-        tr.innerHTML = `
-          <td>${task.TaskName || ''}</td>
-          <td>${task.TaskPlanned || ''}</td>
-          ${plannedDateCell}
-          <td>${finishDate}</td>
-          <td>${status}</td>
-          <td>${task.Delay !== null ? task.Delay : 0}</td>
-          <td>
-            <input type="text" value="${delayReason}" class="delay-reason-input" data-task-id="${task.TaskID}">
-            <br><small>${delayByUser}</small>
-          </td>
-          <td><button class="row-save-btn" data-task-id="${task.TaskID}">Save</button></td>
-        `;
-
-        tbody.appendChild(tr);
-      });
-    });
-  });
-
-  tbody.addEventListener('click', async (e) => {
-    if (e.target.classList.contains('row-save-btn')) {
-      const taskId = e.target.dataset.taskId;
-      const row = e.target.closest('tr');
-      const delayInput = row.querySelector('.delay-reason-input');
-      const dateInput = row.querySelector('.editable-date');
-
-      const updates = [];
-
-      if (delayInput) {
-        updates.push({
-          taskId,
-          field: 'delayReason',
-          value: delayInput.value,
-          usrID: userId
-        });
-      }
-
-      if (dateInput) {
-        updates.push({
-          taskId,
-          field: 'plannedDate',
-          value: dateInput.value,
-          usrID: userId
-        });
-      }
-
-      try {
-        const res = await fetch('/save-task-updates', {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ updates })
-        });
-
-        const data = await res.json();
-        if (res.ok) {
-          alert('Row saved successfully');
-        } else {
-          alert(`Error: ${data.error}`);
-        }
-      } catch (err) {
-        console.error('Row save error:', err);
-        alert('Failed to save row');
-      }
-    }
-  });
-document.getElementById('project').addEventListener('change', async function () {
-  const selectedProjectId = this.value;
-
-  if (selectedProjectId !== 'none') {
-    try {
-      const response = await fetch('/get-project-processes', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ projectId: selectedProjectId, departmentId:deptId }),
-      });
-
-      const data = await response.json();
-
-      console.log('Processes for selected project:', data);
-
-      // Update the processes container
-      const processGrid = document.querySelector('.process-grid');
-      processGrid.innerHTML = ''; 
-
-      if (data.length === 0) {
-        processGrid.innerHTML = '<p>No processes found for this project.</p>';
-        return;
-      }
-
-      data.forEach(process => {
-        const div = document.createElement('div');
-        div.classList.add('process-card');
-        div.dataset.processId = process.NumberOfProccessID || process.processID || process.ProcessID; // confirm your DB column name
-
-        div.innerHTML = `
-          <h3 class="process-name">${process.ProcessName || ''}</h3>
-          <p class="process-desc">${process.processDesc || ''}</p>
-        `;
-
-        div.addEventListener('click', async function () {
-          document.querySelectorAll('.process-card').forEach(c => c.classList.remove('active'));
-          this.classList.add('active');
-
-          const processId = this.dataset.processId;
-          const res = await fetch(`/process/${processId}/tasks?userId=${userId}`);
-          const tasks = await res.json();
-
-          tbody.innerHTML = '';
-
-          if (tasks.length === 0) {
-            const row = document.createElement('tr');
-            row.innerHTML = `<td colspan="8" style="text-align: center;">No tasks found for this process.</td>`;
-            tbody.appendChild(row);
-            return;
-          }
-
-          tasks.forEach(task => {
-div.addEventListener('click', async function () {
-  // Remove active class from all cards
-  document.querySelectorAll('.process-card').forEach(c => c.classList.remove('active'));
-  this.classList.add('active');
-
-  const processId = this.dataset.processId;
-  const res = await fetch(`/process/${processId}/tasks?userId=${userId}`);
+async function refreshTasks() {
+  if (!activeProcessId) return;
+  const res = await fetch(`/process/${activeProcessId}/tasks?userId=${userId}`);
   const tasks = await res.json();
+  renderTasks(tasks);
+  createAddTaskButton(activeProcessId);
+}
 
+
+function renderTasks(tasks) {
   tbody.innerHTML = '';
-
   if (tasks.length === 0) {
     const row = document.createElement('tr');
     row.innerHTML = `<td colspan="8" style="text-align: center;">No tasks found for this process.</td>`;
@@ -262,13 +104,13 @@ div.addEventListener('click', async function () {
 
   tasks.forEach(task => {
     const tr = document.createElement('tr');
-
+console.log("tasks::",task.isTaskSelected)
     let status = '';
-    if (!task.TimeFinished) {
+    if (!task.TimeFinished && task.IsTaskSelected) {
       status = `<span class="status-badge status-pending">Pending</span>`;
-    } else if (task.Delay > 0) {
+    } else if (task.TimeFinished && task.Delay > 0) {
       status = `<span class="status-badge status-overdue">Overdue</span>`;
-    } else {
+    } else if (task.TimeFinished) {
       status = `<span class="status-badge status-completed">Completed</span>`;
     }
 
@@ -276,10 +118,19 @@ div.addEventListener('click', async function () {
     const finishDate = task.TimeFinished ? task.TimeFinished.split('T')[0] : '';
     const delayReason = task.DelayReason || '';
     const delayByUser = task.LastUpdatedBy ? ` (by User ${task.LastUpdatedBy})` : '';
+const plannedDateCell = task.isDateFixed
+  ? `<td>${plannedDate}</td>`
+  : `<td><input type="date" value="${plannedDate}" data-task-id="${task.TaskID}" class="editable-date"></td>`;
 
-    const plannedDateCell = task.IsDateFixed
-      ? `<td>${plannedDate}</td>`
-      : `<td><input type="date" value="${plannedDate}" data-task-id="${task.TaskID}" class="editable-date"></td>`;
+
+    let actionButton = '';
+    if (task.isTaskSelected) {
+      if (!task.TimeStarted) {
+        actionButton = `<button class="task-start-btn" data-task-id="${task.TaskID}">Start</button>`;
+      } else if (!task.TimeFinished) {
+        actionButton = `<button class="task-finish-btn" data-task-id="${task.TaskID}">Finish</button>`;
+      }
+    }
 
     tr.innerHTML = `
       <td>${task.TaskName || ''}</td>
@@ -292,15 +143,152 @@ div.addEventListener('click', async function () {
         <input type="text" value="${delayReason}" class="delay-reason-input" data-task-id="${task.TaskID}">
         <br><small>${delayByUser}</small>
       </td>
-      <td><button class="row-save-btn" data-task-id="${task.TaskID}">Save</button></td>
+      <td>
+        ${actionButton}
+        <button class="row-save-btn" data-task-id="${task.TaskID}">Save</button>
+      </td>
     `;
 
     tbody.appendChild(tr);
   });
+}
+
+function createAddTaskButton(processId) {
+  let existingBtn = document.querySelector('.add-task-btn');
+  if (existingBtn) existingBtn.remove();
+
+  const button = document.createElement('button');
+  button.textContent = "➕ Add Task";
+  button.className = 'add-task-btn';
+  button.style.marginBottom = '10px';
+  button.onclick = () => {
+    window.location.href = `/add-task?processId=${processId}`; 
+  };
+
+  document.querySelector('.tasks-section').insertBefore(button, document.querySelector('.tasks-table'));
+}
+
+document.querySelectorAll('.process-card').forEach(card => {
+  card.addEventListener('click', async function () {
+    const processId = this.dataset.processId;
+    if (activeProcessId === processId) return; // Prevent clicking already active
+
+    activeProcessId = processId;
+    document.querySelectorAll('.process-card').forEach(c => c.classList.remove('active'));
+    this.classList.add('active');
+
+    const res = await fetch(`/process/${processId}/tasks?userId=${userId}`);
+    const tasks = await res.json();
+    renderTasks(tasks);
+    createAddTaskButton(processId);
+  });
 });
 
-            
-          });
+tbody.addEventListener('click', async (e) => {
+  if (e.target.classList.contains('row-save-btn')) {
+    const taskId = e.target.dataset.taskId;
+    const row = e.target.closest('tr');
+    const delayInput = row.querySelector('.delay-reason-input');
+    const dateInput = row.querySelector('.editable-date');
+
+    const updates = [];
+
+    if (delayInput) {
+      updates.push({
+        taskId,
+        field: 'delayReason',
+        value: delayInput.value,
+        usrID: userId
+      });
+    }
+
+    if (dateInput) {
+      updates.push({
+        taskId,
+        field: 'plannedDate',
+        value: dateInput.value,
+        usrID: userId
+      });
+    }
+
+    try {
+      const res = await fetch('/save-task-updates', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ updates })
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        alert('Row saved successfully');
+      } else {
+        alert(`Error: ${data.error}`);
+      }
+    } catch (err) {
+      console.error('Row save error:', err);
+      alert('Failed to save row');
+    }
+  }
+});
+
+document.getElementById('project').addEventListener('change', async function () {
+  const selectedProjectId = this.value;
+  activeProcessId = null; // Reset active process
+  tbody.innerHTML = ''; // Clear task table
+  const addBtn = document.querySelector('.add-task-btn');
+  const pkName = document.querySelector("#packageName");
+  const proName = document.querySelector("#projectName")
+  if (addBtn) addBtn.remove(); // Remove old button
+
+  if (selectedProjectId !== 'none') {
+    try {
+      const response = await fetch('/get-project-processes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectId: selectedProjectId, departmentId: deptId }),
+      });
+
+      const data = await response.json();
+      console.log('Processes for selected project:', data);
+      
+      if (data.length > 0) {
+  pkName.textContent = data[0].PkgeName || 'N/A';
+  proName.textContent = data[0].ProjectName || 'N/A';
+}
+
+      const processGrid = document.querySelector('.process-grid');
+      processGrid.innerHTML = '';
+
+      if (data.length === 0) {
+        processGrid.innerHTML = '<p>No processes found for this project.</p>';
+        return;
+      }
+
+      data.forEach(process => {
+        const div = document.createElement('div');
+        div.classList.add('process-card');
+        div.dataset.processId = process.NumberOfProccessID || process.ProcessID || process.processID;
+
+        div.innerHTML = `
+          <h3 class="process-name">${process.ProcessName || ''}</h3>
+          <p class="process-desc">${process.processDesc || ''}</p>
+        `;
+
+        div.addEventListener('click', async function () {
+          const processId = this.dataset.processId;
+          if (activeProcessId === processId) return;
+
+          activeProcessId = processId;
+          document.querySelectorAll('.process-card').forEach(c => c.classList.remove('active'));
+          this.classList.add('active');
+
+          const res = await fetch(`/process/${processId}/tasks?userId=${userId}`);
+          const tasks = await res.json();
+console.log("this is what im getting ", tasks)
+          renderTasks(tasks);
+          createAddTaskButton(processId);
         });
 
         processGrid.appendChild(div);
@@ -311,6 +299,36 @@ div.addEventListener('click', async function () {
     }
   }
 });
+
+tbody.addEventListener('click', async (e) => {
+  if (e.target.classList.contains('task-start-btn')) {
+    const taskId = e.target.dataset.taskId;
+    const now = new Date().toISOString();
+
+    await fetch(`/start-task/${taskId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ startTime: now })
+    });
+
+    refreshTasks(); // Re-fetch and render tasks
+  }
+
+  if (e.target.classList.contains('task-finish-btn')) {
+    const taskId = e.target.dataset.taskId;
+    const now = new Date().toISOString();
+
+    await fetch(`/finish-task/${taskId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ finishTime: now })
+    });
+
+    refreshTasks(); // Re-fetch and render tasks
+  }
+});
+
+
 
 </script>
 

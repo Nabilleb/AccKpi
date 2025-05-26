@@ -302,7 +302,7 @@ app.get('/process/:processId/tasks', async (req, res) => {
   .input('processId', processId)
   .input('departmentId', userDeptId)
   .query(
-    `SELECT T.TaskID,T.TaskName,T.TaskPlanned, T.PlannedDate,T.isTaskSelected, T.isDateFixed, T.Delay, W.TimeFinished, W.DelayReason
+    `SELECT T.TaskID,T.TaskName,T.TaskPlanned, T.PlannedDate,T.isTaskSelected, T.isDateFixed, W.Delay,W.TimeStarted,W.TimeFinished, W.DelayReason
      FROM tblTasks T
      JOIN tblWorkflow W ON W.TaskID = T.TaskID
      JOIN tblProcessDepartment P ON P.DepartmentID = @departmentId AND P.ProcessID = @processId
@@ -655,6 +655,7 @@ app.get('/process/:processId/tasks', async (req, res) => {
   const userId = req.query.userId;
 
   try {
+    // 1. Get user's department
     const userResult = await pool
       .request()
       .input('userId', userId)
@@ -666,50 +667,73 @@ app.get('/process/:processId/tasks', async (req, res) => {
 
     const userDeptId = userResult.recordset[0].DepartmentID;
 
-    const isDeptInProcess = await pool
-      .request()
-      .input('processId', processId)
-      .input('departmentId', userDeptId)
-      .query(`
-        SELECT * FROM tblProcessDepartment
-        WHERE ProcessID = @processId AND DepartmentID = @departmentId
-      `);
-
-    if (isDeptInProcess.recordset.length === 0) {
-      return res.status(403).json({ error: 'User not in process-related department' });
-    }
-
+    // 2. Get all tasks for the process
     const tasksResult = await pool
       .request()
       .input('processId', processId)
-      .input('departmentId', userDeptId)
       .query(`
         SELECT 
-          t.TaskID, 
-          t.TaskName, 
-          t.TaskPlanned, 
-          t.PlannedDate, 
-          t.IsDateFixed,
-          wf.TimeFinished, 
-          wf.Delay, 
-          wf.DelayReason
-        FROM tblDepartmentTask dt
-        JOIN tblTasks t ON dt.TaskID = t.TaskID
-        OUTER APPLY (
-          SELECT TOP 1 TimeFinished, Delay, DelayReason
-          FROM tblWorkflow
-          WHERE TaskID = t.TaskID
-          ORDER BY WorkflowID DESC
-        ) wf
-        WHERE dt.ProcessID = @processId AND dt.DepartmentID = @departmentId
+          TaskID,
+          TaskName,
+          TaskPlanned,
+          PlannedDate,
+          IsDateFixed,
+          isTaskSelected,
+          DepId,
+          Priority,
+          PredecessorID,
+          DaysFinished,
+          Delay
+        FROM tblTasks
+        WHERE ProcessID = @processId
+        ORDER BY Priority ASC
       `);
 
-    res.json(tasksResult.recordset);
+    if (tasksResult.recordset.length === 0) {
+      return res.json([]);
+    }
+
+    // 3. Get latest workflow status for these tasks
+    const taskIds = tasksResult.recordset.map(t => t.TaskID);
+    const workflowResult = await pool
+      .request()
+      .query(`
+        WITH LatestWorkflow AS (
+          SELECT 
+            TaskID,
+            TimeStarted,
+            TimeFinished,
+            Delay,
+            DelayReason,
+            ROW_NUMBER() OVER (PARTITION BY TaskID ORDER BY WorkflowID DESC) as rn
+          FROM tblWorkflow
+          WHERE TaskID IN (${taskIds.map((_, i) => `@task${i}`).join(',')})
+        )
+        SELECT * FROM LatestWorkflow WHERE rn = 1
+      `, 
+      taskIds.reduce((params, id, i) => ({ ...params, [`task${i}`]: id }), {})
+    );
+
+    // 4. Combine the results
+    const tasksWithWorkflow = tasksResult.recordset.map(task => {
+      const workflow = workflowResult.recordset.find(w => w.TaskID === task.TaskID);
+      return {
+        ...task,
+        IsUserDept: task.DepId === userDeptId ? 1 : 0,
+        TimeStarted: workflow?.TimeStarted || null,
+        TimeFinished: workflow?.TimeFinished || null,
+        Delay: workflow?.Delay || task.Delay || null, // Use task delay if workflow delay is null
+        DelayReason: workflow?.DelayReason || null
+      };
+    });
+console.log("dddd",tasksWithWorkflow)
+    res.json(tasksWithWorkflow);
   } catch (error) {
     console.error('Error fetching tasks:', error);
     res.status(500).json({ error: 'Server error' });
   }
 });
+
 
 app.post('/get-project-processes', async (req, res) => {
   const { projectId, departmentId } = req.body; 
@@ -719,14 +743,28 @@ app.post('/get-project-processes', async (req, res) => {
       .input('projectId', sql.Int, projectId)
       .input('departmentId', sql.Int, departmentId)
       .query(`
-        SELECT DISTINCT P.NumberOfProccessID, P.ProcessName, P.processDesc
-        FROM tblProcess P
-        JOIN tblProcessWorkflow PW ON P.NumberOfProccessID = PW.processID
-        JOIN tblProcessDepartment PD ON P.NumberOfProccessID = PD.ProcessID
-        WHERE PW.projectID = @projectId
-          AND PD.DepartmentID = @departmentId
-      `);
+     SELECT DISTINCT 
+    P.NumberOfProccessID, 
+    P.ProcessName, 
+    P.processDesc,
+    PA.PkgeName,
+    PO.ProjectName
+FROM 
+    tblProcess P
+JOIN 
+    tblProcessWorkflow PW ON P.NumberOfProccessID = PW.processID
+JOIN 
+    tblPackages PA ON PA.pkgeID = PW.packageID
+JOIN 
+    tblProject PO ON PO.projectID = PW.projectID
+JOIN 
+    tblProcessDepartment PD ON P.NumberOfProccessID = PD.ProcessID
+WHERE 
+    PW.projectID = @projectId
+    AND PD.DepartmentID = @departmentId;
 
+      `);
+console.log(result.recordset)
     res.json(result.recordset);
   } catch (err) {
     console.error('Error fetching processes:', err);
@@ -795,8 +833,82 @@ WHERE TaskID = @taskId AND WorkflowID = (
 });
 
 
+app.post('/start-task/:taskId', async (req, res) => {
+  const { taskId } = req.params;
+  const { startTime } = req.body;
 
+  try {
+    await pool.request()
+      .input('taskId', taskId)
+      .input('startTime', startTime)
+      .query(`
+        UPDATE tblWorkflow
+        SET TimeStarted = @startTime
+        WHERE TaskID = @taskId AND TimeStarted IS NULL
+      `);
 
-app.listen(port, () => {
-  console.log("Listening on port", port);
+    res.sendStatus(200);
+  } catch (error) {
+    console.error('Error starting task:', error);
+    res.status(500).json({ error: 'Failed to start task' });
+  }
+});
+
+app.post('/finish-task/:taskId', async (req, res) => {
+  const { taskId } = req.params;
+  const { finishTime } = req.body;
+
+  try {
+    // Get task info
+    const result = await pool.request()
+      .input('taskId', taskId)
+      .query(`
+        SELECT PlannedDate, DepId, Priority
+        FROM tblTasks
+        WHERE TaskID = @taskId
+      `);
+
+    if (result.recordset.length === 0) {
+      return res.status(404).json({ error: 'Task not found' });
+    }
+
+    const task = result.recordset[0];
+    const planned = new Date(task.PlannedDate);
+    const finished = new Date(finishTime);
+
+    const delay = Math.max(0, Math.ceil((finished - planned) / (1000 * 60 * 60 * 24)));
+
+    // Update workflow with finish time and delay
+    await pool.request()
+      .input('taskId', taskId)
+      .input('finishTime', finishTime)
+      .input('delay', delay)
+      .query(`
+        UPDATE tblWorkflow
+        SET TimeFinished = @finishTime, Delay = @delay
+        WHERE TaskID = @taskId
+      `);
+
+    // Deselect current task
+    await pool.request()
+      .input('taskId', taskId)
+      .query(`
+        UPDATE tblTasks SET IsTaskSelected = 0 WHERE TaskID = @taskId
+      `);
+
+    // Select next task based on predecessor and department
+    await pool.request()
+      .input('taskId', taskId)
+      .input('depId', task.DepId)
+      .query(`
+        UPDATE TOP (1) tblTasks
+        SET IsTaskSelected = 1
+        WHERE DepId = @depId AND PredecessorID = @taskId
+      `);
+
+    res.sendStatus(200);
+  } catch (error) {
+    console.error('Error finishing task:', error);
+    res.status(500).json({ error: 'Failed to finish task' });
+  }
 });
