@@ -94,7 +94,20 @@ async function refreshTasks() {
 
 
 function renderTasks(tasks) {
+  const tbody = document.querySelector('.tasks-table tbody');
+  if (!tbody) return;
+
   tbody.innerHTML = '';
+
+  // 🔴 Handle error object
+  if (tasks.error) {
+    const row = document.createElement('tr');
+    row.innerHTML = `<td colspan="8" style="color: red; text-align: center;">${tasks.error}</td>`;
+    tbody.appendChild(row);
+    return;
+  }
+
+  // 🔵 Handle empty task list
   if (tasks.length === 0) {
     const row = document.createElement('tr');
     row.innerHTML = `<td colspan="8" style="text-align: center;">No tasks found for this process.</td>`;
@@ -102,9 +115,10 @@ function renderTasks(tasks) {
     return;
   }
 
+  // ✅ Render tasks as usual
   tasks.forEach(task => {
     const tr = document.createElement('tr');
-console.log("tasks::",task.isTaskSelected)
+
     let status = '';
     if (!task.TimeFinished && task.IsTaskSelected) {
       status = `<span class="status-badge status-pending">Pending</span>`;
@@ -118,10 +132,10 @@ console.log("tasks::",task.isTaskSelected)
     const finishDate = task.TimeFinished ? task.TimeFinished.split('T')[0] : '';
     const delayReason = task.DelayReason || '';
     const delayByUser = task.LastUpdatedBy ? ` (by User ${task.LastUpdatedBy})` : '';
-const plannedDateCell = task.isDateFixed
-  ? `<td>${plannedDate}</td>`
-  : `<td><input type="date" value="${plannedDate}" data-task-id="${task.TaskID}" class="editable-date"></td>`;
 
+    const plannedDateCell = task.isDateFixed
+      ? `<td>${plannedDate}</td>`
+      : `<td><input type="date" value="${plannedDate}" data-task-id="${task.TaskID}" class="editable-date"></td>`;
 
     let actionButton = '';
     if (task.isTaskSelected) {
@@ -153,6 +167,7 @@ const plannedDateCell = task.isDateFixed
   });
 }
 
+
 function createAddTaskButton(processId) {
   let existingBtn = document.querySelector('.add-task-btn');
   if (existingBtn) existingBtn.remove();
@@ -171,16 +186,25 @@ function createAddTaskButton(processId) {
 document.querySelectorAll('.process-card').forEach(card => {
   card.addEventListener('click', async function () {
     const processId = this.dataset.processId;
-    if (activeProcessId === processId) return; // Prevent clicking already active
+    if (activeProcessId === processId) return;
 
     activeProcessId = processId;
     document.querySelectorAll('.process-card').forEach(c => c.classList.remove('active'));
     this.classList.add('active');
 
-    const res = await fetch(`/process/${processId}/tasks?userId=${userId}`);
-    const tasks = await res.json();
-    renderTasks(tasks);
-    createAddTaskButton(processId);
+    try {
+      const res = await fetch(`/process/${processId}/tasks?userId=${userId}`);
+      const tasks = await res.json();
+      renderTasks(tasks);
+      createAddTaskButton(processId);
+
+    } catch (err) {
+      console.error("Network error:", err);
+      document.querySelector('.tasks-table tbody').innerHTML = `
+        <tr><td colspan="7" style="color: red; text-align: center;">Error loading tasks</td></tr>
+      `;
+      document.querySelector('.add-task-btn')?.remove();
+    }
   });
 });
 

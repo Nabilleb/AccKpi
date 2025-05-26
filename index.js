@@ -284,18 +284,24 @@ app.get('/process/:processId/tasks', async (req, res) => {
 
     const userDeptId = userResult.recordset[0].DepartmentID;
 
-    const isDeptInProcess = await pool
-      .request()
-      .input('processId', processId)
-      .input('departmentId', userDeptId)
-      .query(`
-        SELECT * FROM tblProcessDepartment
-        WHERE ProcessID = @processId AND DepartmentID = @departmentId
-      `);
+ const processDeptResult = await pool
+  .request()
+  .input('processId', processId)
+  .input('departmentId', userDeptId)
+  .query(`
+    SELECT IsActive FROM tblProcessDepartment
+    WHERE ProcessID = @processId AND DepartmentID = @departmentId
+  `);
+if (processDeptResult.recordset.length === 0) {
+  return res.status(403).json({ error: 'User not in process-related department' });
+}
 
-    if (isDeptInProcess.recordset.length === 0) {
-      return res.status(403).json({ error: 'User not in process-related department' });
-    }
+const isActive = processDeptResult.recordset[0].IsActive;
+if (!isActive) {
+  console.log("it is working")
+  return res.status(403).json({ error: 'Process not currently active in your department' });
+}
+
 
    const tasksResult = await pool
   .request()
