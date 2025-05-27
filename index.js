@@ -256,11 +256,12 @@ console.log(sessionUserId)
             userId: sessionUserId,
             departmentID: DepartmentID,
             usrDesc,
-            department: deptDetails.DeptName,
+            department: deptDetails.DepartmentID,
             processes,
             projects
         });
 
+        console.log(deptDetails)
     } catch (error) {
         console.error(error);
         res.status(500).send('Server error');
@@ -865,26 +866,26 @@ app.post('/finish-task/:taskId', async (req, res) => {
   const { finishTime } = req.body;
 
   try {
-    // Get task info
-    const result = await pool.request()
+    const taskResult = await pool.request()
       .input('taskId', taskId)
       .query(`
-        SELECT PlannedDate, DepId, Priority
+        SELECT PlannedDate, DepId
         FROM tblTasks
         WHERE TaskID = @taskId
       `);
 
-    if (result.recordset.length === 0) {
+    if (taskResult.recordset.length === 0) {
       return res.status(404).json({ error: 'Task not found' });
     }
 
-    const task = result.recordset[0];
-    const planned = new Date(task.PlannedDate);
-    const finished = new Date(finishTime);
+    const task = taskResult.recordset[0];
+    const depId = task.DepId;
 
+    const finished = new Date(finishTime);
+    const planned = new Date(task.PlannedDate);
     const delay = Math.max(0, Math.ceil((finished - planned) / (1000 * 60 * 60 * 24)));
 
-    // Update workflow with finish time and delay
+    // Finish the task in tblWorkflow
     await pool.request()
       .input('taskId', taskId)
       .input('finishTime', finishTime)
@@ -895,22 +896,105 @@ app.post('/finish-task/:taskId', async (req, res) => {
         WHERE TaskID = @taskId
       `);
 
-    // Deselect current task
+    // Mark task as unselected
     await pool.request()
       .input('taskId', taskId)
       .query(`
         UPDATE tblTasks SET IsTaskSelected = 0 WHERE TaskID = @taskId
       `);
 
-    // Select next task based on predecessor and department
+    // Activate next task(s) in the same department
     await pool.request()
       .input('taskId', taskId)
-      .input('depId', task.DepId)
+      .input('depId', depId)
       .query(`
         UPDATE TOP (1) tblTasks
         SET IsTaskSelected = 1
         WHERE DepId = @depId AND PredecessorID = @taskId
       `);
+
+    // 🔍 Check if there are any unfinished tasks in the current department
+    const remainingTasks = await pool.request()
+      .input('depId', depId)
+      .query(`
+        SELECT COUNT(*) AS Remaining
+        FROM tblTasks t
+        JOIN tblWorkflow w ON t.TaskID = w.TaskID
+        WHERE t.DepId = @depId AND w.TimeFinished IS NULL
+      `);
+
+    if (remainingTasks.recordset[0].Remaining === 0) {
+      // Get ProcessID and StepOrder of current department
+      const processInfo = await pool.request()
+        .input('depId', depId)
+        .query(`
+          SELECT ProcessID, StepOrder
+          FROM tblProcessDepartment
+          WHERE DepartmentID = @depId
+        `);
+
+      if (processInfo.recordset.length > 0) {
+        const { ProcessID, StepOrder } = processInfo.recordset[0];
+
+        // Activate the next department in process sequence
+      // Activate the next department in process sequence
+const nextDeptResult = await pool.request()
+  .input('processId', ProcessID)
+  .input('nextStep', StepOrder + 1)
+  .query(`
+    UPDATE tblProcessDepartment
+    SET IsActive = 1
+    OUTPUT INSERTED.DepartmentID
+    WHERE ProcessID = @processId AND StepOrder = @nextStep
+  `);
+
+// If a department was activated
+if (nextDeptResult.recordset.length > 0) {
+  // Activate the next department in process sequence
+const nextDeptResult = await pool.request()
+  .input('processId', ProcessID)
+  .input('nextStep', StepOrder + 1)
+  .query(`
+    UPDATE tblProcessDepartment
+    SET IsActive = 1
+    OUTPUT INSERTED.DepartmentID
+    WHERE ProcessID = @processId AND StepOrder = @nextStep
+  `);
+
+if (nextDeptResult.recordset.length > 0) {
+  const nextDeptResult = await pool.request()
+  .input('processId', ProcessID)
+  .input('nextStep', StepOrder + 1)
+  .query(`
+    UPDATE tblProcessDepartment
+    SET IsActive = 1
+    OUTPUT INSERTED.DepartmentID
+    WHERE ProcessID = @processId AND StepOrder = @nextStep
+  `);
+
+if (nextDeptResult.recordset.length > 0) {
+  const nextDepId = nextDeptResult.recordset[0].DepartmentID;
+console.log(nextDepId);
+ await pool.request()
+  .input('nextDepId', nextDepId)
+  .query(`
+    ;WITH NextTask AS (
+      SELECT TOP 1 *
+      FROM tblTasks
+      WHERE DepId = @nextDepId AND IsTaskSelected = 0
+      ORDER BY Priority ASC, PlannedDate ASC
+    )
+    UPDATE NextTask
+    SET IsTaskSelected = 1
+  `);
+
+}
+}
+
+}
+
+      }
+    }
 
     res.sendStatus(200);
   } catch (error) {
@@ -918,3 +1002,5 @@ app.post('/finish-task/:taskId', async (req, res) => {
     res.status(500).json({ error: 'Failed to finish task' });
   }
 });
+
+
