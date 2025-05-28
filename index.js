@@ -107,7 +107,7 @@ app.post("/login", async (req, res) => {
         usrAdmin: result.recordset[0].usrAdmin
       };            
       console.log(result.recordset[0].usrAdmin)
-      res.redirect(result.recordset[0].usrAdmin ? "/adminpage" : `/userpage?id=${result.recordset[0].usrID}`);
+      res.redirect(result.recordset[0].usrAdmin ? "/adminpage" : "/userpage");
 
     }
     else{
@@ -203,13 +203,6 @@ app.get("/addUser", isAdmin, async (req, res) => {
 
 app.get('/userpage', ensureAuthenticated, async (req, res) => {
     const sessionUserId = req.session.user.id
-    const queryUserId = req.query.id;
-    console.log(queryUserId)
-console.log(sessionUserId)
-    if (sessionUserId !== queryUserId) {
-        return res.status(403).send("Access denied");
-    }
-
     try {
         const userResult = await pool
             .request()
@@ -326,6 +319,33 @@ if (!isActive) {
   }
 });
 
+app.get('/add-task',ensureAuthenticated, async (req, res) => {
+  const departmentId = parseInt(req.query.DepartmentId);
+
+  if (!departmentId) {
+    return res.status(400).send('Missing or invalid DepartmentId');
+  }
+
+  const query = `
+    SELECT TaskID, TaskName
+    FROM tblTasks
+    WHERE DepId = @DepId
+  `;
+
+  try {
+    const result = await pool.request()
+      .input('DepId', sql.Int, departmentId)
+      .query(query);
+
+    res.render('task.ejs', {
+      departmentId: departmentId,
+      predecessorTasks: result.recordset
+    });
+  } catch (err) {
+    console.error('Error loading add-task page:', err);
+    res.status(500).send('Failed to load page');
+  }
+});
 
  
 app.get("/getWorkflow", async (req, res) => {
@@ -447,47 +467,100 @@ app.post("/addPackage", async (req, res) => {
   }
 });
 
-app.post("/postTask",async (req, res) =>{
+app.post('/add-task', async (req, res) => {
+  const {
+    TaskName, TaskPlanned, IsDateFixed, PlannedDate, DepId
+  } = req.body;
 
-const { TaskName, TaskPlanned, TaskActual, IsTaskSelected, IsDateFixed, PlannedDate, DepartmentID } = req.body;
+  try {
+    const duplicateCheck = await pool.request()
+      .input('TaskName', sql.NVarChar, TaskName)
+      .input('DepId', sql.Int, DepId)
+      .query(`
+        SELECT COUNT(*) AS DuplicateCount
+        FROM tblTasks
+        WHERE TaskName = @TaskName AND DepId = @DepId
+      `);
 
-const isTaskSelected = IsTaskSelected ? 1 : 0;
-const isDateFixed = IsDateFixed ? 1 : 0;
-const plannedDateFormatted = PlannedDate
-  ? new Date(PlannedDate).toISOString().slice(0, 19).replace('T', ' ')
-  : null;
+    if (duplicateCheck.recordset[0].DuplicateCount > 0) {
+      return res.status(400).send('A task with the same name already exists in this department.');
+    }
 
-try {
-  const taskResult = await pool.request()
-    .input('TaskName', sql.VarChar(150), TaskName)
-    .input('TaskPlanned', sql.Text, TaskPlanned)
-    .input('TaskActual', sql.Text, TaskActual)
-    .input('IsTaskSelected', sql.Bit, isTaskSelected)
-    .input('IsDateFixed', sql.Bit, isDateFixed)
-    .input('PlannedDate', sql.DateTime, plannedDateFormatted)
-    .query(`
-      INSERT INTO tblTasks (TaskName, TaskPlanned, TaskActual, IsTaskSelected, IsDateFixed, PlannedDate)
-      OUTPUT INSERTED.TaskID
-      VALUES (@TaskName, @TaskPlanned, @TaskActual, @IsTaskSelected, @IsDateFixed, @PlannedDate)
-    `);
+    const existingTasksResult = await pool.request()
+      .input('DepId', sql.Int, DepId)
+      .query(`
+        SELECT COUNT(*) AS TaskCount
+        FROM tblTasks
+        WHERE DepId = @DepId
+      `);
 
-  const newTaskId = taskResult.recordset[0].TaskID;
+    const isFirstTask = existingTasksResult.recordset[0].TaskCount === 0;
+    const IsTaskSelected = isFirstTask ? 1 : 0;
 
-  await pool.request()
-    .input('DepartmentID', sql.Int, DepartmentID)
-    .input('TaskID', sql.Int, newTaskId)
-    .query(`
-      INSERT INTO tblDepartmentTask (DepartmentID, TaskID)
-      VALUES (@DepartmentID, @TaskID)
-    `);
+    const priorityResult = await pool.request()
+      .input('DepId', sql.Int, DepId)
+      .query(`
+        SELECT ISNULL(MAX(Priority), 0) + 1 AS NewPriority
+        FROM tblTasks
+        WHERE DepId = @DepId
+      `);
 
-  res.status(201).send({ message: 'Task and department assignment completed.' });
-} catch (err) {
-  console.error('Error inserting task:', err);
-  res.status(500).send({ error: 'Task insert failed' });
-}
+    const newPriority = priorityResult.recordset[0].NewPriority;
 
-})
+    let PredecessorID = null;
+
+    if (!isFirstTask) {
+      const predecessorResult = await pool.request()
+        .input('DepId', sql.Int, DepId)
+        .query(`
+          SELECT TOP 1 TaskID 
+          FROM tblTasks
+          WHERE DepId = @DepId
+          ORDER BY Priority DESC
+        `);
+
+      if (predecessorResult.recordset.length > 0) {
+        PredecessorID = predecessorResult.recordset[0].TaskID;
+      }
+    }
+
+    const taskInsertResult = await pool.request()
+      .input('TaskName', sql.NVarChar, TaskName)
+      .input('TaskPlanned', sql.NVarChar, TaskPlanned)
+      .input('IsTaskSelected', sql.Bit, IsTaskSelected)
+      .input('IsDateFixed', sql.Bit, IsDateFixed)
+.input('PlannedDate', sql.DateTime, PlannedDate)
+      .input('DepId', sql.Int, DepId)
+      .input('Priority', sql.Int, newPriority)
+      .input('PredecessorID', sql.Int, PredecessorID)
+      .query(`
+        INSERT INTO tblTasks
+        (TaskName, TaskPlanned, IsTaskSelected, IsDateFixed, PlannedDate, DepId, Priority, PredecessorID)
+        OUTPUT INSERTED.TaskID
+        VALUES (@TaskName, @TaskPlanned, @IsTaskSelected, @IsDateFixed, @PlannedDate, @DepId, @Priority, @PredecessorID)
+      `);
+
+    const newTaskId = taskInsertResult.recordset[0].TaskID;
+
+    const workflowName = `${TaskName}`;
+
+    await pool.request()
+      .input('WorkflowName', sql.NVarChar, workflowName)
+      .input('TaskID', sql.Int, newTaskId)
+      .query(`
+        INSERT INTO tblWorkflow (WorkflowName, TaskID)
+        VALUES (@WorkflowName, @TaskID)
+      `);
+
+    res.redirect('/userpage');
+
+  } catch (err) {
+    console.error('Error adding task:', err);
+    res.status(500).send('Failed to add task');
+  }
+});
+
+
 
 app.post("/postProcess", async (req, res) => {
   const { ProcessName, Departments } = req.body;
@@ -662,7 +735,6 @@ app.get('/process/:processId/tasks', async (req, res) => {
   const userId = req.query.userId;
 
   try {
-    // 1. Get user's department
     const userResult = await pool
       .request()
       .input('userId', userId)
@@ -674,7 +746,6 @@ app.get('/process/:processId/tasks', async (req, res) => {
 
     const userDeptId = userResult.recordset[0].DepartmentID;
 
-    // 2. Get all tasks for the process
     const tasksResult = await pool
       .request()
       .input('processId', processId)
@@ -721,7 +792,6 @@ app.get('/process/:processId/tasks', async (req, res) => {
       taskIds.reduce((params, id, i) => ({ ...params, [`task${i}`]: id }), {})
     );
 
-    // 4. Combine the results
     const tasksWithWorkflow = tasksResult.recordset.map(task => {
       const workflow = workflowResult.recordset.find(w => w.TaskID === task.TaskID);
       return {
@@ -729,7 +799,7 @@ app.get('/process/:processId/tasks', async (req, res) => {
         IsUserDept: task.DepId === userDeptId ? 1 : 0,
         TimeStarted: workflow?.TimeStarted || null,
         TimeFinished: workflow?.TimeFinished || null,
-        Delay: workflow?.Delay || task.Delay || null, // Use task delay if workflow delay is null
+        Delay: workflow?.Delay || task.Delay || null,
         DelayReason: workflow?.DelayReason || null
       };
     });
@@ -885,7 +955,6 @@ app.post('/finish-task/:taskId', async (req, res) => {
     const planned = new Date(task.PlannedDate);
     const delay = Math.max(0, Math.ceil((finished - planned) / (1000 * 60 * 60 * 24)));
 
-    // Finish the task in tblWorkflow
     await pool.request()
       .input('taskId', taskId)
       .input('finishTime', finishTime)
@@ -896,14 +965,12 @@ app.post('/finish-task/:taskId', async (req, res) => {
         WHERE TaskID = @taskId
       `);
 
-    // Mark task as unselected
     await pool.request()
       .input('taskId', taskId)
       .query(`
         UPDATE tblTasks SET IsTaskSelected = 0 WHERE TaskID = @taskId
       `);
 
-    // Activate next task(s) in the same department
     await pool.request()
       .input('taskId', taskId)
       .input('depId', depId)
@@ -913,7 +980,6 @@ app.post('/finish-task/:taskId', async (req, res) => {
         WHERE DepId = @depId AND PredecessorID = @taskId
       `);
 
-    // 🔍 Check if there are any unfinished tasks in the current department
     const remainingTasks = await pool.request()
       .input('depId', depId)
       .query(`
@@ -924,7 +990,6 @@ app.post('/finish-task/:taskId', async (req, res) => {
       `);
 
     if (remainingTasks.recordset[0].Remaining === 0) {
-      // Get ProcessID and StepOrder of current department
       const processInfo = await pool.request()
         .input('depId', depId)
         .query(`
@@ -936,8 +1001,6 @@ app.post('/finish-task/:taskId', async (req, res) => {
       if (processInfo.recordset.length > 0) {
         const { ProcessID, StepOrder } = processInfo.recordset[0];
 
-        // Activate the next department in process sequence
-      // Activate the next department in process sequence
 const nextDeptResult = await pool.request()
   .input('processId', ProcessID)
   .input('nextStep', StepOrder + 1)
@@ -948,9 +1011,7 @@ const nextDeptResult = await pool.request()
     WHERE ProcessID = @processId AND StepOrder = @nextStep
   `);
 
-// If a department was activated
 if (nextDeptResult.recordset.length > 0) {
-  // Activate the next department in process sequence
 const nextDeptResult = await pool.request()
   .input('processId', ProcessID)
   .input('nextStep', StepOrder + 1)

@@ -155,21 +155,22 @@ const delayInput = `
  
 
 
-    tr.innerHTML = `
-      <td>${task.TaskName || ''}</td>
-      <td>${task.TaskPlanned || ''}</td>
-      ${plannedDateCell}
-      <td>${finishDate}</td>
-      <td>${status}</td>
-      <td>${task.Delay !== null ? task.Delay : 0}</td>
-      <td>
-   <td>${delayInput}</td>
-      </td>
-      <td>
-        ${actionButton}
-        <button class="row-save-btn" data-task-id="${task.TaskID}">Save</button>
-      </td>
-    `;
+   tr.innerHTML = `
+  <td>${task.TaskName || ''}</td>
+  <td>${task.TaskPlanned || ''}</td>
+  ${plannedDateCell}
+  <td>${finishDate}</td>
+  <td>${status}</td>
+  <td>${task.Delay !== null ? task.Delay : 0}</td>
+  <td>${delayInput}</td>
+  <td>
+    ${actionButton}
+    <button class="row-save-btn" data-task-id="${task.TaskID}">Save</button>
+    <button class="edit-task-btn" data-task-id="${task.TaskID}">Edit</button>
+    ${task.TimeFinished ? `<button class="delete-task-btn" data-task-id="${task.TaskID}">Delete</button>` : ''}
+  </td>
+`;
+
 
     tbody.appendChild(tr);
   });
@@ -185,7 +186,7 @@ function createAddTaskButton(processId) {
   button.className = 'add-task-btn';
   button.style.marginBottom = '10px';
   button.onclick = () => {
-    window.location.href = `/add-task?processId=${processId}`; 
+    window.location.href = `/add-task?DepartmentId=${deptId}`; 
   };
 
   document.querySelector('.tasks-section').insertBefore(button, document.querySelector('.tasks-table'));
@@ -360,7 +361,7 @@ tbody.addEventListener('click', async (e) => {
       body: JSON.stringify({ finishTime: now })
     });
 
-    refreshTasks(); // Re-fetch and render tasks
+    refreshTasks(); 
   }
 });
 

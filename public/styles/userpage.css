@@ -448,3 +448,250 @@
     max-width: 120px;
   }
 }
+
+/* Enhanced Button Styles */
+button {
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.task-start-btn {
+  background-color: var(--accent);
+  color: white;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 4px;
+  font-weight: 500;
+  margin-right: 0.5rem;
+}
+
+.task-start-btn:hover {
+  background-color: var(--accent-dark);
+}
+
+.task-finish-btn {
+  background-color: var(--success);
+  color: white;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.task-finish-btn:hover {
+  background-color: #218838;
+}
+
+/* Add Task Button */
+.add-task-btn {
+  background-color: var(--primary);
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
+
+.add-task-btn:hover {
+  background-color: var(--primary-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(0, 91, 171, 0.3);
+}
+
+/* Project Info Display */
+#projectName, #packageName {
+  background-color: var(--primary-light);
+  padding: 0.25rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  color: var(--primary-dark);
+  margin-left: 0.5rem;
+  display: inline-block;
+}
+
+/* Table Action Buttons Container */
+.tasks-table td:last-child {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+/* Input Focus States */
+input:focus, select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.2);
+}
+
+/* Empty State Styling */
+.empty-state {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-light);
+}
+
+.empty-state i {
+  font-size: 2rem;
+  color: var(--border);
+  margin-bottom: 1rem;
+  display: block;
+}
+
+/* Card Hover Effects */
+.process-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.process-card::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background-color: var(--primary);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.3s ease;
+}
+
+.process-card:hover::after {
+  transform: scaleX(1);
+}
+
+.process-card.active::after {
+  transform: scaleX(1);
+  background-color: var(--accent);
+}
+
+/* Responsive Table Cells */
+@media (max-width: 768px) {
+  .tasks-table td {
+    padding: 0.75rem 0.5rem;
+    font-size: 0.85rem;
+  }
+  
+  .tasks-table th {
+    padding: 0.75rem 0.5rem;
+    font-size: 0.85rem;
+  }
+  
+  .task-start-btn, 
+  .task-finish-btn,
+  .row-save-btn {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.8rem;
+  }
+}
+
+/* Loading Animation */
+@keyframes pulse {
+  0% { opacity: 0.6; }
+  50% { opacity: 1; }
+  100% { opacity: 0.6; }
+}
+
+.loading-row {
+  animation: pulse 1.5s infinite;
+  background-color: rgba(0, 0, 0, 0.03);
+}
+
+/* Tooltip for Disabled Inputs */
+.delay-reason-input[disabled] {
+  cursor: not-allowed;
+  position: relative;
+}
+
+.delay-reason-input[disabled]::after {
+  content: "Only available for overdue tasks";
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background-color: var(--text);
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+}
+
+.delay-reason-input[disabled]:hover::after {
+  opacity: 1;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--border);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--primary-light);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
+
+/* Animation for Status Badges */
+.status-badge {
+  position: relative;
+  overflow: hidden;
+}
+
+.status-badge::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: white;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.status-badge:hover::after {
+  opacity: 0.2;
+}
+
+/* Focus Styles for Accessibility */
+button:focus-visible, 
+input:focus-visible, 
+select:focus-visible {
+  outline: 2px solid var(--accent-dark);
+  outline-offset: 2px;
+}
+
+/* Print Styles */
+@media print {
+  .dashboard-header, 
+  .process-selection, 
+  .add-task-btn,
+  button {
+    display: none;
+  }
+  
+  .tasks-table {
+    border: 1px solid #ddd;
+  }
+  
+  .tasks-table th {
+    background-color: white;
+    color: black;
+    border-bottom: 2px solid #ddd;
+  }
+}
