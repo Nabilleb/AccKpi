@@ -12,77 +12,57 @@
     <div class="form-header">
       <h1>
         <i class="fas fa-plus-circle"></i>
-        Add New Task
+        Edit New Task
       </h1>
     </div>
     
-    <form action="/add-task" method="POST" class="form-grid">
-      <div class="form-group">
-        <label for="TaskName" class="required-field">Task Name</label>
-        <input type="text" id="TaskName" name="TaskName" required placeholder="Enter task name">
-      </div>
-      
-      <div class="form-group">
-        <label for="TaskPlanned" class="required-field">Task Description</label>
-        <input type="text" id="TaskPlanned" name="TaskPlanned" required placeholder="Describe the task">
-      </div>
-      
-
-      
-      
-      
-      <div class="form-group">
-        <label for="IsDateFixed">Fixed Deadline</label>
-        <select id="IsDateFixed" name="IsDateFixed">
-          <option value="1">Yes</option>
-          <option value="0" selected>No</option>
-        </select>
-      </div>
-
-<div class="form-group">
-  <label for="PlannedDate">Planned Date</label>
-  <input type="datetime-local" id="PlannedDate" name="PlannedDate">
-</div>
-
-      
-     <% if (isAdmin) { %>
+   <form action="/update-task/<%= task.TaskID %>" method="POST" class="form-grid">
   <div class="form-group">
-    <label for="DepId" class="required-field">Department</label>
-    <select name="DepId" id="DepId" required>
-      <option value="">Select a department</option>
-      <% departments.forEach(dept => { %>
-        <option value="<%= dept.DepartmentID %>" <%= dept.DepartmentID === departmentId ? 'selected' : '' %>>
-          <%= dept.DeptName %>
-        </option>
-      <% }); %>
+    <label for="TaskName" class="required-field">Task Name</label>
+    <input type="text" id="TaskName" name="TaskName" required value="<%= task.TaskName %>">
+  </div>
+
+  <div class="form-group">
+    <label for="TaskPlanned" class="required-field">Task Description</label>
+    <input type="text" id="TaskPlanned" name="TaskPlanned" required value="<%= task.TaskPlanned %>">
+  </div>
+
+  <div class="form-group">
+    <label for="IsDateFixed">Fixed Deadline</label>
+    <select id="IsDateFixed" name="IsDateFixed">
+      <option value="1" <%= task.IsDateFixed ? 'selected' : '' %>>Yes</option>
+      <option value="0" <%= !task.IsDateFixed ? 'selected' : '' %>>No</option>
     </select>
   </div>
-<% } else { %>
-  <input type="hidden" name="DepId" value="<%= departmentId %>">
-<% } %>
 
-      
-      <div class="form-actions">
-        <button type="button" class="btn btn-secondary" onclick="window.history.back()">
-          <i class="fas fa-arrow-left"></i> Cancel
-        </button>
-        <button type="submit" class="btn btn-primary">
-          <i class="fas fa-save"></i> Add Task
-        </button>
-      </div>
-    </form>
+  <div class="form-group">
+    <label for="PlannedDate">Planned Date</label>
+    <input type="datetime-local" id="PlannedDate" name="PlannedDate" value="<%= task.PlannedDate.toISOString().slice(0, 16) %>">
+  </div>
+
+  <input type="hidden" name="TaskID" value="<%= task.TaskID %>">
+
+  <div class="form-actions">
+    <button type="button" class="btn btn-secondary" onclick="window.history.back()">Cancel</button>
+    <button type="submit" class="btn btn-primary">Update Task</button>
+  </div>
+</form>
+
   </div>
 
   <script>
+    // Enhance the form with dynamic behavior
     document.addEventListener('DOMContentLoaded', function() {
       const isDateFixedSelect = document.getElementById('IsDateFixed');
       const plannedDateInput = document.getElementById('PlannedDate');
       
+      // Set default datetime to now (rounded to nearest 15 minutes)
       const now = new Date();
       const minutes = Math.ceil(now.getMinutes() / 15) * 15;
       now.setMinutes(minutes);
       now.setSeconds(0);
       
+      // Format for datetime-local input
       const year = now.getFullYear();
       const month = String(now.getMonth() + 1).padStart(2, '0');
       const day = String(now.getDate()).padStart(2, '0');
@@ -90,15 +70,19 @@
       const mins = String(now.getMinutes()).padStart(2, '0');
       
       plannedDateInput.value = `${year}-${month}-${day}T${hours}:${mins}`;
-         
+      
+      // Toggle date field based on IsDateFixed selection
+   
       
       isDateFixedSelect.addEventListener('change', toggleDateField);
-      toggleDateField(); 
+      toggleDateField(); // Initialize
       
+      // Form validation
       const form = document.querySelector('form');
       form.addEventListener('submit', function(e) {
         let isValid = true;
         
+        // Check required fields
         document.querySelectorAll('[required]').forEach(field => {
           if (!field.value.trim()) {
             field.style.borderColor = 'var(--danger)';
@@ -112,6 +96,7 @@
         }
       });
       
+      // Clear error state when typing
       document.querySelectorAll('input, select').forEach(field => {
         field.addEventListener('input', function() {
           if (this.value.trim()) {

@@ -5,6 +5,7 @@ import { dirname } from 'path';
 import sql from 'mssql';
 import dotenv from 'dotenv';
 import session from 'express-session';
+import { isDate } from "util/types";
 
 dotenv.config();
 
@@ -98,13 +99,14 @@ app.post("/login", async (req, res) => {
     const result = await pool.request()
       .input('username', sql.VarChar, username)
       .input('password', sql.VarChar, password) 
-      .query(`SELECT usrID, usrDesc, usrAdmin FROM tblUsers WHERE usrEmail = @username AND usrPWD = @password`);
+      .query(`SELECT usrID, usrDesc,DepartmentID, usrAdmin FROM tblUsers WHERE usrEmail = @username AND usrPWD = @password`);
 
     if (result.recordset.length === 1) {
       req.session.user = {
         id: result.recordset[0].usrID,
         name: result.recordset[0].usrDesc,
-        usrAdmin: result.recordset[0].usrAdmin
+        usrAdmin: result.recordset[0].usrAdmin,
+        DepartmentId: result.recordset[0].DepartmentID
       };            
       console.log(result.recordset[0].usrAdmin)
       res.redirect(result.recordset[0].usrAdmin ? "/adminpage" : "/userpage");
@@ -150,10 +152,13 @@ app.get('/api/tasks/by-department/:departmentID', async (req, res) => {
       W.TimeFinished AS DateFinished,
       W.DelayReason,
       W.Delay
-    FROM tblDepartmentTask DPT
-    JOIN tblTasks T ON DPT.TaskID = T.TaskID
-    LEFT JOIN tblWorkflow W ON T.TaskID = W.TaskID
-    WHERE DPT.DepartmentID = @departmentID
+    FROM tblTasks T
+    LEFT JOIN (
+      SELECT *, ROW_NUMBER() OVER (PARTITION BY TaskID ORDER BY TimeFinished DESC) AS rn
+      FROM tblWorkflow
+    ) W ON T.TaskID = W.TaskID AND W.rn = 1
+    WHERE T.DepId = @departmentID
+    ORDER BY T.PlannedDate;
   `;
 
   try {
@@ -162,7 +167,6 @@ app.get('/api/tasks/by-department/:departmentID', async (req, res) => {
       .query(query);
 
     res.json(result.recordset);
-    console.log(result.recordset)
   } catch (err) {
     console.error('Error fetching tasks by department:', err);
     res.status(500).json({ error: 'Internal Server Error' });
@@ -228,17 +232,8 @@ app.get('/userpage', ensureAuthenticated, async (req, res) => {
             return res.status(404).send('Department not found');
         }
 
-        const processResult = await pool
-            .request()
-            .input('DepId', DepartmentID)
-            .query(`
-                SELECT P.ProcessName, P.processDesc, P.NumberOfProccessID
-                FROM tblProcess P
-                JOIN tblProcessDepartment PD ON P.NumberOfProccessID = PD.ProcessID
-                WHERE PD.DepartmentID = @DepId
-            `);
+       
 
-        const processes = processResult.recordset;
        
         const getProjects = await pool
                                  .request()
@@ -250,7 +245,6 @@ app.get('/userpage', ensureAuthenticated, async (req, res) => {
             departmentID: DepartmentID,
             usrDesc,
             department: deptDetails.DepartmentID,
-            processes,
             projects
         });
 
@@ -319,33 +313,48 @@ if (!isActive) {
   }
 });
 
-app.get('/add-task',ensureAuthenticated, async (req, res) => {
-  const departmentId = parseInt(req.query.DepartmentId);
+app.get('/add-task', ensureAuthenticated, async (req, res) => {
+  const isAdmin = req.session.user.usrAdmin; 
+  const sessionDepId = req.session.DepartmentId;
+  let departmentId = parseInt(req.query.DepartmentId);
+  if (!departmentId && !isAdmin) {
+    departmentId = sessionDepId;
+  }
 
-  if (!departmentId) {
+  if (!departmentId && !isAdmin) {
     return res.status(400).send('Missing or invalid DepartmentId');
   }
 
-  const query = `
-    SELECT TaskID, TaskName
-    FROM tblTasks
-    WHERE DepId = @DepId
-  `;
-
   try {
-    const result = await pool.request()
+    const taskResult = await pool.request()
       .input('DepId', sql.Int, departmentId)
-      .query(query);
+      .query(`
+        SELECT TaskID, TaskName
+        FROM tblTasks
+        WHERE DepId = @DepId
+      `);
 
+    let departments = [];
+    if (isAdmin) {
+      const deptResult = await pool.request()
+        .query('SELECT DepartmentID, DeptName FROM tblDepartments');
+      departments = deptResult.recordset;
+    }
+console.log(departments)
     res.render('task.ejs', {
-      departmentId: departmentId,
-      predecessorTasks: result.recordset
+      isAdmin,
+      departmentId,
+      departments,
+      predecessorTasks: taskResult.recordset
     });
+
   } catch (err) {
     console.error('Error loading add-task page:', err);
     res.status(500).send('Failed to load page');
   }
 });
+
+
 
  
 app.get("/getWorkflow", async (req, res) => {
@@ -469,8 +478,9 @@ app.post("/addPackage", async (req, res) => {
 
 app.post('/add-task', async (req, res) => {
   const {
-    TaskName, TaskPlanned, IsDateFixed, PlannedDate, DepId
+    TaskName, TaskPlanned, PlannedDate, DepId
   } = req.body;
+  const IsDateFixed = req.body.IsDateFixed == '1' ? 1 : 0;
 
   try {
     const duplicateCheck = await pool.request()
@@ -560,6 +570,54 @@ app.post('/add-task', async (req, res) => {
   }
 });
 
+app.get('/edit-task/:id', async (req, res) => {
+  const taskId = req.params.id;
+
+  try {
+    const result = await pool
+      .request()
+      .input('TaskID', sql.Int, taskId)
+      .query('SELECT * FROM tblTasks WHERE TaskID = @TaskID');
+
+    if (result.recordset.length === 0) {
+      return res.status(404).send('Task not found');
+    }
+
+    const task = result.recordset[0];
+
+    res.render('edittasks.ejs', { task });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Server Error');
+  }
+});
+
+
+app.post('/update-task/:id', async (req, res) => {
+  const taskId = req.params.id;
+  const { TaskName, TaskPlanned, IsDateFixed, PlannedDate } = req.body;
+
+  try {
+    await pool
+      .request()
+      .input('TaskID', sql.Int, taskId)
+      .input('TaskName', sql.NVarChar, TaskName)
+      .input('TaskPlanned', sql.NVarChar, TaskPlanned)
+      .input('IsDateFixed', sql.Bit, IsDateFixed)
+      .input('PlannedDate', sql.DateTime, PlannedDate)
+      .query(`UPDATE tblTasks SET 
+        TaskName = @TaskName, 
+        TaskPlanned = @TaskPlanned, 
+        IsDateFixed = @IsDateFixed, 
+        PlannedDate = @PlannedDate 
+        WHERE TaskID = @TaskID`);
+
+    res.redirect('/userpage'); 
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Error updating task');
+  }
+});
 
 
 app.post("/postProcess", async (req, res) => {
@@ -908,6 +966,7 @@ WHERE TaskID = @taskId AND WorkflowID = (
     res.status(500).json({ error: 'Server error' });
   }
 });
+
 
 
 app.post('/start-task/:taskId', async (req, res) => {
