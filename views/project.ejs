@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <!-- views/addProject.ejs -->
+<div class="container mt-5">
+  <h2>Add New Project</h2>
+  <form action="/projects/add" method="POST">
+    <div class="mb-3">
+      <label for="projectName" class="form-label">Project Name</label>
+      <input type="text" class="form-control" id="projectName" name="projectName" required>
+    </div>
+
+    <div class="mb-3">
+      <label for="packageID" class="form-label">Select Package</label>
+      <select class="form-select" id="packageID" name="packageID" required>
+        <% packages.forEach(pkg => { %>
+          <option value="<%= pkg.PkgeID %>">
+            <%= pkg.PkgeName %> - <%= pkg.Division %> (Duration: <%= pkg.Duration %> days)
+          </option>
+        <% }) %>
+      </select>
+    </div>
+
+    <div class="mb-3">
+      <label for="processID" class="form-label">Select Process</label>
+      <select class="form-select" id="processID" name="processID" required>
+        <% processes.forEach(proc => { %>
+          <option value="<%= proc.NumberOfProccessID %>">
+            <%= proc.ProcessName %> <% if (proc.processDesc) { %> - <%= proc.processDesc %> <% } %>
+          </option>
+        <% }) %>
+      </select>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Add Project</button>
+  </form>
+</div>
+
+</body>
+</html>

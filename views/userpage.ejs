@@ -13,8 +13,8 @@
     <div class="header-left">
       <img src="/images/accNewLog.webp" alt="Company Logo" class="logo">
       <h1>Task Management</h1>
-      <p id="projectName">project name</p>
-      <p id="packageName">package name</p>
+      <p id="projectName"></p>
+      <p id="packageName"></p>
      <select name="project" id="project">
   <option value="none">none</option>
   <% projects.forEach(project => { %>
@@ -79,6 +79,7 @@
 <script>
 const userId = "<%= userId %>";
 const deptId = "<%= departmentID %>";
+const username = "<%=usrDesc%>"
 const tbody = document.querySelector('.tasks-table tbody');
 let activeProcessId = null;
 
@@ -126,12 +127,10 @@ function renderTasks(tasks) {
     const plannedDate = task.PlannedDate ? task.PlannedDate.split('T')[0] : '';
     const finishDate = task.TimeFinished ? task.TimeFinished.split('T')[0] : '';
     const delayReason = task.DelayReason || '';
-    const delayByUser = task.LastUpdatedBy ? ` (by User ${task.LastUpdatedBy})` : '';
     const delayInputDisabled = !(task.TimeFinished && task.Delay > 0) ? 'disabled' : '';
 
     const delayInput = `
       <input type="text" value="${delayReason}" class="delay-reason-input" data-task-id="${task.TaskID}" ${delayInputDisabled}>
-      <br><small>${delayByUser}</small>
     `;
 
     const plannedDateCell = task.isDateFixed
@@ -388,7 +387,6 @@ tbody.addEventListener('click', async (e) => {
   }
 
 
-  // Handle task delete with confirmation
 document.addEventListener('click', async (e) => {
   if (e.target.classList.contains('delete-task-btn')) {
     const taskId = e.target.dataset.taskId;

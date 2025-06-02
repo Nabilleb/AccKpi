@@ -561,8 +561,12 @@ app.post('/add-task', async (req, res) => {
         INSERT INTO tblWorkflow (WorkflowName, TaskID)
         VALUES (@WorkflowName, @TaskID)
       `);
-
+if(!req.session.user.usrAdmin){
     res.redirect('/userpage');
+}
+else{
+  res.redirect("/adminpage")
+}
 
   } catch (err) {
     console.error('Error adding task:', err);
@@ -967,6 +971,46 @@ WHERE TaskID = @taskId AND WorkflowID = (
   }
 });
 
+app.get('/addProject', async (req, res) => {
+  try {
+    const [packagesResult, processesResult] = await Promise.all([
+      pool.request().query("SELECT * FROM tblPackages WHERE Selected = 1"),
+      pool.request().query("SELECT * FROM tblProcess") 
+    ]);
+
+    res.render('project.ejs', {
+      packages: packagesResult.recordset,
+      processes: processesResult.recordset
+    });
+  } catch (err) {
+    console.error('Error loading data:', err);
+    res.status(500).send('Server error');
+  }
+});
+
+app.post('/projects/add', async (req, res) => {
+  const { projectName, packageID, processID } = req.body;
+
+  try {
+    const insertProject = await pool.request()
+      .input('projectName', sql.VarChar, projectName)
+      .query('INSERT INTO tblProject (projectName) OUTPUT INSERTED.projectID VALUES (@projectName)');
+
+    const newProjectID = insertProject.recordset[0].projectID;
+
+    await pool.request()
+      .input('processID', sql.Int, processID)
+      .input('projectID', sql.Int, newProjectID)
+      .input('packageID', sql.Int, packageID)
+      .query(`INSERT INTO tblProcessWorkflow (processID, projectID, packageID)
+              VALUES (@processID, @projectID, @packageID)`);
+
+    res.redirect('/adminpage');
+  } catch (err) {
+    console.error('Insert failed:', err);
+    res.status(500).send('Error adding project');
+  }
+});
 
 
 app.post('/start-task/:taskId', async (req, res) => {
