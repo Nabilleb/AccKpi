@@ -110,90 +110,176 @@
     </section>
   </main>
 
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const projectSelect = document.getElementById('projectSelect');
-      if (projectSelect) {
-        projectSelect.addEventListener('change', function () {
-          localStorage.setItem('selectedProject', this.value);
-        });
 
-        const savedProject = localStorage.getItem('selectedProject');
-        if (savedProject) {
-          projectSelect.value = savedProject;
-        }
-      }
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const projectSelect = document.getElementById('projectSelect');
+    const mobileNavToggle = document.getElementById('mobileNavToggle');
+    const mobileNav = document.getElementById('mobileNav');
+    const navLinks = document.querySelectorAll('.main-nav a, .mobile-nav a');
+    const activityTitle = document.getElementById('activityTitle');
+    let currentDepartmentID = null;
 
-      const rows = document.querySelectorAll('tbody tr');
-      rows.forEach((row, i) => {
-        setTimeout(() => {
-          row.style.opacity = '1';
-          row.style.transform = 'translateY(0)';
-        }, i * 100);
+    if (projectSelect) {
+      projectSelect.addEventListener('change', function () {
+        localStorage.setItem('selectedProject', this.value);
       });
 
-      const mobileNavToggle = document.getElementById('mobileNavToggle');
-      const mobileNav = document.getElementById('mobileNav');
-      if (mobileNavToggle && mobileNav) {
-        mobileNavToggle.addEventListener('click', () => {
-          mobileNav.classList.toggle('active');
-        });
+      const savedProject = localStorage.getItem('selectedProject');
+      if (savedProject) {
+        projectSelect.value = savedProject;
       }
+    }
 
-      const navLinks = document.querySelectorAll('.main-nav a, .mobile-nav a');
-      const activityTitle = document.getElementById('activityTitle');
-
-      navLinks.forEach(link => {
-        link.addEventListener("click", (e) => {
-          e.preventDefault();
-          const departmentName = link.textContent.trim();
-          const departmentID = link.dataset.id;
-
-          activityTitle.innerHTML = `<i class="fas fa-clipboard-list"></i> ${departmentName} Activities`;
-          fetchDepartmentTasks(departmentID);
-        });
+    if (mobileNavToggle && mobileNav) {
+      mobileNavToggle.addEventListener('click', () => {
+        mobileNav.classList.toggle('active');
       });
+    }
 
-      function fetchDepartmentTasks(departmentID) {
-        fetch(`/api/tasks/by-department/${departmentID}`)
-          .then(res => res.json())
-          .then(data => {
-            const tbody = document.querySelector("tbody");
-            tbody.innerHTML = "";
-
-            data.forEach(task => {
-              const row = document.createElement("tr");
-
-              const plannedDate = task.PlannedDate
-                ? new Date(task.PlannedDate).toISOString().split("T")[0]
-                : "-";
-              const finishedDate = task.DateFinished
-                ? new Date(task.DateFinished).toISOString().split("T")[0]
-                : "-";
-
-              const status = task.Delay === null
-                ? `<span class="status-badge status-pending">Pending</span>`
-                : task.Delay > 0
-                  ? `<span class="status-badge status-delayed">Delayed ${task.Delay} day(s)</span>`
-                  : `<span class="status-badge status-on-time">On time</span>`;
-
-              row.innerHTML = `
-                <td>${task.TaskName}</td>
-                <td>${plannedDate}</td>
-                <td>-</td>
-                <td>${finishedDate}</td>
-                <td>${status}</td>
-                <td>${task.DelayReason || ""}</td>
-              `;
-
-              tbody.appendChild(row);
-            });
-          })
-          .catch(err => {
-            console.error("Error fetching tasks:", err);
-          });
+    function refreshTasks() {
+      if (currentDepartmentID) {
+        fetchDepartmentTasks(currentDepartmentID);
+      } else {
+        console.warn("⚠ No department selected.");
       }
+    }
+
+    navLinks.forEach(link => {
+      link.addEventListener("click", (e) => {
+        e.preventDefault();
+        const departmentName = link.textContent.trim();
+        const departmentID = link.dataset.id;
+        currentDepartmentID = departmentID;
+
+        activityTitle.innerHTML = `<i class="fas fa-clipboard-list"></i> ${departmentName} Activities`;
+
+        refreshTasks();
+      });
     });
-  </script>
+
+    function fetchDepartmentTasks(departmentID) {
+      fetch(`/api/tasks/by-department/${departmentID}`)
+        .then(res => res.json())
+        .then(data => {
+          const tbody = document.querySelector("tbody");
+          tbody.innerHTML = "";
+
+          data.forEach((task, index) => {
+            const row = document.createElement("tr");
+
+            const plannedDate = task.PlannedDate
+              ? new Date(task.PlannedDate).toISOString().split("T")[0]
+              : "-";
+            const finishedDate = task.DateFinished
+              ? new Date(task.DateFinished).toISOString().split("T")[0]
+              : "-";
+
+            const status = task.Delay === null
+              ? `<span class="status-badge status-pending">Pending</span>`
+              : task.Delay > 0
+                ? `<span class="status-badge status-delayed">Delayed ${task.Delay} day(s)</span>`
+                : `<span class="status-badge status-on-time">On time</span>`;
+
+            row.innerHTML = `
+              <td>${task.TaskName}</td>
+              <td>${plannedDate}</td>
+              <td>-</td>
+              <td>${finishedDate}</td>
+              <td>${status}</td>
+              <td>${task.DelayReason || ""}</td>
+            `;
+
+            row.setAttribute("draggable", true);
+            row.setAttribute("data-finished", task.DateFinished ? "true" : "false");
+            row.setAttribute("data-delay", task.Delay || 0);
+            row.setAttribute("data-task-id", task.TaskID);
+            row.setAttribute("data-task-name", task.TaskName);
+
+            if (task.DateFinished || (task.Delay && task.Delay > 0)) {
+              row.style.opacity = "0.6";
+              row.style.cursor = "not-allowed";
+            }
+
+            // Optional highlight for active task
+            if (task.IsTaskSelected) {
+              row.classList.add("active-task");
+            }
+
+            // Drag handlers
+            row.addEventListener("dragstart", (e) => {
+              const isFinished = row.getAttribute("data-finished") === "true";
+              const delay = parseInt(row.getAttribute("data-delay"));
+
+              if (isFinished || delay > 0) {
+                e.preventDefault();
+                console.log("❌ Drag prevented: Finished or delayed task");
+              } else {
+                e.dataTransfer.setData("text/taskID", task.TaskID);
+                e.dataTransfer.setData("text/taskName", task.TaskName);
+                row.classList.add("dragging");
+              }
+            });
+
+            row.addEventListener("dragover", (e) => {
+              e.preventDefault();
+              row.style.border = "2px dashed #007bff";
+            });
+
+            row.addEventListener("dragleave", () => {
+              row.style.border = "";
+            });
+
+            row.addEventListener("drop", (e) => {
+              e.preventDefault();
+              row.style.border = "";
+
+              const draggedTaskID = e.dataTransfer.getData("text/taskID");
+              const droppedTaskID = row.getAttribute("data-task-id");
+
+              handleTaskDrop(draggedTaskID, droppedTaskID);
+            });
+
+            row.addEventListener("dragend", () => {
+              row.classList.remove("dragging");
+            });
+
+            tbody.appendChild(row);
+
+            setTimeout(() => {
+              row.style.opacity = '1';
+              row.style.transform = 'translateY(0)';
+            }, index * 100);
+          });
+        })
+        .catch(err => {
+          console.error("❌ Error fetching tasks:", err);
+        });
+    }
+
+    function handleTaskDrop(taskIdA, taskIdB) {
+      console.log(taskIdA, taskIdB)
+      fetch('/api/tasks/switch-details', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ taskIdA, taskIdB })
+      })
+        .then(res => res.json())
+        .then(result => {
+          if (result.success) {
+            console.log("✅ Tasks swapped.");
+            refreshTasks();
+          } else {
+            alert("Swap failed.");
+          }
+        })
+        .catch(err => {
+          console.error("Swap error:", err);
+        });
+    }
+  });
+</script>
+
+
 </body>
 </html>
