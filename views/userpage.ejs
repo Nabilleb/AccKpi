@@ -6,7 +6,7 @@
   <title>My Tasks | Engineering System</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="/styles/userpage.css">
-
+ <link rel="stylesheet" href="/styles/homepage.css">
 </head>
 <body>
   <header class="dashboard-header">
@@ -33,6 +33,28 @@
     </div>
   </header>
 
+ <nav class="main-nav">
+    <a href="#" data-id="1"><i class="fas fa-shopping-cart"></i> Procurement</a>
+    <a href="#" data-id="2"><i class="fas fa-file-contract"></i> Finance</a>
+    <a href="#" data-id="3"><i class="fas fa-calculator"></i> HR</a>
+    <a href="#" data-id="4"><i class="fas fa-calculator"></i> IT</a>
+    <a href="#" data-id="5"><i class="fas fa-truck"></i> Logistics</a>
+    <a href="#" data-id="6"><i class="fas fa-chart-bar"></i> Reports</a>
+  </nav>
+
+  <button class="mobile-nav-toggle" id="mobileNavToggle">
+    <i class="fas fa-bars"></i>
+  </button>
+
+  <div class="mobile-nav" id="mobileNav">
+    <a href="#" data-id="1"><i class="fas fa-shopping-cart"></i> Procurement</a>
+    <a href="#" data-id="2"><i class="fas fa-file-contract"></i> Finance</a>
+    <a href="#" data-id="3"><i class="fas fa-calculator"></i> HR</a>
+    <a href="#" data-id="4"><i class="fas fa-calculator"></i> IT</a>
+    <a href="#" data-id="5"><i class="fas fa-truck"></i> Logistics</a>
+    <a href="#" data-id="6"><i class="fas fa-chart-bar"></i> Reports</a>
+  </div>
+  
   <main class="main-content">
     <section class="process-selection">
       <h2 class="section-title">
@@ -81,6 +103,8 @@ const userId = "<%= userId %>";
 const deptId = "<%= departmentID %>";
 const username = "<%=usrDesc%>"
 const tbody = document.querySelector('.tasks-table tbody');
+const navLinks = document.querySelectorAll('.main-nav a, .mobile-nav a');
+console.log(navLinks)
 let activeProcessId = null;
 
 async function refreshTasks() {
@@ -108,13 +132,9 @@ function renderTasks(tasks) {
 
   tasks.forEach(task => {
     const tr = document.createElement('tr');
-
-    const isDraggable = !task.TimeFinished && task.IsTaskSelected;
-    tr.setAttribute('draggable', isDraggable);
-    tr.dataset.taskId = task.TaskID;
-    tr.classList.add('task-row');
-    if (isDraggable) tr.classList.add('draggable');
-
+    const isOwnDepartment = task.DepId == deptId;
+console.log(isOwnDepartment)
+console.log("taskid", task.DepId, "depid", deptId)
     let status = '';
     if (!task.TimeFinished && task.IsTaskSelected) {
       status = `<span class="status-badge status-pending">Pending</span>`;
@@ -127,23 +147,32 @@ function renderTasks(tasks) {
     const plannedDate = task.PlannedDate ? task.PlannedDate.split('T')[0] : '';
     const finishDate = task.TimeFinished ? task.TimeFinished.split('T')[0] : '';
     const delayReason = task.DelayReason || '';
-    const delayInputDisabled = !(task.TimeFinished && task.Delay > 0) ? 'disabled' : '';
+    const delayInputDisabled = !isOwnDepartment || !(task.TimeFinished && task.Delay > 0) ? 'disabled' : '';
 
     const delayInput = `
       <input type="text" value="${delayReason}" class="delay-reason-input" data-task-id="${task.TaskID}" ${delayInputDisabled}>
     `;
 
-    const plannedDateCell = task.isDateFixed
+    const plannedDateCell = task.isDateFixed || !isOwnDepartment
       ? `<td>${plannedDate}</td>`
       : `<td><input type="date" value="${plannedDate}" data-task-id="${task.TaskID}" class="editable-date"></td>`;
 
     let actionButton = '';
-    if (task.isTaskSelected) {
+    if (isOwnDepartment && task.isTaskSelected) {
       if (!task.TimeStarted) {
         actionButton = `<button class="task-start-btn" data-task-id="${task.TaskID}">Start</button>`;
       } else if (!task.TimeFinished) {
         actionButton = `<button class="task-finish-btn" data-task-id="${task.TaskID}">Finish</button>`;
       }
+    }
+
+    let extraButtons = '';
+    if (isOwnDepartment) {
+      extraButtons = `
+        <button class="row-save-btn" data-task-id="${task.TaskID}">Save</button>
+        <button class="edit-task-btn" data-task-id="${task.TaskID}">Edit</button>
+        ${task.TimeFinished ? `<button class="delete-task-btn" data-task-id="${task.TaskID}">Delete</button>` : ''}
+      `;
     }
 
     tr.innerHTML = `
@@ -156,58 +185,11 @@ function renderTasks(tasks) {
       <td>${delayInput}</td>
       <td>
         ${actionButton}
-        <button class="row-save-btn" data-task-id="${task.TaskID}">Save</button>
-        <button class="edit-task-btn" data-task-id="${task.TaskID}">Edit</button>
-        ${task.TimeFinished ? `<button class="delete-task-btn" data-task-id="${task.TaskID}">Delete</button>` : ''}
+        ${extraButtons}
       </td>
     `;
 
     tbody.appendChild(tr);
-  });
-
-  setupDragAndDrop();
-}
-
-function setupDragAndDrop() {
-  const rows = document.querySelectorAll('.task-row');
-  let dragSrc = null;
-
-  rows.forEach(row => {
-    row.addEventListener('dragstart', (e) => {
-      if (!row.classList.contains('draggable')) {
-        e.preventDefault();
-        return;
-      }
-      dragSrc = row;
-      row.classList.add('dragging');
-    });
-
-    row.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      const dragging = document.querySelector('.dragging');
-      if (!dragging || row === dragging || !row.classList.contains('draggable')) return;
-
-      const bounding = row.getBoundingClientRect();
-      const offset = bounding.y + bounding.height / 2;
-      const tbody = row.parentElement;
-      if (e.clientY - offset > 0) {
-        tbody.insertBefore(dragging, row.nextSibling);
-      } else {
-        tbody.insertBefore(dragging, row);
-      }
-    });
-
-    row.addEventListener('drop', () => {
-      if (!dragSrc || !row.classList.contains('draggable')) return;
-      dragSrc.classList.remove('dragging');
-      dragSrc = null;
-      saveNewTaskOrder(); // You can implement this function to save the new order to backend if needed
-    });
-
-    row.addEventListener('dragend', () => {
-      row.classList.remove('dragging');
-      dragSrc = null;
-    });
   });
 }
 
@@ -386,55 +368,85 @@ tbody.addEventListener('click', async (e) => {
     refreshTasks();
   }
 
+});
 
-document.addEventListener('click', async (e) => {
-  if (e.target.classList.contains('delete-task-btn')) {
-    const taskId = e.target.dataset.taskId;
-    const taskName = e.target.closest('tr').querySelector('td:first-child').textContent;
 
-    const confirmed = await showDeleteConfirmation(taskName);
-    if (confirmed) {
-      const res = await fetch(`/delete-task/${taskId}`, { method: 'DELETE' });
-      if (res.ok) {
-        refreshTasks();
-      } else {
-        alert('Failed to delete task');
-      }
+    navLinks.forEach(link => {
+  link.addEventListener('click', async (e) => {
+    e.preventDefault();
+
+    const departmentId = link.dataset.id;
+    const projectId = document.getElementById('project').value;
+    activeProcessId = null;
+    tbody.innerHTML = '';
+    document.querySelector('.add-task-btn')?.remove();
+
+    if (!projectId || projectId === 'none') {
+      alert("Please select a project first.");
+      return;
     }
-  }
-});
 
-function showDeleteConfirmation(taskName) {
-  return new Promise((resolve) => {
-    const dialog = document.createElement('div');
-    dialog.className = 'delete-confirmation';
-    dialog.innerHTML = `
-      <div class="delete-confirmation-content">
-        <h3>Delete Task</h3>
-        <p>Are you sure you want to delete "<strong>${taskName}</strong>"?</p>
-        <p>This action cannot be undone.</p>
-        <div class="delete-confirmation-buttons">
-          <button id="confirm-delete" class="btn btn-danger">Delete</button>
-          <button id="cancel-delete" class="btn btn-secondary">Cancel</button>
-        </div>
-      </div>
-    `;
+    try {
+      const response = await fetch('/get-project-processes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectId, departmentId })
+      });
 
-    document.body.appendChild(dialog);
+      const data = await response.json();
+      const pkName = document.querySelector("#packageName");
+      const proName = document.querySelector("#projectName");
 
-    document.getElementById('confirm-delete').addEventListener('click', () => {
-      document.body.removeChild(dialog);
-      resolve(true);
-    });
+      if (data.length > 0) {
+        pkName.textContent = data[0].PkgeName || 'N/A';
+        proName.textContent = data[0].ProjectName || 'N/A';
+      }
 
-    document.getElementById('cancel-delete').addEventListener('click', () => {
-      document.body.removeChild(dialog);
-      resolve(false);
-    });
+      const processGrid = document.querySelector('.process-grid');
+      processGrid.innerHTML = '';
+
+      if (data.length === 0) {
+        processGrid.innerHTML = '<p>No processes found for this department in this project.</p>';
+      } else {
+        data.forEach(process => {
+          const div = document.createElement('div');
+          div.classList.add('process-card');
+          div.dataset.processId = process.NumberOfProccessID || process.ProcessID || process.processID;
+
+          div.innerHTML = `
+            <h3 class="process-name">${process.ProcessName || ''}</h3>
+            <p class="process-desc">${process.processDesc || ''}</p>
+          `;
+
+          // Optional: clicking a process highlights it
+          div.addEventListener('click', async function () {
+            const processId = this.dataset.processId;
+            if (activeProcessId === processId) return;
+
+            activeProcessId = processId;
+            document.querySelectorAll('.process-card').forEach(c => c.classList.remove('active'));
+            this.classList.add('active');
+
+            const res = await fetch(`/process/${processId}/tasks?userId=${userId}`);
+            const tasks = await res.json();
+            renderTasks(tasks);
+            createAddTaskButton(processId);
+          });
+
+          processGrid.appendChild(div);
+        });
+      }
+
+      const res = await fetch(`/department/${departmentId}/tasks?userId=${userId}`);
+      const tasks = await res.json();
+      renderTasks(tasks);
+
+    } catch (err) {
+      console.error("Error loading processes or tasks:", err);
+    }
   });
-}
-
 });
+
 </script>
 
 

@@ -294,7 +294,7 @@ if (!isActive) {
   .input('processId', processId)
   .input('departmentId', userDeptId)
   .query(
-    `SELECT T.TaskID,T.TaskName,T.TaskPlanned, T.PlannedDate,T.isTaskSelected, T.isDateFixed, W.Delay,W.TimeStarted,W.TimeFinished, W.DelayReason
+    `SELECT T.TaskID,T.TaskName,T.TaskPlanned, T.DepId,T.PlannedDate,T.isTaskSelected, T.isDateFixed, W.Delay,W.TimeStarted,W.TimeFinished, W.DelayReason
      FROM tblTasks T
      JOIN tblWorkflow W ON W.TaskID = T.TaskID
      JOIN tblProcessDepartment P ON P.DepartmentID = @departmentId AND P.ProcessID = @processId
@@ -348,6 +348,30 @@ app.get('/add-task', ensureAuthenticated, async (req, res) => {
   } catch (err) {
     console.error('Error loading add-task page:', err);
     res.status(500).send('Failed to load page');
+  }
+});
+
+
+app.get('/department/:departmentId/tasks', async (req, res) => {
+  const { departmentId } = req.params;
+
+  try {
+    const result = await pool
+      .request()
+      .input('departmentId', departmentId)
+      .query(`
+        SELECT T.TaskID, T.TaskName, T.TaskPlanned, T.PlannedDate, W.TimeFinished, W.TimeStarted,
+               T.DepId, T.IsDateFixed,
+                W.Delay, W.DelayReason
+        FROM tblTasks T
+        LEFT JOIN tblWorkflow W ON T.TaskID = W.TaskID
+        WHERE T.DepID = @departmentId
+      `);
+
+    res.json(result.recordset);
+  } catch (error) {
+    console.error('Error fetching department tasks:', error);
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
