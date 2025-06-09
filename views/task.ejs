@@ -41,8 +41,10 @@
 
 <div class="form-group">
   <label for="PlannedDate">Planned Date</label>
-  <input type="datetime-local" id="PlannedDate" name="PlannedDate">
+  <input type="datetime-local" id="PlannedDate" name="PlannedDate"
+    <%= isFirstTask ? '' : 'disabled' %> >
 </div>
+
 
       
      <% if (isAdmin) { %>
