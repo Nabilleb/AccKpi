@@ -79,6 +79,7 @@
         <th>Task Name</th>
         <th>Task Description</th>
         <th>Planned Date</th>
+        <th>Days Required</th>
         <th>Date Finished</th>
         <th>Status</th>
         <th>Days Delay</th>
@@ -130,67 +131,67 @@ function renderTasks(tasks) {
     return;
   }
 
-  tasks.forEach(task => {
-    const tr = document.createElement('tr');
-    const isOwnDepartment = task.DepId == deptId;
-console.log(isOwnDepartment)
-console.log("taskid", task.DepId, "depid", deptId)
-    let status = '';
-    if (!task.TimeFinished && task.IsTaskSelected) {
-      status = `<span class="status-badge status-pending">Pending</span>`;
-    } else if (task.TimeFinished && task.Delay > 0) {
-      status = `<span class="status-badge status-overdue">Overdue</span>`;
-    } else if (task.TimeFinished) {
-      status = `<span class="status-badge status-completed">Completed</span>`;
+ tasks.forEach(task => {
+  const tr = document.createElement('tr');
+  const isOwnDepartment = task.DepId == deptId;
+
+  let status = '';
+  if (!task.TimeFinished && task.IsTaskSelected) {
+    status = `<span class="status-badge status-pending">Pending</span>`;
+  } else if (task.TimeFinished && task.Delay > 0) {
+    status = `<span class="status-badge status-overdue">Overdue</span>`;
+  } else if (task.TimeFinished) {
+    status = `<span class="status-badge status-completed">Completed</span>`;
+  }
+
+  const plannedDate = task.PlannedDate ? task.PlannedDate.split('T')[0] : '';
+  const finishDate = task.TimeFinished ? task.TimeFinished.split('T')[0] : '';
+  const delayReason = task.DelayReason || '';
+  const delayInputDisabled = !isOwnDepartment || !(task.TimeFinished && task.Delay > 0) ? 'disabled' : '';
+
+  const delayInput = `
+    <input type="text" value="${delayReason}" class="delay-reason-input" data-task-id="${task.TaskID}" ${delayInputDisabled}>
+  `;
+  const taskPlannedCell = !task.isDateFixed && isOwnDepartment
+    ? `<td><input type="number" value="${task.DaysRequired}" class="editable-days" data-task-id="${task.TaskID}"></td>`
+    : `<td>${task.DaysRequired}</td>`;
+console.log(taskPlannedCell)
+  const plannedDateCell = `<td>${plannedDate}</td>`;
+
+  let actionButton = '';
+  if (isOwnDepartment && task.isTaskSelected) {
+    if (!task.TimeStarted) {
+      actionButton = `<button class="task-start-btn" data-task-id="${task.TaskID}">Start</button>`;
+    } else if (!task.TimeFinished) {
+      actionButton = `<button class="task-finish-btn" data-task-id="${task.TaskID}">Finish</button>`;
     }
+  }
 
-    const plannedDate = task.PlannedDate ? task.PlannedDate.split('T')[0] : '';
-    const finishDate = task.TimeFinished ? task.TimeFinished.split('T')[0] : '';
-    const delayReason = task.DelayReason || '';
-    const delayInputDisabled = !isOwnDepartment || !(task.TimeFinished && task.Delay > 0) ? 'disabled' : '';
-
-    const delayInput = `
-      <input type="text" value="${delayReason}" class="delay-reason-input" data-task-id="${task.TaskID}" ${delayInputDisabled}>
+  let extraButtons = '';
+  if (isOwnDepartment) {
+    extraButtons = `
+      <button class="row-save-btn" data-task-id="${task.TaskID}">Save</button>
     `;
+  }
 
-    const plannedDateCell = task.isDateFixed || !isOwnDepartment
-      ? `<td>${plannedDate}</td>`
-      : `<td><input type="date" value="${plannedDate}" data-task-id="${task.TaskID}" class="editable-date"></td>`;
-
-    let actionButton = '';
-    if (isOwnDepartment && task.isTaskSelected) {
-      if (!task.TimeStarted) {
-        actionButton = `<button class="task-start-btn" data-task-id="${task.TaskID}">Start</button>`;
-      } else if (!task.TimeFinished) {
-        actionButton = `<button class="task-finish-btn" data-task-id="${task.TaskID}">Finish</button>`;
-      }
-    }
-
-    let extraButtons = '';
-    if (isOwnDepartment) {
-      extraButtons = `
-        <button class="row-save-btn" data-task-id="${task.TaskID}">Save</button>
-        <button class="edit-task-btn" data-task-id="${task.TaskID}">Edit</button>
-        ${task.TimeFinished ? `<button class="delete-task-btn" data-task-id="${task.TaskID}">Delete</button>` : ''}
-      `;
-    }
-
-    tr.innerHTML = `
-      <td>${task.TaskName || ''}</td>
-      <td>${task.TaskPlanned || ''}</td>
-      ${plannedDateCell}
-      <td>${finishDate}</td>
-      <td>${status}</td>
-      <td>${task.Delay !== null ? task.Delay : 0}</td>
-      <td>${delayInput}</td>
-      <td>
-        ${actionButton}
-        ${extraButtons}
-      </td>
-    `;
-
-    tbody.appendChild(tr);
-  });
+tr.innerHTML = `
+  <td class="task-name">${task.TaskName || ''}</td>
+  <td class="task-description">${task.TaskPlanned || ''}</td>
+  <td class="planned-date">${plannedDate}</td>
+  <td class="days-required">${task.DaysRequired}</td>
+  <td class="date-finished">${finishDate}</td>
+  <td class="status">${status}</td>
+  <td class="days-delay">${task.Delay !== null ? task.Delay : 0}</td>
+  <td class="delay-reason">${delayInput}</td>
+  <td class="actions">
+    <div class="button-container">
+      ${actionButton}
+      ${extraButtons}
+    </div>
+  </td>
+`;
+  tbody.appendChild(tr);
+});
 }
 
 function createAddTaskButton(processId) {
@@ -418,7 +419,6 @@ tbody.addEventListener('click', async (e) => {
             <p class="process-desc">${process.processDesc || ''}</p>
           `;
 
-          // Optional: clicking a process highlights it
           div.addEventListener('click', async function () {
             const processId = this.dataset.processId;
             if (activeProcessId === processId) return;

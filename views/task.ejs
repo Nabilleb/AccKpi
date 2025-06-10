@@ -40,6 +40,12 @@
       </div>
 
 <div class="form-group">
+  <label for="DaysRequired" class="required-field">Days Required</label>
+  <input type="number" id="DaysRequired" name="DaysRequired" required placeholder="Enter number of days" min="1">
+</div>
+
+
+<div class="form-group">
   <label for="PlannedDate">Planned Date</label>
   <input type="datetime-local" id="PlannedDate" name="PlannedDate"
     <%= isFirstTask ? '' : 'disabled' %> >

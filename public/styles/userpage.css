@@ -854,6 +854,40 @@ select:focus-visible {
   margin-top: 1.5rem;
 }
 
+/* Add these styles to your CSS */
+
+/* Days Required Cell */
+.editable-days {
+  padding: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background-color: var(--white);
+  width: 60px;
+  text-align: center;
+  font-size: 0.9rem;
+  transition: var(--transition);
+}
+
+.editable-days:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.2);
+}
+
+/* Static Days Display */
+.tasks-table td[data-days] {
+  text-align: center;
+  font-weight: 500;
+  color: var(--primary-dark);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .editable-days {
+    width: 50px;
+    padding: 0.35rem;
+  }
+}
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .tasks-table td:last-child {
@@ -865,4 +899,7 @@ select:focus-visible {
     width: 100%;
     justify-content: center;
   }
+}
+tbody{
+  text-align: center;
 }
