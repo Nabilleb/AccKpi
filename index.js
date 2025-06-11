@@ -994,6 +994,7 @@ WHERE
     AND PD.DepartmentID = @departmentId;
 
       `);
+      console.log(result.recordset)
     res.json(result.recordset);
   } catch (err) {
     console.error('Error fetching processes:', err);

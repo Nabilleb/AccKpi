@@ -513,6 +513,51 @@ button {
   display: inline-block;
 }
 
+/* Package Selection Styles */
+.package-selection {
+  background-color: var(--white);
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  margin-bottom: 2rem;
+}
+
+.package-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.package-card {
+  background-color: var(--primary-light);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 1rem;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.package-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.package-card.active {
+  border: 2px solid var(--primary);
+  background-color: var(--white);
+}
+
+.package-name {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--primary-dark);
+}
+
+.package-desc {
+  font-size: 0.9rem;
+  color: var(--text-light);
+}
+
 /* Table Action Buttons Container */
 .tasks-table td:last-child {
   display: flex;
@@ -776,6 +821,7 @@ select:focus-visible {
   background-color: #218838;
   transform: translateY(-1px);
 }
+
 
 .row-save-btn::before {
   content: "💾";

@@ -54,7 +54,14 @@
     <a href="#" data-id="5"><i class="fas fa-truck"></i> Logistics</a>
     <a href="#" data-id="6"><i class="fas fa-chart-bar"></i> Reports</a>
   </div>
-  
+  <section class="package-selection">
+      <h2 class="section-title">
+        <i class="fas fa-cube"></i>
+        Select Package
+      </h2>
+      <div class="package-grid">
+      </div>
+    </section>
   <main class="main-content">
     <section class="process-selection">
       <h2 class="section-title">
@@ -240,60 +247,81 @@ document.getElementById('project').addEventListener('change', async function () 
   const pkName = document.querySelector("#packageName");
   const proName = document.querySelector("#projectName");
 
-  if (selectedProjectId !== 'none') {
-    try {
-      const response = await fetch('/get-project-processes', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ projectId: selectedProjectId, departmentId: deptId }),
-      });
+  if (!selectedProjectId || selectedProjectId === 'none') {
+    pkName.textContent = 'N/A';
+    proName.textContent = 'N/A';
+    document.querySelector('.process-grid').innerHTML = '<p>Please select a project first.</p>';
+    document.querySelector('.package-grid').innerHTML = '';
+    return;
+  }
 
-      const data = await response.json();
-      if (data.length > 0) {
-        pkName.textContent = data[0].PkgeName || 'N/A';
-        proName.textContent = data[0].ProjectName || 'N/A';
-      }
+  try {
+    const response = await fetch('/get-project-processes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ projectId: selectedProjectId, departmentId: deptId }),
+    });
 
-      const processGrid = document.querySelector('.process-grid');
-      processGrid.innerHTML = '';
+    const data = await response.json();
 
-      if (data.length === 0) {
-        processGrid.innerHTML = '<p>No processes found for this project.</p>';
-        return;
-      }
+    const processGrid = document.querySelector('.process-grid');
+    const packageGrid = document.querySelector('.package-grid');
+    processGrid.innerHTML = '';
+    packageGrid.innerHTML = '';
 
-      data.forEach(process => {
-        const div = document.createElement('div');
-        div.classList.add('process-card');
-        div.dataset.processId = process.NumberOfProccessID || process.ProcessID || process.processID;
-
-        div.innerHTML = `
-          <h3 class="process-name">${process.ProcessName || ''}</h3>
-          <p class="process-desc">${process.processDesc || ''}</p>
-        `;
-
-        div.addEventListener('click', async function () {
-          const processId = this.dataset.processId;
-          if (activeProcessId === processId) return;
-
-          activeProcessId = processId;
-          document.querySelectorAll('.process-card').forEach(c => c.classList.remove('active'));
-          this.classList.add('active');
-
-          const res = await fetch(`/process/${processId}/tasks?userId=${userId}`);
-          const tasks = await res.json();
-          renderTasks(tasks);
-          createAddTaskButton(processId);
-        });
-
-        processGrid.appendChild(div);
-      });
-
-    } catch (error) {
-      console.error('Error fetching project data:', error);
+    if (data.length === 0) {
+      processGrid.innerHTML = '<p>No processes found for this project.</p>';
+      packageGrid.innerHTML = '<p>No packages found for this project.</p>';
+      pkName.textContent = 'N/A';
+      proName.textContent = 'N/A';
+      return;
     }
+
+    pkName.textContent = data[0].PkgeName || 'N/A';
+    proName.textContent = data[0].ProjectName || 'N/A';
+
+    const seenPackages = new Set();
+
+    data.forEach(item => {
+      if (!seenPackages.has(item.PkgeID)) {
+        seenPackages.add(item.PkgeID);
+
+        const pkgDiv = document.createElement('div');
+        pkgDiv.classList.add('package-card');
+        pkgDiv.innerHTML = `<h4>${item.PkgeName}</h4>`;
+        packageGrid.appendChild(pkgDiv);
+      }
+
+      const procDiv = document.createElement('div');
+      procDiv.classList.add('process-card');
+      procDiv.dataset.processId = item.NumberOfProccessID;
+      procDiv.innerHTML = `
+        <h3 class="process-name">${item.ProcessName || ''}</h3>
+        <p class="process-desc">${item.processDesc || ''}</p>
+      `;
+
+      procDiv.addEventListener('click', async function () {
+        const processId = this.dataset.processId;
+        if (activeProcessId === processId) return;
+
+        activeProcessId = processId;
+        document.querySelectorAll('.process-card').forEach(c => c.classList.remove('active'));
+        this.classList.add('active');
+
+        const res = await fetch(`/process/${processId}/tasks?userId=${userId}`);
+        const tasks = await res.json();
+        renderTasks(tasks);
+        createAddTaskButton(processId);
+      });
+
+      processGrid.appendChild(procDiv);
+    });
+
+  } catch (error) {
+    console.error('Error fetching project data:', error);
   }
 });
+
 
 tbody.addEventListener('click', async (e) => {
   const taskId = e.target.dataset.taskId;
