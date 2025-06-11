@@ -234,11 +234,10 @@ document.addEventListener('click', (e) => {
   }
 });
 
-// In your task row generation code
 row.innerHTML = `
   <td>${task.TaskName}</td>
   <td>${plannedDate}</td>
-  <td>-</td>
+  <td>${task.DaysRequired}</td>
   <td>${finishedDate}</td>
   <td>${status}</td>
   <td>${task.DelayReason || ""}</td>
@@ -259,10 +258,7 @@ document.addEventListener('click', async (e) => {
   if (e.target.closest('.delete-btn')) {
     const taskId = e.target.closest('.delete-btn').dataset.taskId;
     
-    // Confirm deletion
-    if (!confirm('Are you sure you want to delete this finished task?')) {
-      return;
-    }
+   
 
     try {
       const response = await fetch(`/delete-task/${taskId}`, {
@@ -270,7 +266,6 @@ document.addEventListener('click', async (e) => {
       });
       
       if (response.ok) {
-        alert('Task deleted successfully');
         refreshTasks(); 
       } else {
         const error = await response.json();

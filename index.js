@@ -149,6 +149,7 @@ app.get('/api/tasks/by-department/:departmentID', async (req, res) => {
     T.TaskID,
       T.TaskName,
       T.PlannedDate,
+      T.DaysRequired,
       W.TimeFinished AS DateFinished,
       W.DelayReason,
       W.Delay
@@ -630,56 +631,48 @@ app.get('/edit-task/:id', async (req, res) => {
   }
 });
 
-app.get('/can-delete-task/:id', async (req, res) => {
-  try {
-    const result = await pool
-      .request()
-      .input('TaskID', sql.Int, req.params.id)
-      .query('SELECT TimeFinished FROM tblWorkflow WHERE TaskID = @TaskID');
-    
-    res.json({ canDelete: !!result.recordset[0]?.TimeFinished });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Server Error' });
-  }
-});
 
-app.delete('/delete-task/:id', async (req, res) => {
-  try {
-    const checkResult = await pool
-      .request()
-      .input('TaskID', sql.Int, req.params.id)
-      .query('SELECT TimeFinished FROM tblWorkflow WHERE TaskID = @TaskID');
-    
-    if (!checkResult.recordset[0]?.TimeFinished) {
-      return res.status(403).json({ 
-        error: 'Only finished tasks can be deleted' 
-      });
-    }
 
+app.delete('/delete-task/:taskId', async (req, res) => {
+  const taskId = parseInt(req.params.taskId);
+
+  try {
+    const pool = await sql.connect();
     const transaction = new sql.Transaction(pool);
     await transaction.begin();
 
     try {
-      const workflowRequest = new sql.Request(transaction);
-      await workflowRequest
-        .input('TaskID', sql.Int, req.params.id)
-        .query('DELETE FROM tblWorkflow WHERE TaskID = @TaskID');
-      
-      const tasksRequest = new sql.Request(transaction);
-      await tasksRequest
-        .input('TaskID', sql.Int, req.params.id)
-        .query('DELETE FROM tblTasks WHERE TaskID = @TaskID');
-      
+      const request = transaction.request();
+      request.input('TaskID', sql.Int, taskId);
+
+      await request.query(`
+        UPDATE tblTasks
+        SET PredecessorID = NULL
+        WHERE PredecessorID = @TaskID
+      `);
+
+      await request.query(`
+        DELETE FROM tblWorkflow
+        WHERE TaskID = @TaskID
+      `);
+
+      await request.query(`
+        DELETE FROM tblTasks
+        WHERE TaskID = @TaskID
+      `);
+
       await transaction.commit();
-      res.sendStatus(200);
-    } catch (err) {
+      res.status(200).json({ message: 'Task and its workflows deleted successfully' });
+
+    } catch (error) {
       await transaction.rollback();
-      throw err;
+      console.error('Transaction error:', error);
+      res.status(500).json({ error: 'Failed to delete task and workflow due to task dependency' });
     }
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Failed to delete task' });
+
+  } catch (err) {
+    console.error('DB error:', err);
+    res.status(500).json({ error: 'Database connection failed' });
   }
 });
 
