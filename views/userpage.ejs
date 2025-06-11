@@ -112,15 +112,88 @@ const deptId = "<%= departmentID %>";
 const username = "<%=usrDesc%>"
 const tbody = document.querySelector('.tasks-table tbody');
 const navLinks = document.querySelectorAll('.main-nav a, .mobile-nav a');
-console.log(navLinks)
 let activeProcessId = null;
+let isLoading = false;
+let lastActivity = new Date();
+
+// Activity tracker to refresh tasks when inactive
+setInterval(() => {
+  if (new Date() - lastActivity > 300000) { 
+    if (activeProcessId) refreshTasks();
+  }
+}, 60000);
+
+// Track user activity
+document.addEventListener('mousemove', () => lastActivity = new Date());
+document.addEventListener('keydown', () => lastActivity = new Date());
+
+// Keyboard shortcut for refresh
+document.addEventListener('keydown', (e) => {
+  if (e.altKey && e.key === 'r') {
+    e.preventDefault();
+    refreshTasks();
+  }
+});
+
+function showLoading(show) {
+  const loader = document.getElementById('loading-overlay') || createLoadingOverlay();
+  loader.style.display = show ? 'flex' : 'none';
+  isLoading = show;
+}
+
+function createLoadingOverlay() {
+  const loader = document.createElement('div');
+  loader.id = 'loading-overlay';
+  loader.innerHTML = `
+    <div class="loading-spinner">
+      <div class="spinner"></div>
+      <p>Loading tasks...</p>
+    </div>
+  `;
+  document.body.appendChild(loader);
+  return loader;
+}
+
+// Enhanced error display
+function showError(message) {
+  const errorEl = document.getElementById('error-message') || createErrorElement();
+  errorEl.textContent = message;
+  errorEl.style.display = 'block';
+  setTimeout(() => errorEl.style.opacity = 1, 10);
+  
+  setTimeout(() => {
+    errorEl.style.opacity = 0;
+    setTimeout(() => errorEl.style.display = 'none', 300);
+  }, 5000);
+}
+
+function createErrorElement() {
+  const errorEl = document.createElement('div');
+  errorEl.id = 'error-message';
+  document.body.appendChild(errorEl);
+  return errorEl;
+}
 
 async function refreshTasks() {
-  if (!activeProcessId) return;
-  const res = await fetch(`/process/${activeProcessId}/tasks?userId=${userId}`);
-  const tasks = await res.json();
-  renderTasks(tasks);
-  createAddTaskButton(activeProcessId);
+  if (!activeProcessId || isLoading) return;
+  
+  try {
+    showLoading(true);
+    const res = await fetch(`/process/${activeProcessId}/tasks?userId=${userId}`);
+    
+    if (!res.ok) {
+      throw new Error(res.statusText);
+    }
+    
+    const tasks = await res.json();
+    renderTasks(tasks);
+    createAddTaskButton(activeProcessId);
+  } catch (err) {
+    console.error("Refresh error:", err);
+    showError("Failed to refresh tasks. Please try again.");
+  } finally {
+    showLoading(false);
+  }
 }
 
 function renderTasks(tasks) {
@@ -129,117 +202,186 @@ function renderTasks(tasks) {
   tbody.innerHTML = '';
 
   if (tasks.error) {
-    tbody.innerHTML = `<tr><td colspan="8" style="color: red; text-align: center;">${tasks.error}</td></tr>`;
+    tbody.innerHTML = `
+      <tr class="fade-in">
+        <td colspan="8" class="error-message">
+          <i class="fas fa-exclamation-circle"></i> ${tasks.error}
+        </td>
+      </tr>
+    `;
     return;
   }
 
   if (tasks.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="8" style="text-align: center;">No tasks found for this process.</td></tr>`;
+    tbody.innerHTML = `
+      <tr class="fade-in">
+        <td colspan="8" class="empty-message">
+          <i class="fas fa-info-circle"></i> No tasks found for this process.
+        </td>
+      </tr>
+    `;
     return;
   }
 
- tasks.forEach(task => {
-  const tr = document.createElement('tr');
-  const isOwnDepartment = task.DepId == deptId;
+  tasks.forEach((task, index) => {
+    const tr = document.createElement('tr');
+    tr.className = 'fade-in';
+    tr.style.animationDelay = `${index * 0.05}s`;
+    const isOwnDepartment = task.DepId == deptId;
 
-  let status = '';
-  if (!task.TimeFinished && task.IsTaskSelected) {
-    status = `<span class="status-badge status-pending">Pending</span>`;
-  } else if (task.TimeFinished && task.Delay > 0) {
-    status = `<span class="status-badge status-overdue">Overdue</span>`;
-  } else if (task.TimeFinished) {
-    status = `<span class="status-badge status-completed">Completed</span>`;
-  }
-
-  const plannedDate = task.PlannedDate ? task.PlannedDate.split('T')[0] : '';
-  const finishDate = task.TimeFinished ? task.TimeFinished.split('T')[0] : '';
-  const delayReason = task.DelayReason || '';
-  const delayInputDisabled = !isOwnDepartment || !(task.TimeFinished && task.Delay > 0) ? 'disabled' : '';
-
-  const delayInput = `
-    <input type="text" value="${delayReason}" class="delay-reason-input" data-task-id="${task.TaskID}" ${delayInputDisabled}>
-  `;
-  const taskPlannedCell = !task.isDateFixed && isOwnDepartment
-    ? `<td><input type="number" value="${task.DaysRequired}" class="editable-days" data-task-id="${task.TaskID}"></td>`
-    : `<td>${task.DaysRequired}</td>`;
-console.log(taskPlannedCell)
-  const plannedDateCell = `<td>${plannedDate}</td>`;
-
-  let actionButton = '';
-  if (isOwnDepartment && task.isTaskSelected) {
-    if (!task.TimeStarted) {
-      actionButton = `<button class="task-start-btn" data-task-id="${task.TaskID}">Start</button>`;
-    } else if (!task.TimeFinished) {
-      actionButton = `<button class="task-finish-btn" data-task-id="${task.TaskID}">Finish</button>`;
+    let status = '';
+    if (!task.TimeFinished && task.IsTaskSelected) {
+      status = `<span class="status-badge status-pending"><i class="fas fa-clock"></i> Pending</span>`;
+    } else if (task.TimeFinished && task.Delay > 0) {
+      status = `<span class="status-badge status-overdue"><i class="fas fa-exclamation-triangle"></i> Overdue</span>`;
+    } else if (task.TimeFinished) {
+      status = `<span class="status-badge status-completed"><i class="fas fa-check-circle"></i> Completed</span>`;
     }
-  }
 
-  let extraButtons = '';
-  if (isOwnDepartment) {
-    extraButtons = `
-      <button class="row-save-btn" data-task-id="${task.TaskID}">Save</button>
+    const plannedDate = task.PlannedDate ? task.PlannedDate.split('T')[0] : '';
+    const finishDate = task.TimeFinished ? task.TimeFinished.split('T')[0] : '';
+    const delayReason = task.DelayReason || '';
+    const delayInputDisabled = !isOwnDepartment || !(task.TimeFinished && task.Delay > 0) ? 'disabled' : '';
+
+    const delayInput = `
+      <input type="text" value="${delayReason}" class="delay-reason-input" data-task-id="${task.TaskID}" 
+        ${delayInputDisabled} placeholder="${delayInputDisabled ? '' : 'Enter delay reason...'}">
     `;
-  }
+    
+    const taskPlannedCell = !task.isDateFixed && isOwnDepartment
+      ? `<td><input type="number" min="1" value="${task.DaysRequired}" class="editable-days" data-task-id="${task.TaskID}"></td>`
+      : `<td>${task.DaysRequired}</td>`;
 
-tr.innerHTML = `
-  <td class="task-name">${task.TaskName || ''}</td>
-  <td class="task-description">${task.TaskPlanned || ''}</td>
-  <td class="planned-date">${plannedDate}</td>
-  <td class="days-required">${task.DaysRequired}</td>
-  <td class="date-finished">${finishDate}</td>
-  <td class="status">${status}</td>
-  <td class="days-delay">${task.Delay !== null ? task.Delay : 0}</td>
-  <td class="delay-reason">${delayInput}</td>
-  <td class="actions">
-    <div class="button-container">
-      ${actionButton}
-      ${extraButtons}
-    </div>
-  </td>
-`;
-  tbody.appendChild(tr);
-});
+    const plannedDateCell = `<td>${plannedDate}</td>`;
+
+    let actionButton = '';
+    if (isOwnDepartment && task.isTaskSelected) {
+      if (!task.TimeStarted) {
+        actionButton = `
+          <button class="task-start-btn" data-task-id="${task.TaskID}">
+            <i class="fas fa-play"></i> Start
+          </button>`;
+      } else if (!task.TimeFinished) {
+        actionButton = `
+          <button class="task-finish-btn" data-task-id="${task.TaskID}">
+            <i class="fas fa-flag-checkered"></i> Finish
+          </button>`;
+      }
+    }
+
+    let extraButtons = '';
+    if (isOwnDepartment) {
+      extraButtons = `
+        <button class="row-save-btn" data-task-id="${task.TaskID}">
+          <i class="fas fa-save"></i> Save
+        </button>
+      `;
+    }
+
+    tr.innerHTML = `
+      <td class="task-name">${task.TaskName || ''}</td>
+      <td class="task-description">${task.TaskPlanned || ''}</td>
+      <td class="planned-date">${plannedDate}</td>
+      <td class="days-required">${task.DaysRequired}</td>
+      <td class="date-finished">${finishDate}</td>
+      <td class="status">${status}</td>
+      <td class="days-delay">${task.Delay !== null ? task.Delay : 0}</td>
+      <td class="delay-reason">${delayInput}</td>
+      <td class="actions">
+        <div class="button-container">
+          ${actionButton}
+          ${extraButtons}
+        </div>
+      </td>
+    `;
+    
+    tbody.appendChild(tr);
+  });
 }
 
 function createAddTaskButton(processId) {
   let existingBtn = document.querySelector('.add-task-btn');
-  if (existingBtn) existingBtn.remove();
+  if (existingBtn) {
+    existingBtn.classList.add('fade-out');
+    setTimeout(() => existingBtn.remove(), 300);
+  }
 
   const button = document.createElement('button');
-  button.textContent = "➕ Add Task";
-  button.className = 'add-task-btn';
-  button.style.marginBottom = '10px';
+  button.className = 'add-task-btn tooltip';
+  button.innerHTML = `
+    <i class="fas fa-plus-circle"></i> Add New Task
+    <span class="pulse-animation"></span>
+    <span class="tooltip-text">Add a new task to this process (Ctrl+Shift+A)</span>
+  `;
+  
   button.onclick = () => {
-    window.location.href = `/add-task?DepartmentId=${deptId}`;
+    window.location.href = `/add-task?processId=${processId}&DepartmentId=${deptId}`;
   };
 
+  button.style.opacity = '0';
+  button.style.transform = 'translateY(20px)';
+  
   document.querySelector('.tasks-section').insertBefore(button, document.querySelector('.tasks-table'));
+  
+  setTimeout(() => {
+    button.style.opacity = '1';
+    button.style.transform = 'translateY(0)';
+  }, 50);
+
+  document.addEventListener('keydown', (e) => {
+    if (e.ctrlKey && e.shiftKey && e.key === 'A') {
+      e.preventDefault();
+      button.click();
+    }
+  });
 }
 
 document.querySelectorAll('.process-card').forEach(card => {
-  card.addEventListener('click', async function () {
+  card.addEventListener('click', async function() {
     const processId = this.dataset.processId;
-    if (activeProcessId === processId) return;
+    if (activeProcessId === processId || isLoading) return;
 
     activeProcessId = processId;
     document.querySelectorAll('.process-card').forEach(c => c.classList.remove('active'));
     this.classList.add('active');
+    this.classList.add('loading');
 
     try {
+      showLoading(true);
       const res = await fetch(`/process/${processId}/tasks?userId=${userId}`);
+      
+      if (!res.ok) {
+        throw new Error(res.statusText);
+      }
+      
       const tasks = await res.json();
       renderTasks(tasks);
       createAddTaskButton(processId);
     } catch (err) {
-      console.error("Network error:", err);
-      tbody.innerHTML = `<tr><td colspan="7" style="color: red; text-align: center;">Error loading tasks</td></tr>`;
+      console.error("Process load error:", err);
+      showError("Failed to load tasks for this process");
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="8" class="error-message">
+            <i class="fas fa-exclamation-circle"></i> Error loading tasks
+          </td>
+        </tr>
+      `;
       document.querySelector('.add-task-btn')?.remove();
+    } finally {
+      showLoading(false);
+      this.classList.remove('loading');
     }
   });
 });
 
-document.getElementById('project').addEventListener('change', async function () {
-  const selectedProjectId = this.value;
+let projectChangeTimeout;
+document.getElementById('project').addEventListener('change', function() {
+  clearTimeout(projectChangeTimeout);
+  projectChangeTimeout = setTimeout(() => handleProjectChange(this.value), 300);
+});
+
+async function handleProjectChange(selectedProjectId) {
   activeProcessId = null;
   tbody.innerHTML = '';
   document.querySelector('.add-task-btn')?.remove();
@@ -250,17 +392,22 @@ document.getElementById('project').addEventListener('change', async function () 
   if (!selectedProjectId || selectedProjectId === 'none') {
     pkName.textContent = 'N/A';
     proName.textContent = 'N/A';
-    document.querySelector('.process-grid').innerHTML = '<p>Please select a project first.</p>';
+    document.querySelector('.process-grid').innerHTML = '<p class="info-message"><i class="fas fa-info-circle"></i> Please select a project first.</p>';
     document.querySelector('.package-grid').innerHTML = '';
     return;
   }
 
   try {
+    showLoading(true);
     const response = await fetch('/get-project-processes', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ projectId: selectedProjectId, departmentId: deptId }),
     });
+
+    if (!response.ok) {
+      throw new Error(response.statusText);
+    }
 
     const data = await response.json();
 
@@ -270,8 +417,8 @@ document.getElementById('project').addEventListener('change', async function () 
     packageGrid.innerHTML = '';
 
     if (data.length === 0) {
-      processGrid.innerHTML = '<p>No processes found for this project.</p>';
-      packageGrid.innerHTML = '<p>No packages found for this project.</p>';
+      processGrid.innerHTML = '<p class="info-message"><i class="fas fa-info-circle"></i> No processes found for this project.</p>';
+      packageGrid.innerHTML = '<p class="info-message"><i class="fas fa-info-circle"></i> No packages found for this project.</p>';
       pkName.textContent = 'N/A';
       proName.textContent = 'N/A';
       return;
@@ -282,79 +429,105 @@ document.getElementById('project').addEventListener('change', async function () 
 
     const seenPackages = new Set();
 
-    data.forEach(item => {
-      if (!seenPackages.has(item.PkgeID)) {
-        seenPackages.add(item.PkgeID);
+    data.forEach((item, index) => {
+      setTimeout(() => {
+        if (!seenPackages.has(item.PkgeID)) {
+          seenPackages.add(item.PkgeID);
 
-        const pkgDiv = document.createElement('div');
-        pkgDiv.classList.add('package-card');
-        pkgDiv.innerHTML = `<h4>${item.PkgeName}</h4>`;
-        packageGrid.appendChild(pkgDiv);
-      }
+          const pkgDiv = document.createElement('div');
+          pkgDiv.classList.add('package-card', 'fade-in');
+          pkgDiv.innerHTML = `<h4>${item.PkgeName}</h4>`;
+          packageGrid.appendChild(pkgDiv);
+        }
 
-      const procDiv = document.createElement('div');
-      procDiv.classList.add('process-card');
-      procDiv.dataset.processId = item.NumberOfProccessID;
-      procDiv.innerHTML = `
-        <h3 class="process-name">${item.ProcessName || ''}</h3>
-        <p class="process-desc">${item.processDesc || ''}</p>
-      `;
+        const procDiv = document.createElement('div');
+        procDiv.classList.add('process-card', 'fade-in');
+        procDiv.dataset.processId = item.NumberOfProccessID;
+        procDiv.innerHTML = `
+          <h3 class="process-name">${item.ProcessName || ''}</h3>
+          <p class="process-desc">${item.processDesc || ''}</p>
+        `;
 
-      procDiv.addEventListener('click', async function () {
-        const processId = this.dataset.processId;
-        if (activeProcessId === processId) return;
+        procDiv.addEventListener('click', async function() {
+          const processId = this.dataset.processId;
+          if (activeProcessId === processId || isLoading) return;
 
-        activeProcessId = processId;
-        document.querySelectorAll('.process-card').forEach(c => c.classList.remove('active'));
-        this.classList.add('active');
+          activeProcessId = processId;
+          document.querySelectorAll('.process-card').forEach(c => c.classList.remove('active'));
+          this.classList.add('active');
+          this.classList.add('loading');
 
-        const res = await fetch(`/process/${processId}/tasks?userId=${userId}`);
-        const tasks = await res.json();
-        renderTasks(tasks);
-        createAddTaskButton(processId);
-      });
+          try {
+            showLoading(true);
+            const res = await fetch(`/process/${processId}/tasks?userId=${userId}`);
+            const tasks = await res.json();
+            renderTasks(tasks);
+            createAddTaskButton(processId);
+          } catch (err) {
+            console.error("Process load error:", err);
+            showError("Failed to load tasks for this process");
+          } finally {
+            showLoading(false);
+            this.classList.remove('loading');
+          }
+        });
 
-      processGrid.appendChild(procDiv);
+        processGrid.appendChild(procDiv);
+      }, index * 50);
     });
 
   } catch (error) {
-    console.error('Error fetching project data:', error);
+    console.error('Project data error:', error);
+    showError("Failed to load project data");
+  } finally {
+    showLoading(false);
   }
-});
-
+}
 
 tbody.addEventListener('click', async (e) => {
+  e.preventDefault();
+  if (isLoading) return;
+
   const taskId = e.target.dataset.taskId;
   const row = e.target.closest('tr');
 
+  // === Save Button ===
   if (e.target.classList.contains('row-save-btn')) {
-    const delayInput = row.querySelector('.delay-reason-input');
-    const dateInput = row.querySelector('.editable-date');
-
-    const updates = [];
-
-    if (delayInput && !delayInput.disabled) {
-      updates.push({
-        taskId,
-        field: 'delayReason',
-        value: delayInput.value,
-        usrID: userId
-      });
-    } else if (delayInput && delayInput.value.trim() !== '') {
-      alert("You can only enter a delay reason after finishing an overdue task.");
-      return;
-    }
-
-    if (dateInput) {
-      updates.push({
-        taskId,
-        field: 'plannedDate',
-        value: dateInput.value,
-        usrID: userId
-      });
-    }
+    const originalHTML = e.target.innerHTML;
 
     try {
+      const delayInput = row.querySelector('.delay-reason-input');
+      const daysInput = row.querySelector('.editable-days');
+      const updates = [];
+
+      if (delayInput && !delayInput.disabled && delayInput.value.trim() !== '') {
+        updates.push({
+          taskId,
+          field: 'delayReason',
+          value: delayInput.value,
+          usrID: userId
+        });
+      } else if (delayInput && delayInput.value.trim() !== '') {
+        showError("You can only enter a delay reason for overdue tasks");
+        return;
+      }
+
+      if (daysInput) {
+        updates.push({
+          taskId,
+          field: 'daysRequired',
+          value: daysInput.value,
+          usrID: userId
+        });
+      }
+
+      if (updates.length === 0) {
+        showError("No changes to save");
+        return;
+      }
+
+      e.target.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
       const res = await fetch('/save-task-updates', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -363,47 +536,84 @@ tbody.addEventListener('click', async (e) => {
 
       const data = await res.json();
       if (res.ok) {
-        alert('Row saved successfully');
+        showError('Changes saved successfully');
+        refreshTasks();
       } else {
-        alert(`Error: ${data.error}`);
+        throw new Error(data.error || 'Save failed');
       }
     } catch (err) {
-      console.error('Row save error:', err);
-      alert('Failed to save row');
+      console.error('Save error:', err);
+      showError(err.message);
+    } finally {
+      e.target.innerHTML = originalHTML;
     }
   }
 
+  // === Edit Button ===
   if (e.target.classList.contains('edit-task-btn')) {
     window.location.href = `/edit-task/${taskId}`;
   }
 
+  // === Start Button ===
   if (e.target.classList.contains('task-start-btn')) {
-    const now = new Date().toISOString();
-    await fetch(`/start-task/${taskId}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ startTime: now })
-    });
-    refreshTasks();
+    if (!confirm('Are you sure you want to start this task?')) return;
+
+    const originalHTML = e.target.innerHTML;
+
+    try {
+      e.target.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Starting...';
+
+      const now = new Date().toISOString();
+      await fetch(`/start-task/${taskId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ startTime: now })
+      });
+
+      refreshTasks();
+    } catch (err) {
+      console.error('Start error:', err);
+      showError("Failed to start task");
+    } finally {
+      e.target.innerHTML = originalHTML;
+    }
   }
 
+  // === Finish Button ===
   if (e.target.classList.contains('task-finish-btn')) {
-    const now = new Date().toISOString();
-    await fetch(`/finish-task/${taskId}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ finishTime: now })
-    });
-    refreshTasks();
-  }
+    if (!confirm('Are you sure you want to mark this task as finished?')) return;
 
+    const originalHTML = e.target.innerHTML;
+
+    try {
+      e.target.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Finishing...';
+
+      const now = new Date().toISOString();
+      await fetch(`/finish-task/${taskId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ finishTime: now })
+      });
+
+      refreshTasks();
+    } catch (err) {
+      console.error('Finish error:', err);
+      showError("Failed to finish task");
+    } finally {
+      e.target.innerHTML = originalHTML;
+    }
+  }
 });
 
 
-    navLinks.forEach(link => {
+
+// Enhanced department navigation
+navLinks.forEach(link => {
   link.addEventListener('click', async (e) => {
     e.preventDefault();
 
+    if (isLoading) return;
+    
     const departmentId = link.dataset.id;
     const projectId = document.getElementById('project').value;
     activeProcessId = null;
@@ -411,16 +621,25 @@ tbody.addEventListener('click', async (e) => {
     document.querySelector('.add-task-btn')?.remove();
 
     if (!projectId || projectId === 'none') {
-      alert("Please select a project first.");
+      showError("Please select a project first.");
       return;
     }
 
     try {
+      showLoading(true);
+      navLinks.forEach(l => l.classList.remove('active'));
+      link.classList.add('active');
+      link.classList.add('loading');
+
       const response = await fetch('/get-project-processes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ projectId, departmentId })
       });
+
+      if (!response.ok) {
+        throw new Error(response.statusText);
+      }
 
       const data = await response.json();
       const pkName = document.querySelector("#packageName");
@@ -435,33 +654,45 @@ tbody.addEventListener('click', async (e) => {
       processGrid.innerHTML = '';
 
       if (data.length === 0) {
-        processGrid.innerHTML = '<p>No processes found for this department in this project.</p>';
+        processGrid.innerHTML = '<p class="info-message"><i class="fas fa-info-circle"></i> No processes found for this department.</p>';
       } else {
-        data.forEach(process => {
-          const div = document.createElement('div');
-          div.classList.add('process-card');
-          div.dataset.processId = process.NumberOfProccessID || process.ProcessID || process.processID;
+        data.forEach((process, index) => {
+          setTimeout(() => {
+            const div = document.createElement('div');
+            div.classList.add('process-card', 'fade-in');
+            div.dataset.processId = process.NumberOfProccessID || process.ProcessID || process.processID;
 
-          div.innerHTML = `
-            <h3 class="process-name">${process.ProcessName || ''}</h3>
-            <p class="process-desc">${process.processDesc || ''}</p>
-          `;
+            div.innerHTML = `
+              <h3 class="process-name">${process.ProcessName || ''}</h3>
+              <p class="process-desc">${process.processDesc || ''}</p>
+            `;
 
-          div.addEventListener('click', async function () {
-            const processId = this.dataset.processId;
-            if (activeProcessId === processId) return;
+            div.addEventListener('click', async function() {
+              const processId = this.dataset.processId;
+              if (activeProcessId === processId || isLoading) return;
 
-            activeProcessId = processId;
-            document.querySelectorAll('.process-card').forEach(c => c.classList.remove('active'));
-            this.classList.add('active');
+              activeProcessId = processId;
+              document.querySelectorAll('.process-card').forEach(c => c.classList.remove('active'));
+              this.classList.add('active');
+              this.classList.add('loading');
 
-            const res = await fetch(`/process/${processId}/tasks?userId=${userId}`);
-            const tasks = await res.json();
-            renderTasks(tasks);
-            createAddTaskButton(processId);
-          });
+              try {
+                showLoading(true);
+                const res = await fetch(`/process/${processId}/tasks?userId=${userId}`);
+                const tasks = await res.json();
+                renderTasks(tasks);
+                createAddTaskButton(processId);
+              } catch (err) {
+                console.error("Process load error:", err);
+                showError("Failed to load tasks");
+              } finally {
+                showLoading(false);
+                this.classList.remove('loading');
+              }
+            });
 
-          processGrid.appendChild(div);
+            processGrid.appendChild(div);
+          }, index * 50);
         });
       }
 
@@ -470,11 +701,125 @@ tbody.addEventListener('click', async (e) => {
       renderTasks(tasks);
 
     } catch (err) {
-      console.error("Error loading processes or tasks:", err);
+      console.error("Department load error:", err);
+      showError("Failed to load department data");
+    } finally {
+      showLoading(false);
+      link.classList.remove('loading');
     }
   });
 });
 
+// Initialize the UI
+document.addEventListener('DOMContentLoaded', () => {
+  // Add CSS for new elements
+  const style = document.createElement('style');
+  style.textContent = `
+    #loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(255,255,255,0.8);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    .loading-spinner {
+      text-align: center;
+    }
+    .spinner {
+      border: 5px solid #f3f3f3;
+      border-top: 5px solid #3498db;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 15px;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    #error-message {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #ff4444;
+      color: white;
+      padding: 15px 20px;
+      border-radius: 5px;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+      display: none;
+      opacity: 0;
+      transition: opacity 0.3s;
+      z-index: 1000;
+    }
+    .error-message, .empty-message, .info-message {
+      padding: 10px;
+      text-align: center;
+    }
+    .error-message {
+      color: #d32f2f;
+    }
+    .empty-message {
+      color: #757575;
+    }
+    .info-message {
+      color: #1976d2;
+    }
+    .fade-in {
+      animation: fadeIn 0.3s ease-in;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .process-card.loading {
+      position: relative;
+      color: transparent;
+    }
+    .process-card.loading:after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(0,0,0,0.1);
+      border-top-color: #3498db;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    .tooltip {
+      position: relative;
+    }
+    .tooltip .tooltip-text {
+      visibility: hidden;
+      width: 200px;
+      background-color: #333;
+      color: #fff;
+      text-align: center;
+      border-radius: 6px;
+      padding: 5px;
+      position: absolute;
+      z-index: 1;
+      bottom: 125%;
+      left: 50%;
+      transform: translateX(-50%);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .tooltip:hover .tooltip-text {
+      visibility: visible;
+      opacity: 1;
+    }
+  `;
+  document.head.appendChild(style);
+});
 </script>
 
 
