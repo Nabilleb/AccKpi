@@ -255,6 +255,39 @@ app.get('/userpage', ensureAuthenticated, async (req, res) => {
     }
 });
 
+app.get('/api/tasks/my-department', async (req, res) => {
+  try {
+    const userId = req.session.user?.usrID || req.query.userId; // fallback if no session
+    if (!userId) return res.status(400).json({ error: 'No user ID' });
+
+    const pool = await sql.connect(config);
+
+    // Get user's department
+    const userResult = await pool.request()
+      .input('userId', sql.Int, userId)
+      .query('SELECT DepartmentID FROM tblUsers WHERE usrID = @userId');
+
+    const departmentId = userResult.recordset[0]?.DepartmentID;
+    if (!departmentId) return res.status(404).json({ error: 'Department not found' });
+
+    // Get tasks from that department
+    const taskResult = await pool.request()
+      .input('DepId', sql.Int, departmentId)
+      .query(`
+        SELECT TaskName, TaskPlanned, Priority
+        FROM tblTasks
+        WHERE DepId = @DepId
+        ORDER BY Priority ASC
+      `);
+
+    res.json(taskResult.recordset);
+  } catch (err) {
+    console.error('❌ Error fetching tasks:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+
 
 app.get('/process/:processId/tasks', async (req, res) => {
   const processId = req.params.processId;
@@ -598,6 +631,35 @@ else{
     res.status(500).send('Failed to add task');
   }
 });
+
+app.get('/task-selected', async (req, res) => {
+  const { processId, DepartmentId } = req.query;
+
+  try {
+    const pool = await sql.connect(config);
+
+    const result = await pool.request()
+      .input('processId', sql.Int, processId)
+      .input('DepartmentId', sql.Int, DepartmentId)
+      .query(`
+        SELECT  T.TaskName, T.TaskPlanned, T.Priority, T.PlannedDate
+        FROM tblTasks T
+        INNER JOIN tblProcessDepartment PD ON PD.DepartmentID = T.DepId
+          AND T.DepId = @DepartmentId
+          AND PD.ProcessID = @processId
+        ORDER BY T.Priority ASC
+      `);
+console.log(result.recordset)
+ res.render("selectTask.ejs", {tasks:result.recordset})
+
+
+  } catch (err) {
+    console.error('❌ Error loading selected task:', err);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+
 
 app.get('/edit-task/:id', async (req, res) => {
   const taskId = req.params.id;
@@ -1337,18 +1399,33 @@ app.post('/api/tasks/switch-details', async (req, res) => {
   try {
     const pool = await sql.connect(config);
 
+    // Fetch planned date and other swappable fields for both tasks
     const taskA = await pool.request()
       .input('taskIdA', sql.Int, taskIdA)
-      .query('SELECT IsTaskSelected, IsDateFixed, Priority, PredecessorID FROM tblTasks WHERE TaskID = @taskIdA');
+      .query(`
+        SELECT PlannedDate, IsTaskSelected, IsDateFixed, Priority, PredecessorID
+        FROM tblTasks WHERE TaskID = @taskIdA
+      `);
 
     const taskB = await pool.request()
       .input('taskIdB', sql.Int, taskIdB)
-      .query('SELECT IsTaskSelected, IsDateFixed, Priority, PredecessorID FROM tblTasks WHERE TaskID = @taskIdB');
+      .query(`
+        SELECT PlannedDate, IsTaskSelected, IsDateFixed, Priority, PredecessorID
+        FROM tblTasks WHERE TaskID = @taskIdB
+      `);
 
     const a = taskA.recordset[0];
     const b = taskB.recordset[0];
 
-    // Update Task A with B's swappable fields
+    // Check if either task has a planned date
+    if (a.PlannedDate || b.PlannedDate) {
+      return res.status(400).json({
+        success: false,
+        message: "Swap not allowed: one or both tasks already have a PlannedDate."
+      });
+    }
+
+    // Swap fields
     await pool.request()
       .input('taskIdA', sql.Int, taskIdA)
       .input('IsTaskSelected', sql.Bit, b.IsTaskSelected)
@@ -1364,7 +1441,6 @@ app.post('/api/tasks/switch-details', async (req, res) => {
         WHERE TaskID = @taskIdA
       `);
 
-    // Update Task B with A's swappable fields
     await pool.request()
       .input('taskIdB', sql.Int, taskIdB)
       .input('IsTaskSelected', sql.Bit, a.IsTaskSelected)
@@ -1380,9 +1456,11 @@ app.post('/api/tasks/switch-details', async (req, res) => {
         WHERE TaskID = @taskIdB
       `);
 
-    res.json({ success: true, message: "Task fields swapped." });
+    res.json({ success: true, message: "Task fields swapped successfully." });
+
   } catch (err) {
     console.error("❌ Error swapping task fields:", err);
     res.status(500).json({ success: false, error: err.message });
   }
 });
+

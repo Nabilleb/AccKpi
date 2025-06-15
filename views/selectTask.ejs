@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Department Tasks</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #f4f4f4;
+    }
+    h1 {
+      color: #333;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      background: #fff;
+    }
+    th, td {
+      padding: 12px;
+      border: 1px solid #ccc;
+      text-align: left;
+    }
+    th {
+      background-color: #007bff;
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Your Department's Tasks</h1>
+
+  <table id="taskTable">
+    <thead>
+      <tr>
+        <th>Task Name</th>
+        <th>Task Description</th>
+        <th>Priority</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% if (tasks.length === 0) { %>
+        <tr><td colspan="3">No tasks found.</td></tr>
+      <% } else { %>
+        <% tasks.forEach(task => { %>
+          <tr>
+            <td><%= task.TaskName %></td>
+            <td><%= task.TaskPlanned %></td>
+            <td><%= task.Priority %></td>
+          </tr>
+        <% }); %>
+      <% } %>
+    </tbody>
+  </table>
+
+  <br>
+  <a href="/userpage">⬅ Back</a>
+
+</body>
+</html>

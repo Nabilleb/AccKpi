@@ -116,7 +116,6 @@ let activeProcessId = null;
 let isLoading = false;
 let lastActivity = new Date();
 
-// Activity tracker to refresh tasks when inactive
 setInterval(() => {
   if (new Date() - lastActivity > 300000) { 
     if (activeProcessId) refreshTasks();
@@ -306,17 +305,17 @@ function createAddTaskButton(processId) {
     setTimeout(() => existingBtn.remove(), 300);
   }
 
-  const button = document.createElement('button');
-  button.className = 'add-task-btn tooltip';
-  button.innerHTML = `
-    <i class="fas fa-plus-circle"></i> Add New Task
-    <span class="pulse-animation"></span>
-    <span class="tooltip-text">Add a new task to this process (Ctrl+Shift+A)</span>
-  `;
-  
-  button.onclick = () => {
-    window.location.href = `/add-task?processId=${processId}&DepartmentId=${deptId}`;
-  };
+ const button = document.createElement('button');
+button.className = 'add-task-btn tooltip';
+button.innerHTML = `
+  <i class="fas fa-tasks"></i> View Selected Task
+  <span class="pulse-animation"></span>
+  <span class="tooltip-text">Go to the current active task in this process</span>
+`;
+
+button.onclick = () => {
+  window.location.href = `/task-selected?processId=${processId}&DepartmentId=${deptId}`;
+};
 
   button.style.opacity = '0';
   button.style.transform = 'translateY(20px)';
@@ -549,12 +548,10 @@ tbody.addEventListener('click', async (e) => {
     }
   }
 
-  // === Edit Button ===
   if (e.target.classList.contains('edit-task-btn')) {
     window.location.href = `/edit-task/${taskId}`;
   }
 
-  // === Start Button ===
   if (e.target.classList.contains('task-start-btn')) {
     if (!confirm('Are you sure you want to start this task?')) return;
 
@@ -607,7 +604,6 @@ tbody.addEventListener('click', async (e) => {
 
 
 
-// Enhanced department navigation
 navLinks.forEach(link => {
   link.addEventListener('click', async (e) => {
     e.preventDefault();

@@ -218,6 +218,76 @@ body {
     width: 100%;
 }
 
+/* Add these to your existing login.css */
+.password-wrapper {
+    position: relative;
+}
+
+.toggle-password {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: #666;
+}
+
+.toggle-password:hover {
+    color: #333;
+}
+
+/* Loading spinner */
+.spinner {
+    margin-left: 8px;
+}
+
+/* Toast notifications */
+.toast {
+    visibility: hidden;
+    min-width: 250px;
+    margin-left: -125px;
+    background-color: #333;
+    color: #fff;
+    text-align: center;
+    border-radius: 4px;
+    padding: 16px;
+    position: fixed;
+    z-index: 1;
+    left: 50%;
+    bottom: 30px;
+    font-size: 14px;
+    opacity: 0;
+    transition: opacity 0.3s, visibility 0.3s;
+}
+
+.toast.show {
+    visibility: visible;
+    opacity: 1;
+}
+
+.toast.success {
+    background-color: #4CAF50;
+}
+
+.toast.error {
+    background-color: #f44336;
+}
+
+/* Button states */
+.login-button:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+}
+
+/* Input validation */
+input:invalid {
+    border-color: #ff4444;
+}
+
+input:focus:invalid {
+    box-shadow: 0 0 5px rgba(255, 68, 68, 0.5);
+}
+
 /* ==================== */
 /* Subtle Animations */
 /* ==================== */

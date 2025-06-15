@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Engineering Portal Sign-In</title>
     <link rel="stylesheet" href="/styles/login.css">
+    <!-- Add Font Awesome for better icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
     <div class="login-container">
@@ -14,33 +16,42 @@
             <p>Precision. Innovation. Efficiency.</p>
         </div>
 
-      <form method="POST" action="/login">
+        <form id="loginForm" method="POST" action="/login">
             <div class="input-group">
                 <label for="username">Username / Email</label>
-                <input type="text" id="username" placeholder="e.g., john.doe@domain.com" name="username" required>
+                <input type="text" id="username" placeholder="e.g., john.doe@domain.com" name="username" required autocomplete="username">
             </div>
 
             <div class="input-group">
                 <label for="password">Password</label>
                 <div class="password-wrapper">
-                  <input type="password" id="password" placeholder="••••••••••••" name="password" required>
-                  <span class="toggle-password">
-                    <i class="eye-icon">👁️</i> 
-                  </span>
+                    <input type="password" id="password" placeholder="••••••••••••" name="password" required autocomplete="current-password">
+                    <span class="toggle-password">
+                        <i class="fas fa-eye"></i>
+                        <i class="fas fa-eye-slash" style="display: none;"></i>
+                    </span>
                 </div>
-                <span class="password-note">🔒 Passwords are case-sensitive</span>
-              </div>
+                <span class="password-note"><i class="fas fa-lock"></i> Passwords are case-sensitive</span>
+            </div>
 
             <div class="options">
-                <button type="submit" class="login-button">Sign In</button>
+                <button type="submit" class="login-button" id="loginButton">
+                    <span class="button-text">Sign In</span>
+                    <span class="spinner" style="display: none;">
+                        <i class="fas fa-spinner fa-spin"></i>
+                    </span>
+                </button>
             </div>
         </form>
 
         <div class="login-footer">
-            <a href="#">Forgot Password?</a>            
-            <a href="#">Contact IT Support</a>
+            <a href="/forgot-password">Forgot Password?</a>            
+            <a href="mailto:ITSupport@domain.com">Contact IT Support</a>
         </div>
     </div>
+
+    <!-- Toast notification container -->
+    <div id="toast" class="toast"></div>
 </body>
 <script src="/js/script.js"></script>
 </html>

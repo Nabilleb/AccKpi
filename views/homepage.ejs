@@ -93,6 +93,7 @@
       </div>
 
       <h3 id="activityTitle" class="section-title"><i class="fas fa-clipboard-list"></i> Procurement Activities</h3>
+      <input type="text" id="taskSearchInput" placeholder="Search tasks..." style="margin: 10px 0; padding: 6px; width: 100%; max-width: 300px;">
       <table>
         <thead>
           <tr>
@@ -114,6 +115,63 @@
 
 <script>
   document.addEventListener('DOMContentLoaded', () => {
+    // Toast notification function
+    function showToast(message, type = 'success') {
+      const toast = document.createElement('div');
+      toast.className = `toast-notification toast-${type}`;
+      toast.textContent = message;
+      document.body.appendChild(toast);
+      
+      // Animation for toast entry
+      setTimeout(() => {
+        toast.style.opacity = '1';
+        toast.style.transform = 'translateY(0)';
+      }, 10);
+      
+      // Auto-remove after 3 seconds
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(-20px)';
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+
+    // Search functionality
+    const searchInput = document.createElement('input');
+    searchInput.type = 'text';
+    searchInput.placeholder = 'Search tasks...';
+    searchInput.id = 'taskSearch';
+    searchInput.style.margin = '10px 0';
+    searchInput.style.padding = '8px';
+    searchInput.style.width = '100%';
+    searchInput.style.borderRadius = '4px';
+    searchInput.style.border = '1px solid #ddd';
+    
+    // Insert search input before the table
+    const table = document.querySelector('table');
+    if (table) {
+      table.parentNode.insertBefore(searchInput, table);
+    }
+
+    searchInput.addEventListener('input', (e) => {
+      const searchTerm = e.target.value.toLowerCase();
+      const rows = document.querySelectorAll('tbody tr');
+      
+      rows.forEach(row => {
+        const taskName = row.querySelector('td:first-child').textContent.toLowerCase();
+        const delayReason = row.querySelector('td:nth-child(6)').textContent.toLowerCase();
+        
+        if (taskName.includes(searchTerm) || delayReason.includes(searchTerm)) {
+          row.style.display = '';
+          // Add highlight animation
+          row.style.animation = 'highlight 0.5s';
+          setTimeout(() => row.style.animation = '', 500);
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    });
+
     const projectSelect = document.getElementById('projectSelect');
     const mobileNavToggle = document.getElementById('mobileNavToggle');
     const mobileNav = document.getElementById('mobileNav');
@@ -124,6 +182,7 @@
     if (projectSelect) {
       projectSelect.addEventListener('change', function () {
         localStorage.setItem('selectedProject', this.value);
+        showToast('Project selection saved', 'info');
       });
 
       const savedProject = localStorage.getItem('selectedProject');
@@ -135,11 +194,21 @@
     if (mobileNavToggle && mobileNav) {
       mobileNavToggle.addEventListener('click', () => {
         mobileNav.classList.toggle('active');
+        // Smooth animation for mobile nav
+        if (mobileNav.classList.contains('active')) {
+          mobileNav.style.maxHeight = mobileNav.scrollHeight + 'px';
+        } else {
+          mobileNav.style.maxHeight = '0';
+        }
       });
     }
 
     function refreshTasks() {
       if (currentDepartmentID) {
+        // Add loading animation
+        const tbody = document.querySelector("tbody");
+        tbody.innerHTML = '<tr class="loading-row"><td colspan="7"><div class="loading-spinner"></div></td></tr>';
+        
         fetchDepartmentTasks(currentDepartmentID);
       } else {
         console.warn("⚠ No department selected.");
@@ -153,37 +222,45 @@
         const departmentID = link.dataset.id;
         currentDepartmentID = departmentID;
 
-        activityTitle.innerHTML = `<i class="fas fa-clipboard-list"></i> ${departmentName} Activities`;
+        // Add animation to title change
+        activityTitle.style.opacity = '0';
+        setTimeout(() => {
+          activityTitle.innerHTML = `<i class="fas fa-clipboard-list"></i> ${departmentName} Activities`;
+          activityTitle.style.opacity = '1';
+        }, 300);
 
+        showToast(`Loading ${departmentName} tasks...`, 'info');
         refreshTasks();
       });
     });
-document.addEventListener('click', async (e) => {
-  if (e.target.closest('.delete-btn')) {
-    const taskId = e.target.closest('.delete-btn').dataset.taskId;
-    
-    if (!confirm('Are you sure you want to delete this finished task?')) {
-      return;
-    }
 
-    try {
-      const response = await fetch(`/delete-task/${taskId}`, {
-        method: 'DELETE'
-      });
-      
-      if (response.ok) {
-        alert('Task deleted successfully');
-        refreshTasks(); 
-      } else {
-        const error = await response.json();
-        alert(error.error || 'Failed to delete task');
+    document.addEventListener('click', async (e) => {
+      if (e.target.closest('.delete-btn')) {
+        const taskId = e.target.closest('.delete-btn').dataset.taskId;
+        
+        if (!confirm('Are you sure you want to delete this finished task?')) {
+          return;
+        }
+
+        try {
+          const response = await fetch(`/delete-task/${taskId}`, {
+            method: 'DELETE'
+          });
+          
+          if (response.ok) {
+            showToast('Task deleted successfully');
+            refreshTasks(); 
+          } else {
+            const error = await response.json();
+            showToast(error.error || 'Failed to delete task', 'error');
+          }
+        } catch (err) {
+          console.error('Delete error:', err);
+          showToast('Network error - please try again', 'error');
+        }
       }
-    } catch (err) {
-      console.error('Delete error:', err);
-      alert('Network error - please try again');
-    }
-  }
-});
+    });
+
     function fetchDepartmentTasks(departmentID) {
       fetch(`/api/tasks/by-department/${departmentID}`)
         .then(res => res.json())
@@ -191,8 +268,16 @@ document.addEventListener('click', async (e) => {
           const tbody = document.querySelector("tbody");
           tbody.innerHTML = "";
 
+          if (data.length === 0) {
+            tbody.innerHTML = '<tr class="no-tasks"><td colspan="7">No tasks found for this department</td></tr>';
+            return;
+          }
+
           data.forEach((task, index) => {
             const row = document.createElement("tr");
+            row.style.opacity = '0';
+            row.style.transform = 'translateY(20px)';
+            row.style.transition = `opacity 0.3s ease, transform 0.3s ease ${index * 0.05}s`;
 
             const plannedDate = task.PlannedDate
               ? new Date(task.PlannedDate).toISOString().split("T")[0]
@@ -207,76 +292,25 @@ document.addEventListener('click', async (e) => {
                 ? `<span class="status-badge status-delayed">Delayed ${task.Delay} day(s)</span>`
                 : `<span class="status-badge status-on-time">On time</span>`;
 
- row.innerHTML = `
-  <td>${task.TaskName}</td>
-  <td>${plannedDate}</td>
-  <td>-</td>
-  <td>${finishedDate}</td>
-  <td>${status}</td>
-  <td>${task.DelayReason || ""}</td>
-  <td class="action-buttons">
-    ${!task.DateFinished ? 
-      `<button class="edit-btn" data-task-id="${task.TaskID}">
-        <i class="fas fa-edit"></i> Edit
-      </button>` : ''}
-    
-    ${task.DateFinished ? 
-      `<button class="delete-btn" data-task-id="${task.TaskID}">
-        <i class="fas fa-trash-alt"></i> Delete
-      </button>` : ''}
-  </td>
-`;
-
-document.addEventListener('click', (e) => {
-  if (e.target.closest('.edit-btn')) {
-    const taskId = e.target.closest('.edit-btn').dataset.taskId;
-    window.location.href = `/edit-task/${taskId}`;
-  }
-});
-
-row.innerHTML = `
-  <td>${task.TaskName}</td>
-  <td>${plannedDate}</td>
-  <td>${task.DaysRequired}</td>
-  <td>${finishedDate}</td>
-  <td>${status}</td>
-  <td>${task.DelayReason || ""}</td>
-  <td class="action-buttons">
-    ${!task.DateFinished ? 
-      `<button class="edit-btn" data-task-id="${task.TaskID}">
-        <i class="fas fa-edit"></i> Edit
-      </button>` : ''}
-    
-    ${task.DateFinished ? 
-      `<button class="delete-btn" data-task-id="${task.TaskID}">
-        <i class="fas fa-trash-alt"></i> Delete
-      </button>` : ''}
-  </td>
-`;
-
-document.addEventListener('click', async (e) => {
-  if (e.target.closest('.delete-btn')) {
-    const taskId = e.target.closest('.delete-btn').dataset.taskId;
-    
-   
-
-    try {
-      const response = await fetch(`/delete-task/${taskId}`, {
-        method: 'DELETE'
-      });
-      
-      if (response.ok) {
-        refreshTasks(); 
-      } else {
-        const error = await response.json();
-        alert(error.error || 'Failed to delete task');
-      }
-    } catch (err) {
-      console.error('Delete error:', err);
-      alert('Network error - please try again');
-    }
-  }
-});
+            row.innerHTML = `
+              <td>${task.TaskName}</td>
+              <td>${plannedDate}</td>
+              <td>${task.DaysRequired}</td>
+              <td>${finishedDate}</td>
+              <td>${status}</td>
+              <td>${task.DelayReason || ""}</td>
+              <td class="action-buttons">
+                ${!task.DateFinished ? 
+                  `<button class="edit-btn" data-task-id="${task.TaskID}">
+                    <i class="fas fa-edit"></i> Edit
+                  </button>` : ''}
+                
+                ${task.DateFinished ? 
+                  `<button class="delete-btn" data-task-id="${task.TaskID}">
+                    <i class="fas fa-trash-alt"></i> Delete
+                  </button>` : ''}
+              </td>
+            `;
 
             row.setAttribute("draggable", true);
             row.setAttribute("data-finished", task.DateFinished ? "true" : "false");
@@ -292,13 +326,14 @@ document.addEventListener('click', async (e) => {
             if (task.IsTaskSelected) {
               row.classList.add("active-task");
             }
+            
             row.addEventListener("dragstart", (e) => {
               const isFinished = row.getAttribute("data-finished") === "true";
               const delay = parseInt(row.getAttribute("data-delay"));
 
               if (isFinished || delay > 0) {
                 e.preventDefault();
-                console.log("❌ Drag prevented: Finished or delayed task");
+                showToast('Cannot drag finished or delayed tasks', 'warning');
               } else {
                 e.dataTransfer.setData("text/taskID", task.TaskID);
                 e.dataTransfer.setData("text/taskName", task.TaskName);
@@ -339,11 +374,13 @@ document.addEventListener('click', async (e) => {
         })
         .catch(err => {
           console.error("❌ Error fetching tasks:", err);
+          showToast('Failed to load tasks', 'error');
         });
     }
 
     function handleTaskDrop(taskIdA, taskIdB) {
-      console.log(taskIdA, taskIdB)
+      showToast('Swapping tasks...', 'info');
+      
       fetch('/api/tasks/switch-details', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -352,18 +389,107 @@ document.addEventListener('click', async (e) => {
         .then(res => res.json())
         .then(result => {
           if (result.success) {
-            console.log("✅ Tasks swapped.");
+            showToast('Tasks swapped successfully');
             refreshTasks();
           } else {
-            alert("Swap failed.");
+            showToast('Task swap failed', 'error');
           }
         })
         .catch(err => {
           console.error("Swap error:", err);
+          showToast('Error swapping tasks', 'error');
         });
     }
+
+    // Add click handler for edit buttons
+    document.addEventListener('click', (e) => {
+      if (e.target.closest('.edit-btn')) {
+        const taskId = e.target.closest('.edit-btn').dataset.taskId;
+        // Add transition effect before navigation
+        document.body.style.opacity = '0.7';
+        setTimeout(() => {
+          window.location.href = `/edit-task/${taskId}`;
+        }, 300);
+      }
+    });
   });
 </script>
+
+<style>
+  /* Add these styles to your existing CSS */
+  .toast-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 12px 20px;
+    border-radius: 4px;
+    color: white;
+    opacity: 0;
+    transform: translateY(-50px);
+    transition: all 0.3s ease;
+    z-index: 1000;
+    max-width: 300px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  }
+  
+  .toast-success {
+    background-color: #28a745;
+  }
+  
+  .toast-error {
+    background-color: #dc3545;
+  }
+  
+  .toast-warning {
+    background-color: #ffc107;
+    color: #212529;
+  }
+  
+  .toast-info {
+    background-color: #17a2b8;
+  }
+  
+  @keyframes highlight {
+    0% { background-color: rgba(255, 255, 0, 0.3); }
+    100% { background-color: transparent; }
+  }
+  
+  .loading-spinner {
+    border: 4px solid rgba(0, 0, 0, 0.1);
+    border-radius: 50%;
+    border-top: 4px solid #3498db;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin: 20px auto;
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  
+  .loading-row td {
+    text-align: center;
+    padding: 20px;
+  }
+  
+  .no-tasks td {
+    text-align: center;
+    padding: 20px;
+    color: #6c757d;
+  }
+  
+  .mobile-nav {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+  }
+  
+  .mobile-nav.active {
+    max-height: 500px;
+  }
+</style>
 
 
 </body>
