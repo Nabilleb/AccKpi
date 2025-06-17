@@ -99,6 +99,17 @@
 
   </main>
 
+<div id="plannedDateModal" class="modal" style="display:none;">
+  <div class="modal-content">
+    <h3>Add Planned Date</h3>
+    <input type="date" id="plannedDateInput">
+    <div class="modal-actions">
+      <button id="confirmPlannedDateBtn">Confirm</button>
+      <button id="cancelPlannedDateBtn">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const userId = "<%= userId %>";
 const deptId = "<%= departmentID %>";
@@ -270,6 +281,16 @@ function renderTasks(tasks) {
       `;
     }
 
+    let selectButton = '';
+if (isOwnDepartment && !task.isTaskSelected) {
+  selectButton = `
+    <button class="select-task-btn" data-task-id="${task.TaskID}">
+      <i class="fas fa-check"></i> Select
+    </button>
+  `;
+}
+
+
     tr.innerHTML = `
       <td class="task-name">${task.TaskName || ''}</td>
       <td class="task-description">${task.TaskPlanned || ''}</td>
@@ -283,6 +304,7 @@ function renderTasks(tasks) {
         <div class="button-container">
           ${actionButton}
           ${extraButtons}
+          ${selectButton}
         </div>
       </td>
     `;
@@ -476,6 +498,55 @@ async function handleProjectChange(selectedProjectId) {
   }
 }
 
+let pendingTaskId = null;
+  let pendingButton = null;
+  let originalHTML = '';
+
+  function showPlannedDateModal(taskId, button) {
+    pendingTaskId = taskId;
+    pendingButton = button;
+    originalHTML = button.innerHTML;
+    document.getElementById('plannedDateInput').value = '';
+    document.getElementById('plannedDateModal').style.display = 'flex';
+  }
+
+  function hidePlannedDateModal() {
+    document.getElementById('plannedDateModal').style.display = 'none';
+    pendingTaskId = null;
+    pendingButton = null;
+  }
+
+  document.getElementById('confirmPlannedDateBtn').addEventListener('click', async () => {
+    const plannedDate = document.getElementById('plannedDateInput').value;
+    if (!plannedDate) return alert('Please enter a valid planned date');
+
+    try {
+      pendingButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Selecting...';
+
+      const res = await fetch(`/select-task/${pendingTaskId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plannedDate })
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Selection failed');
+
+      hidePlannedDateModal();
+      refreshTasks();
+    } catch (err) {
+      showError(err.message);
+      console.error(err);
+    } finally {
+      pendingButton.innerHTML = originalHTML;
+    }
+  });
+
+  document.getElementById('cancelPlannedDateBtn').addEventListener('click', () => {
+    hidePlannedDateModal();
+    if (pendingButton) pendingButton.innerHTML = originalHTML;
+  });
+
 tbody.addEventListener('click', async (e) => {
   e.preventDefault();
   if (isLoading) return;
@@ -541,6 +612,50 @@ tbody.addEventListener('click', async (e) => {
     }
   }
 
+if (e.target.classList.contains('select-task-btn')) {
+  const taskId = e.target.dataset.taskId;
+  const button = e.target;
+  const originalHTML = button.innerHTML;
+  console.log("is clicked")
+
+  try {
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Checking...';
+
+    const checkRes = await fetch(`/is-first-task/${taskId}`);
+    const checkData = await checkRes.json();
+
+    if (!checkRes.ok) throw new Error(checkData.error || 'Error checking task');
+
+    if (checkData.isFirst) {
+      showPlannedDateModal(taskId, button);
+    } else {
+      if (!confirm('Are you sure you want to select this task?')) {
+        button.innerHTML = originalHTML;
+        return;
+      }
+
+      const res = await fetch(`/select-task/${taskId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Selection failed');
+
+      refreshTasks();
+    }
+  } catch (err) {
+    showError(err.message);
+    console.error(err);
+  } finally {
+    if (button.innerHTML.includes('Checking')) {
+      button.innerHTML = originalHTML;
+    }
+  }
+}
+
+
+
   if (e.target.classList.contains('edit-task-btn')) {
     window.location.href = `/edit-task/${taskId}`;
   }
@@ -594,112 +709,6 @@ tbody.addEventListener('click', async (e) => {
     }
   }
 });
-
-
-
-navLinks.forEach(link => {
-  link.addEventListener('click', async (e) => {
-    e.preventDefault();
-
-    if (isLoading) return;
-    
-    const departmentId = link.dataset.id;
-    const projectId = document.getElementById('project').value;
-    activeProcessId = null;
-    tbody.innerHTML = '';
-    document.querySelector('.add-task-btn')?.remove();
-
-    if (!projectId || projectId === 'none') {
-      showError("Please select a project first.");
-      return;
-    }
-
-    try {
-      showLoading(true);
-      navLinks.forEach(l => l.classList.remove('active'));
-      link.classList.add('active');
-      link.classList.add('loading');
-
-      const response = await fetch('/get-project-processes', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ projectId, departmentId })
-      });
-
-      if (!response.ok) {
-        throw new Error(response.statusText);
-      }
-
-      const data = await response.json();
-      const pkName = document.querySelector("#packageName");
-      const proName = document.querySelector("#projectName");
-
-      if (data.length > 0) {
-        pkName.textContent = data[0].PkgeName || 'N/A';
-        proName.textContent = data[0].ProjectName || 'N/A';
-      }
-
-      const processGrid = document.querySelector('.process-grid');
-      processGrid.innerHTML = '';
-
-      if (data.length === 0) {
-        processGrid.innerHTML = '<p class="info-message"><i class="fas fa-info-circle"></i> No processes found for this department.</p>';
-      } else {
-        data.forEach((process, index) => {
-          setTimeout(() => {
-            const div = document.createElement('div');
-            div.classList.add('process-card', 'fade-in');
-            div.dataset.processId = process.NumberOfProccessID || process.ProcessID || process.processID;
-
-            div.innerHTML = `
-              <h3 class="process-name">${process.ProcessName || ''}</h3>
-              <p class="process-desc">${process.processDesc || ''}</p>
-            `;
-
-            div.addEventListener('click', async function() {
-              const processId = this.dataset.processId;
-              if (activeProcessId === processId || isLoading) return;
-
-              activeProcessId = processId;
-              document.querySelectorAll('.process-card').forEach(c => c.classList.remove('active'));
-              this.classList.add('active');
-              this.classList.add('loading');
-
-              try {
-                showLoading(true);
-                const res = await fetch(`/process/${processId}/tasks?userId=${userId}`);
-                const tasks = await res.json();
-                renderTasks(tasks);
-                createAddTaskButton(processId);
-              } catch (err) {
-                console.error("Process load error:", err);
-                showError("Failed to load tasks");
-              } finally {
-                showLoading(false);
-                this.classList.remove('loading');
-              }
-            });
-
-            processGrid.appendChild(div);
-          }, index * 50);
-        });
-      }
-
-      const res = await fetch(`/department/${departmentId}/tasks?userId=${userId}`);
-      const tasks = await res.json();
-      renderTasks(tasks);
-
-    } catch (err) {
-      console.error("Department load error:", err);
-      showError("Failed to load department data");
-    } finally {
-      showLoading(false);
-      link.classList.remove('loading');
-    }
-  });
-});
-
-// Initialize the UI
 document.addEventListener('DOMContentLoaded', () => {
   // Add CSS for new elements
   const style = document.createElement('style');
@@ -810,6 +819,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.head.appendChild(style);
 });
 </script>
+
 
 
 

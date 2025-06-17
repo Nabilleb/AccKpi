@@ -1411,6 +1411,88 @@ app.post('/finish-task/:taskId', async (req, res) => {
   }
 });
 
+app.get('/is-first-task/:taskId', async (req, res) => {
+  const { taskId } = req.params;
+
+  try {
+    const taskResult = await pool.request()
+      .input('taskId', taskId)
+      .query('SELECT DepId FROM tblTasks WHERE TaskID = @taskId');
+
+    if (taskResult.recordset.length === 0) {
+      return res.status(404).json({ error: 'Task not found' });
+    }
+
+    const depId = taskResult.recordset[0].DepId;
+
+    const countResult = await pool.request()
+      .input('depId', depId)
+      .query(`
+        SELECT COUNT(*) AS selectedCount
+        FROM tblTasks
+        WHERE DepId = @depId AND IsTaskSelected = 1
+      `);
+
+    const isFirst = countResult.recordset[0].selectedCount === 0;
+    res.json({ isFirst });
+  } catch (err) {
+    console.error('Error checking first task:', err);
+    res.status(500).json({ error: 'Internal error' });
+  }
+});
+
+
+app.post('/select-task/:taskId', async (req, res) => {
+  const { taskId } = req.params;
+  const { plannedDate } = req.body;
+
+  try {
+    const taskResult = await pool.request()
+      .input('taskId', taskId)
+      .query('SELECT DepId FROM tblTasks WHERE TaskID = @taskId');
+
+    if (taskResult.recordset.length === 0) {
+      return res.status(404).json({ error: 'Task not found' });
+    }
+
+    const depId = taskResult.recordset[0].DepId;
+
+    const countResult = await pool.request()
+      .input('depId', depId)
+      .query(`
+        SELECT COUNT(*) AS selectedCount
+        FROM tblTasks
+        WHERE DepId = @depId AND IsTaskSelected = 1
+      `);
+
+    const isFirst = countResult.recordset[0].selectedCount === 0;
+
+    if (isFirst) {
+      if (!plannedDate) {
+        return res.status(400).json({ error: 'Planned date is required for first task' });
+      }
+
+      await pool.request()
+        .input('taskId', taskId)
+        .input('plannedDate', plannedDate)
+        .query(`
+          UPDATE tblTasks
+          SET IsTaskSelected = 1, PlannedDate = @plannedDate
+          WHERE TaskID = @taskId
+        `);
+    } else {
+      await pool.request()
+        .input('taskId', taskId)
+        .query('UPDATE tblTasks SET IsTaskSelected = 1 WHERE TaskID = @taskId');
+    }
+
+    res.sendStatus(200);
+  } catch (err) {
+    console.error('Error selecting task:', err);
+    res.status(500).json({ error: 'Failed to select task' });
+  }
+});
+
 
 
 app.post('/api/tasks/switch-details', async (req, res) => {
