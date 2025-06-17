@@ -633,30 +633,50 @@ else{
 });
 
 app.get('/task-selected', async (req, res) => {
-  const { processId, DepartmentId } = req.query;
-
   try {
     const pool = await sql.connect(config);
+    
+    const joinedQuery = await pool.request().query(`
+      SELECT
+        t.TaskID,
+        t.TaskName,
+        t.TaskPlanned,
+        t.IsTaskSelected,
+        t.IsDateFixed,
+        t.PlannedDate,
+        t.DepId,
+        t.Priority,
+        t.PredecessorID,
+        t.DaysRequired,
+        t.linkTasks,
+        w.WorkflowID,
+        w.WorkflowName,
+        w.TimeStarted,
+        w.TimeFinished,
+        w.DelayReason,
+        w.Delay,
+        d.DeptName
+      FROM tblTasks t
+      LEFT JOIN tblWorkflow w ON t.TaskID = w.TaskID
+      LEFT JOIN tblDepartments d ON t.DepId = d.DepartmentID
+      ORDER BY t.DepId, t.TaskID ASC
+    `);
 
-    const result = await pool.request()
-      .input('processId', sql.Int, processId)
-      .input('DepartmentId', sql.Int, DepartmentId)
-      .query(`
-        SELECT  T.TaskName, T.TaskPlanned, T.Priority, T.PlannedDate
-        FROM tblTasks T
-        INNER JOIN tblProcessDepartment PD ON PD.DepartmentID = T.DepId
-          AND T.DepId = @DepartmentId
-          AND PD.ProcessID = @processId
-        ORDER BY T.Priority ASC
-      `);
-console.log(result.recordset)
- res.render("selectTask.ejs", {tasks:result.recordset})
+    if (!joinedQuery.recordset || joinedQuery.recordset.length === 0) {
+      return res.status(404).render('selectTask.ejs', {
+        taskWorkflows: [],
+        message: 'No tasks found'
+      });
+    }
 
+    res.render('selectTask.ejs', {
+      taskWorkflows: joinedQuery.recordset
+    });
 
   } catch (err) {
-    console.error('❌ Error loading selected task:', err);
-    res.status(500).send('Internal Server Error');
-  }
+    console.error('Database error:', err);
+  
+  } 
 });
 
 

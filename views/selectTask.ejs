@@ -1,64 +1,152 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Department Tasks</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-      background: #f4f4f4;
-    }
-    h1 {
-      color: #333;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-      background: #fff;
-    }
-    th, td {
-      padding: 12px;
-      border: 1px solid #ccc;
-      text-align: left;
-    }
-    th {
-      background-color: #007bff;
-      color: #fff;
-    }
-  </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Task Workflow Dashboard</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="/styles/select.css">
 </head>
 <body>
+  <div class="dashboard-container">
+    <div class="dashboard-header">
+      <h1><i class="fas fa-tasks"></i> Task Workflow Dashboard</h1>
+      <div class="header-actions">
+        <button id="export-excel"><i class="fas fa-file-excel"></i> Export</button>
+      </div>
+    </div>
+    
+    <div class="control-panel">
+      <div class="filter-group">
+        <label for="department-filter"><i class="fas fa-building"></i> Department:</label>
+        <select id="department-filter">
+  <option value="all">All Departments</option>
+          <% 
+            const uniqueDepartments = {};
+            taskWorkflows.forEach(task => {
+              if (!uniqueDepartments[task.DepId]) {
+                uniqueDepartments[task.DepId] = task.DepId;
+              }
+            });
+            Object.keys(uniqueDepartments).forEach(depId => {
+          %>
+            <option value="<%= depId %>">Department <%= depId %></option>
+          <% }); %>
+        </select> 
 
-  <h1>Your Department's Tasks</h1>
+      </div>
+      
+      <div class="filter-group">
+        <label for="status-filter"><i class="fas fa-filter"></i> Status:</label>
+        <select id="status-filter">
+          <option value="all">All Statuses</option>
+          <option value="not-started">Not Started</option>
+          <option value="pending">Pending</option>
+          <option value="completed">Completed</option>
+          <option value="overdue">Overdue</option>
+        </select>
+      </div>
+      
+      <div class="filter-group">
+        <label for="priority-filter"><i class="fas fa-flag"></i> Priority:</label>
+        <select id="priority-filter">
+          <option value="all">All Priorities</option>
+          <option value="1">High</option>
+          <option value="2">Medium</option>
+          <option value="3">Low</option>
+        </select>
+      </div>
+      
+      <div class="search-box">
+        <i class="fas fa-search"></i>
+        <input type="text" id="search-input" placeholder="Search tasks...">
+      </div>
+      
+      <button class="action-btn" id="reset-filters">
+        <i class="fas fa-sync-alt"></i> Reset
+      </button>
+    </div>
+    
+    <div class="task-grid-container">
+      <div class="task-grid">
+        <% 
+          let currentDepartment = null;
+          taskWorkflows.forEach(task => {
+            const status = !task.TimeFinished && task.IsTaskSelected ? 'pending' : 
+                          task.TimeFinished && task.Delay > 0 ? 'overdue' :
+                          task.TimeFinished ? 'completed' : 'not-started';
+            
+            if (currentDepartment !== task.DepId) {
+              currentDepartment = task.DepId;
+        %>
+          <div class="department-section">
+            <div class="department-header">
+              <h3>Department <%= task.DepId %></h3>
+              <span class="task-count"><%= taskWorkflows.filter(t => t.DepId === task.DepId).length %> tasks</span>
+            </div>
+            <div class="department-content">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Task ID</th>
+                    <th>Task Name</th>
+                    <th>Description</th>
+                    <th>Planned Date</th>
+                    <th>Priority</th>
+                    <th>Days Required</th>
+                    <th>Status</th>
+                    <th>Time Started</th>
+                    <th>Time Finished</th>
+                    <th>Delay Days</th>
+                    <th>Delay Reason</th>
+                  </tr>
+                </thead>
+                <tbody>
+        <% } %>
+                  <tr class="task-row" 
+                      data-department="<%= task.DepId %>"
+                      data-status="<%= status %>"
+                      data-priority="<%= task.Priority %>">
+                    <td><%= task.TaskID %></td>
+                    <td><%= task.TaskName %></td>
+                    <td><%= task.TaskPlanned || '—' %></td>
+                    <td><%= task.PlannedDate ? new Date(task.PlannedDate).toLocaleDateString() : '—' %></td>
+                    <td>
+                      <span class="priority-badge priority-<%= task.Priority === 1 ? 'high' : task.Priority === 2 ? 'medium' : 'low' %>">
+                        <%= task.Priority === 1 ? 'High' : task.Priority === 2 ? 'Medium' : 'Low' %>
+                      </span>
+                    </td>
+                    <td><%= task.DaysRequired || '—' %></td>
+                    <td>
+                      <span class="status-badge status-<%= status %>">
+                        <i class="fas fa-<%= 
+                          status === 'completed' ? 'check-circle' : 
+                          status === 'pending' ? 'clock' : 
+                          status === 'overdue' ? 'exclamation-triangle' : 'hourglass-start' 
+                        %>"></i>
+                        <%= status.charAt(0).toUpperCase() + status.slice(1) %>
+                      </span>
+                    </td>
+                    <td><%= task.TimeStarted ? new Date(task.TimeStarted).toLocaleDateString() : '—' %></td>
+                    <td><%= task.TimeFinished ? new Date(task.TimeFinished).toLocaleDateString() : '—' %></td>
+                    <td><%= task.Delay || '—' %></td>
+                    <td><%= task.DelayReason || '—' %></td>
+                  </tr>
+        <% 
+            const nextTask = taskWorkflows[taskWorkflows.indexOf(task) + 1];
+            if (!nextTask || nextTask.DepId !== task.DepId) { 
+        %>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        <% } 
+          }); 
+        %>
+      </div>
+    </div>
+  </div>
 
-  <table id="taskTable">
-    <thead>
-      <tr>
-        <th>Task Name</th>
-        <th>Task Description</th>
-        <th>Priority</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% if (tasks.length === 0) { %>
-        <tr><td colspan="3">No tasks found.</td></tr>
-      <% } else { %>
-        <% tasks.forEach(task => { %>
-          <tr>
-            <td><%= task.TaskName %></td>
-            <td><%= task.TaskPlanned %></td>
-            <td><%= task.Priority %></td>
-          </tr>
-        <% }); %>
-      <% } %>
-    </tbody>
-  </table>
-
-  <br>
-  <a href="/userpage">⬅ Back</a>
-
+  <script src="/js/select.js"></script>
 </body>
 </html>
