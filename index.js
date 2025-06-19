@@ -132,6 +132,30 @@ app.get("/addTask",isAdmin, async (req, res) => {
 app.get("/workFlowDash", ensureAuthenticated, async (req, res)=>{
 res.render("workflowdashboard.ejs");
 })
+
+
+app.get("/api/workFlowDashData", ensureAuthenticated, async (req, res) => {
+  try {
+    const result = await pool.request().query(`
+      SELECT 
+        hdr.WorkFlowID AS HdrID,
+        p.ProcessName,
+        pk.PkgeName,
+        prj.ProjectName,
+        hdr.Status
+      FROM tblWorkflowHdr hdr
+      LEFT JOIN tblProcess p ON hdr.ProcessID = p.NumberOfProccessID
+      LEFT JOIN tblPackages pk ON hdr.PackageID = pk.PkgeID
+      LEFT JOIN tblProject prj ON hdr.ProjectID = prj.ProjectID
+    `);
+
+    res.json(result.recordset);
+  } catch (err) {
+    console.error("Error fetching workflow dashboard data:", err);
+    res.status(500).json({ error: "Failed to fetch workflow dashboard data" });
+  }
+});
+
 app.get("/addProcess", isAdmin, async (req, res) => {
   try {
     const result = await pool.request().query("SELECT DepartmentID, DeptName FROM tblDepartments");
