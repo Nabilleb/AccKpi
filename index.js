@@ -162,6 +162,45 @@ app.get("/api/workFlowDashData", ensureAuthenticated, async (req, res) => {
 });
 
 
+app.get("/api/tasks-by-hdr/:hdrId", ensureAuthenticated, async (req, res) => {
+  const hdrId = req.params.hdrId;
+
+  try {
+    const result = await pool.request()
+      .input('HdrID', sql.Int, hdrId)
+      .query(`
+        SELECT 
+          t.TaskID,
+          t.TaskName,
+          t.TaskPlanned,
+          t.IsTaskSelected,
+          t.IsDateFixed,
+          t.PlannedDate,
+          t.DepId,
+          t.Priority,
+          t.PredecessorID,
+          t.DaysRequired,
+          t.linkTasks,
+          d.WorkflowDtlId,
+          d.WorkflowName,
+          d.TimeStarted,
+          d.TimeFinished,
+          d.DelayReason,
+          d.Delay
+        FROM tblWorkflowDtl d
+        INNER JOIN tblTasks t ON d.TaskID = t.TaskID
+        WHERE d.workFLowHdrId = @HdrID
+      `);
+     console.log(result.recordset)
+    res.json(result.recordset);
+  } catch (err) {
+    console.error("Error fetching full task details for HdrID:", err);
+    res.status(500).json({ error: "Failed to fetch full task details" });
+  }
+});
+
+
+
 app.get("/addProcess", isAdmin, async (req, res) => {
   try {
     const result = await pool.request().query("SELECT DepartmentID, DeptName FROM tblDepartments");

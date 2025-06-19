@@ -176,7 +176,7 @@
         <div class="context-menu-item">Delete</div>
     </div>
 
-  <script>
+<script>
 document.addEventListener("DOMContentLoaded", async () => {
   try {
     const response = await fetch("/api/workFlowDashData");
@@ -187,6 +187,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     data.forEach(row => {
       const tr = document.createElement("tr");
+
       tr.innerHTML = `
         <td>${row.HdrID}</td>
         <td>${row.ProcessName || ''}</td>
@@ -194,6 +195,24 @@ document.addEventListener("DOMContentLoaded", async () => {
         <td>${row.ProjectName || ''}</td>
         <td>${row.Status || ''}</td>
       `;
+
+      // Add click listener to each row
+      tr.addEventListener("click", async () => {
+        const hdrId = row.HdrID;
+        console.log("Selected HdrID:", hdrId);
+
+        try {
+          const taskResponse = await fetch(`/api/tasks-by-hdr/${hdrId}`);
+          const taskData = await taskResponse.json();
+
+          console.log("Tasks for HdrID", hdrId, taskData);
+
+          // You can display taskData somewhere if needed
+        } catch (taskErr) {
+          console.error("Failed to fetch tasks for HdrID:", hdrId, taskErr);
+        }
+      });
+
       tbody.appendChild(tr);
     });
   } catch (err) {
@@ -201,6 +220,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 });
 </script>
+
 
 </body>
 </html>
