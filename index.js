@@ -162,7 +162,7 @@ app.get("/api/workFlowDashData", ensureAuthenticated, async (req, res) => {
 });
 
 
-app.get("/api/tasks-by-hdr/:hdrId", ensureAuthenticated, async (req, res) => {
+app.get("/userpage/:hdrId", ensureAuthenticated, async (req, res) => {
   const hdrId = req.params.hdrId;
 
   try {
@@ -191,13 +191,17 @@ app.get("/api/tasks-by-hdr/:hdrId", ensureAuthenticated, async (req, res) => {
         INNER JOIN tblTasks t ON d.TaskID = t.TaskID
         WHERE d.workFLowHdrId = @HdrID
       `);
-     console.log(result.recordset)
-    res.json(result.recordset);
+
+    res.render("userpage.ejs", {
+      tasks: result.recordset,
+      hdrId: hdrId
+    });
   } catch (err) {
-    console.error("Error fetching full task details for HdrID:", err);
-    res.status(500).json({ error: "Failed to fetch full task details" });
+    console.error("Error loading user page for HdrID:", err);
+    res.status(500).send("Error loading user page.");
   }
 });
+
 
 
 

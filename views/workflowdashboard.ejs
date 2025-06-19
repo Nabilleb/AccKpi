@@ -202,12 +202,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         console.log("Selected HdrID:", hdrId);
 
         try {
-          const taskResponse = await fetch(`/api/tasks-by-hdr/${hdrId}`);
-          const taskData = await taskResponse.json();
-
-          console.log("Tasks for HdrID", hdrId, taskData);
-
-          // You can display taskData somewhere if needed
+       tr.addEventListener("click", () => {
+  const hdrId = row.HdrID;
+  window.location.href = `/userpage/${hdrId}`;
+});
         } catch (taskErr) {
           console.error("Failed to fetch tasks for HdrID:", hdrId, taskErr);
         }
