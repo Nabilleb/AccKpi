@@ -135,19 +135,24 @@ res.render("workflowdashboard.ejs");
 
 
 app.get("/api/workFlowDashData", ensureAuthenticated, async (req, res) => {
+  const DepId = req.session.user.DepartmentId;
+
   try {
-    const result = await pool.request().query(`
-      SELECT 
-        hdr.WorkFlowID AS HdrID,
-        p.ProcessName,
-        pk.PkgeName,
-        prj.ProjectName,
-        hdr.Status
-      FROM tblWorkflowHdr hdr
-      LEFT JOIN tblProcess p ON hdr.ProcessID = p.NumberOfProccessID
-      LEFT JOIN tblPackages pk ON hdr.PackageID = pk.PkgeID
-      LEFT JOIN tblProject prj ON hdr.ProjectID = prj.ProjectID
-    `);
+    const result = await pool.request()
+      .input('DepId', sql.Int, DepId)
+      .query(`
+        SELECT 
+          hdr.WorkFlowID AS HdrID,
+          p.ProcessName,
+          pk.PkgeName AS PackageName,
+          prj.ProjectName,
+          hdr.Status
+        FROM tblWorkflowHdr hdr
+        LEFT JOIN tblProcess p ON hdr.ProcessID = p.NumberOfProccessID
+        LEFT JOIN tblPackages pk ON hdr.PackageID = pk.PkgeID
+        LEFT JOIN tblProject prj ON hdr.ProjectID = prj.ProjectID
+        WHERE hdr.DepId = @DepId
+      `);
 
     res.json(result.recordset);
   } catch (err) {
@@ -155,6 +160,7 @@ app.get("/api/workFlowDashData", ensureAuthenticated, async (req, res) => {
     res.status(500).json({ error: "Failed to fetch workflow dashboard data" });
   }
 });
+
 
 app.get("/addProcess", isAdmin, async (req, res) => {
   try {
