@@ -281,14 +281,7 @@ function renderTasks(tasks) {
       `;
     }
 
-    let selectButton = '';
-if (isOwnDepartment && !task.isTaskSelected) {
-  selectButton = `
-    <button class="select-task-btn" data-task-id="${task.TaskID}">
-      <i class="fas fa-check"></i> Select
-    </button>
-  `;
-}
+
 
 
     tr.innerHTML = `
@@ -304,7 +297,6 @@ if (isOwnDepartment && !task.isTaskSelected) {
         <div class="button-container">
           ${actionButton}
           ${extraButtons}
-          ${selectButton}
         </div>
       </td>
     `;
@@ -611,50 +603,6 @@ tbody.addEventListener('click', async (e) => {
       e.target.innerHTML = originalHTML;
     }
   }
-
-if (e.target.classList.contains('select-task-btn')) {
-  const taskId = e.target.dataset.taskId;
-  const button = e.target;
-  const originalHTML = button.innerHTML;
-  console.log("is clicked")
-
-  try {
-    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Checking...';
-
-    const checkRes = await fetch(`/is-first-task/${taskId}`);
-    const checkData = await checkRes.json();
-
-    if (!checkRes.ok) throw new Error(checkData.error || 'Error checking task');
-
-    if (checkData.isFirst) {
-      showPlannedDateModal(taskId, button);
-    } else {
-      if (!confirm('Are you sure you want to select this task?')) {
-        button.innerHTML = originalHTML;
-        return;
-      }
-
-      const res = await fetch(`/select-task/${taskId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Selection failed');
-
-      refreshTasks();
-    }
-  } catch (err) {
-    showError(err.message);
-    console.error(err);
-  } finally {
-    if (button.innerHTML.includes('Checking')) {
-      button.innerHTML = originalHTML;
-    }
-  }
-}
-
-
 
   if (e.target.classList.contains('edit-task-btn')) {
     window.location.href = `/edit-task/${taskId}`;

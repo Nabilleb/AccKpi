@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/styles/workflowDash.css">
+    <title>System Engineering Workflow Dashboard</title>
+</head>
+<body>
+    <div class="dashboard">
+        <div class="header">
+            <h1>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M3 17V19H10V17H3ZM3 5V7H14V5H3ZM14 21V19H21V17H14V15H12V21H14ZM7 9V11H3V13H7V15H9V9H7ZM21 13V11H12V13H21ZM15 9H17V7H21V5H17V3H15V9Z" fill="currentColor"/>
+                </svg>
+                System Engineering Workflow
+            </h1>
+            <div class="toolbar">
+                <button class="btn btn-primary">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M19 13H13V19H11V13H5V11H11V5H13V11H19V13Z" fill="currentColor"/>
+                    </svg>
+                    New Item
+                </button>
+                <button class="btn btn-outline">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M5 20H19V22H5V20ZM12 8C10.3431 8 9 6.65685 9 5C9 3.34315 10.3431 2 12 2C13.6569 2 15 3.34315 15 5C15 6.65685 13.6569 8 12 8ZM12 10C14.2091 10 16 8.20914 16 6C16 3.79086 14.2091 2 12 2C9.79086 2 8 3.79086 8 6C8 8.20914 9.79086 10 12 10ZM6.5 17.5C6.5 14.4624 8.96243 12 12 12C15.0376 12 17.5 14.4624 17.5 17.5H19.5C19.5 13.3579 16.1421 10 12 10C7.85786 10 4.5 13.3579 4.5 17.5H6.5Z" fill="currentColor"/>
+                    </svg>
+                    Export
+                </button>
+                <div class="search-box">
+                    <span class="search-icon">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M15.5 14H14.71L14.43 13.73C15.41 12.59 16 11.11 16 9.5C16 5.91 13.09 3 9.5 3C5.91 3 3 5.91 3 9.5C3 13.09 5.91 16 9.5 16C11.11 16 12.59 15.41 13.73 14.43L14 14.71V15.5L19 20.49L20.49 19L15.5 14ZM9.5 14C7.01 14 5 11.99 5 9.5C5 7.01 7.01 5 9.5 5C11.99 5 14 7.01 14 9.5C14 11.99 11.99 14 9.5 14Z" fill="currentColor"/>
+                        </svg>
+                    </span>
+                    <input type="text" placeholder="Search workflow...">
+                </div>
+            </div>
+        </div>
+
+        <div class="filters">
+            <div class="filter-group">
+                <label class="filter-label">Project</label>
+                <select>
+                    <option>All Projects</option>
+                    <option>Satellite Launch</option>
+                    <option>Network Upgrade</option>
+                    <option>Data Center Migration</option>
+                    <option>Security Overhaul</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label class="filter-label">Process</label>
+                <select>
+                    <option>All Processes</option>
+                    <option>Requirements Analysis</option>
+                    <option>System Design</option>
+                    <option>Implementation</option>
+                    <option>Testing</option>
+                    <option>Deployment</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label class="filter-label">Status</label>
+                <select>
+                    <option>All Statuses</option>
+                    <option>Draft</option>
+                    <option>In Progress</option>
+                    <option>Review</option>
+                    <option>Completed</option>
+                    <option>Blocked</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label class="filter-label">Date Range</label>
+                <input type="date">
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>
+                            <div class="th-inner">
+                                HDR ID
+                                <span class="sort-icon">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M7 10L12 15L17 10H7Z" fill="currentColor"/>
+                                    </svg>
+                                </span>
+                                <div class="resize-handle"></div>
+                            </div>
+                        </th>
+                        <th>
+                            <div class="th-inner">
+                                Process
+                                <span class="sort-icon">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M7 10L12 15L17 10H7Z" fill="currentColor"/>
+                                    </svg>
+                                </span>
+                                <div class="resize-handle"></div>
+                            </div>
+                        </th>
+                        <th>
+                            <div class="th-inner">
+                                Package
+                                <span class="sort-icon">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M7 10L12 15L17 10H7Z" fill="currentColor"/>
+                                    </svg>
+                                </span>
+                                <div class="resize-handle"></div>
+                            </div>
+                        </th>
+                        <th>
+                            <div class="th-inner">
+                                Project
+                                <span class="sort-icon">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M7 10L12 15L17 10H7Z" fill="currentColor"/>
+                                    </svg>
+                                </span>
+                                <div class="resize-handle"></div>
+                            </div>
+                        </th>
+                        <th>
+                            <div class="th-inner">
+                                Status
+                                <span class="sort-icon">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M7 10L12 15L17 10H7Z" fill="currentColor"/>
+                                    </svg>
+                                </span>
+                                <div class="resize-handle"></div>
+                            </div>
+                        </th>
+                     
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>HDR-2023-001</td>
+                        <td>Requirements Analysis</td>
+                        <td>System Specs v1.2</td>
+                        <td>Satellite Launch</td>
+                        <td><span class="status status-completed">Completed</span></td>
+                    </tr>
+                    <tr>
+                        <td>HDR-2023-002</td>
+                        <td>System Design</td>
+                        <td>Architecture Blueprint</td>
+                        <td>Satellite Launch</td>
+                        <td><span class="status status-in-progress">In Progress</span></td>
+                    </tr>
+                    <tr>
+                        <td>HDR-2023-003</td>
+                        <td>Implementation</td>
+                        <td>Flight Software</td>
+                        <td>Satellite Launch</td>
+                        <td><span class="status status-review">Review</span></td>
+                
+                    </tr>
+                    <tr>
+                        <td>HDR-2023-004</td>
+                        <td>Testing</td>
+                        <td>Integration Tests</td>
+                        <td>Network Upgrade</td>
+                        <td><span class="status status-blocked">Blocked</span></td>
+                      
+                    </tr>
+                    <tr>
+                        <td>HDR-2023-005</td>
+                        <td>Deployment</td>
+                        <td>Phase 1 Rollout</td>
+                        <td>Data Center Migration</td>
+                        <td><span class="status status-draft">Draft</span></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="pagination">
+                <div class="page-info">Showing 1 to 5 of 24 entries</div>
+                <div class="page-controls">
+                    <button class="page-btn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M15.41 16.59L10.83 12L15.41 7.41L14 6L8 12L14 18L15.41 16.59Z" fill="currentColor"/>
+                        </svg>
+                    </button>
+                    <button class="page-btn active">1</button>
+                    <button class="page-btn">2</button>
+                    <button class="page-btn">3</button>
+                    <button class="page-btn">4</button>
+                    <button class="page-btn">5</button>
+                    <button class="page-btn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M8.59 16.59L13.17 12L8.59 7.41L10 6L16 12L10 18L8.59 16.59Z" fill="currentColor"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="context-menu">
+        <div class="context-menu-item">Edit</div>
+        <div class="context-menu-item">Duplicate</div>
+        <div class="context-menu-item">Change Status</div>
+        <div class="context-menu-item">Add Dependency</div>
+        <div class="context-menu-item">Delete</div>
+    </div>
+
+    <script>
+        // Add Excel-like functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            // Column resizing
+            const headers = document.querySelectorAll('th');
+            headers.forEach(header => {
+                const resizeHandle = header.querySelector('.resize-handle');
+                const thInner = header.querySelector('.th-inner');
+                let startX, startWidth;
+                
+                resizeHandle.addEventListener('mousedown', (e) => {
+                    startX = e.clientX;
+                    startWidth = header.offsetWidth;
+                    document.documentElement.style.cursor = 'col-resize';
+                    header.style.userSelect = 'none';
+                    
+                    function onMouseMove(e) {
+                        const newWidth = startWidth + e.clientX - startX;
+                        header.style.width = `${newWidth}px`;
+                        thInner.style.width = `${newWidth}px`;
+                    }
+                    
+                    function onMouseUp() {
+                        document.removeEventListener('mousemove', onMouseMove);
+                        document.removeEventListener('mouseup', onMouseUp);
+                        document.documentElement.style.cursor = '';
+                        header.style.userSelect = '';
+                    }
+                    
+                    document.addEventListener('mousemove', onMouseMove);
+                    document.addEventListener('mouseup', onMouseUp);
+                });
+            });
+            
+            // Sorting functionality
+            const sortIcons = document.querySelectorAll('.sort-icon');
+            sortIcons.forEach(icon => {
+                icon.addEventListener('click', function() {
+                    const th = this.closest('th');
+                    const columnIndex = Array.from(th.parentNode.children).indexOf(th);
+                    const tbody = document.querySelector('tbody');
+                    const rows = Array.from(tbody.querySelectorAll('tr'));
+                    
+                    // Toggle sort direction
+                    const isAscending = !th.classList.contains('sorted-asc');
+                    th.classList.toggle('sorted-asc', isAscending);
+                    th.classList.toggle('sorted-desc', !isAscending);
+                    
+                    // Update sort icon
+                    this.innerHTML = isAscending ? 
+                        '<path d="M7 14L12 9L17 14H7Z" fill="currentColor"/>' : 
+                        '<path d="M7 10L12 15L17 10H7Z" fill="currentColor"/>';
+                    
+                    // Sort rows
+                    rows.sort((a, b) => {
+                        const aValue = a.children[columnIndex].textContent;
+                        const bValue = b.children[columnIndex].textContent;
+                        
+                        if (isAscending) {
+                            return aValue.localeCompare(bValue);
+                        } else {
+                            return bValue.localeCompare(aValue);
+                        }
+                    });
+                    
+                    // Re-append sorted rows
+                    rows.forEach(row => tbody.appendChild(row));
+                });
+            });
+            
+            // Context menu
+            const contextMenu = document.querySelector('.context-menu');
+            document.addEventListener('contextmenu', function(e) {
+                if (e.target.closest('tr')) {
+                    e.preventDefault();
+                    contextMenu.style.display = 'block';
+                    contextMenu.style.left = `${e.pageX}px`;
+                    contextMenu.style.top = `${e.pageY}px`;
+                }
+            });
+            
+            document.addEventListener('click', function() {
+                contextMenu.style.display = 'none';
+            });
+        });
+    </script>
+</body>
+</html>

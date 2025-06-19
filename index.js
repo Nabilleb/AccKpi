@@ -109,7 +109,7 @@ app.post("/login", async (req, res) => {
         usrAdmin: result.recordset[0].usrAdmin,
         DepartmentId: result.recordset[0].DepartmentID
       };            
-      res.redirect(result.recordset[0].usrAdmin ? "/adminpage" : "/userpage");
+      res.redirect(result.recordset[0].usrAdmin ? "/adminpage" : "/workFlowDash");
 
     }
     else{
@@ -129,7 +129,9 @@ app.get("/addTask",isAdmin, async (req, res) => {
   res.render("task.ejs");
 });
 
-
+app.get("/workFlowDash", ensureAuthenticated, async (req, res)=>{
+res.render("workflowdashboard.ejs");
+})
 app.get("/addProcess", isAdmin, async (req, res) => {
   try {
     const result = await pool.request().query("SELECT DepartmentID, DeptName FROM tblDepartments");
