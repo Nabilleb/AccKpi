@@ -1244,13 +1244,13 @@ app.put('/save-task-updates', async (req, res) => {
           .input('usrID', usrID)
           .input('value', value)
           .query(`
-         UPDATE tblWorkflow
+         UPDATE tblWorkflowDtl
 SET DelayReason = @value
-WHERE TaskID = @taskId AND WorkflowID = (
-  SELECT TOP 1 WorkflowID
-  FROM tblWorkflow
+WHERE TaskID = @taskId AND WorkflowDtlId = (
+  SELECT TOP 1 WorkflowDtlId
+  FROM tblWorkflowDtl
   WHERE TaskID = @taskId
-  ORDER BY WorkflowID DESC
+  ORDER BY WorkflowDtlId DESC
 );
 
           `);
@@ -1317,7 +1317,7 @@ app.post('/start-task/:taskId', async (req, res) => {
       .input('taskId', taskId)
       .input('startTime', startTime)
       .query(`
-        UPDATE tblWorkflow
+        UPDATE tblWorkflowDtl
         SET TimeStarted = @startTime
         WHERE TaskID = @taskId AND TimeStarted IS NULL
       `);
@@ -1359,7 +1359,7 @@ app.post('/finish-task/:taskId', async (req, res) => {
       .input('finishTime', finishTime)
       .input('delay', delay)
       .query(`
-        UPDATE tblWorkflow
+        UPDATE tblWorkflowDtl
         SET TimeFinished = @finishTime, Delay = @delay
         WHERE TaskID = @taskId
       `);
