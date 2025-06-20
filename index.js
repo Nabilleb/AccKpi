@@ -94,32 +94,42 @@ app.get("/login",checkIfInSession ,(req,res) =>{
 })
 
 app.post("/login", async (req, res) => {
-  const {username, password} = req.body;
+  const { username, password } = req.body;
 
   try {
     const result = await pool.request()
       .input('username', sql.VarChar, username)
       .input('password', sql.VarChar, password) 
-      .query(`SELECT usrID, usrDesc,DepartmentID, usrAdmin FROM tblUsers WHERE usrEmail = @username AND usrPWD = @password`);
+      .query(`
+        SELECT usrID, usrDesc, DepartmentID, usrAdmin 
+        FROM tblUsers 
+        WHERE usrEmail = @username AND usrPWD = @password
+      `);
 
     if (result.recordset.length === 1) {
+      const user = result.recordset[0];
+      
       req.session.user = {
-        id: result.recordset[0].usrID,
-        name: result.recordset[0].usrDesc,
-        usrAdmin: result.recordset[0].usrAdmin,
-        DepartmentId: result.recordset[0].DepartmentID
-      };            
-      res.redirect(result.recordset[0].usrAdmin ? "/adminpage" : "/workFlowDash");
+        id: user.usrID,
+        name: user.usrDesc,
+        usrAdmin: user.usrAdmin,
+        DepartmentId: user.DepartmentID
+      };
 
-    }
-    else{
-      res.status(401).send("invalid")
+      console.log("Login success, session user:", req.session.user);
+      
+      res.redirect(user.usrAdmin ? "/adminpage" : "/workFlowDash");
+    } else {
+      console.log("Login failed: No matching user");
+      res.status(401).send("Invalid username or password");
     }
 
-  }catch(err){
-    res.status(500).send("Internal server error")
+  } catch (err) {
+    console.error("Login error:", err);
+    res.status(500).send("Internal server error");
   }
-})
+});
+
 
 app.get("/addPackage", isAdmin,async (req, res) => {
 res.render("packagefrom.ejs");
@@ -165,67 +175,76 @@ app.get("/api/workFlowDashData", async (req, res) => {
 
 app.get("/userpage/:hdrId", async (req, res) => {
   const hdrId = req.params.hdrId;
-  const DepId = req.session.user.DepartmentId;
-  const usrId = req.session.user.id;
-console.log(req.session.user)
-  try {
-    const tasksResult = await pool.request()
-      .input('HdrID', sql.Int, hdrId)
-      .input('DepId', sql.Int, DepId)
-      .query(`
-        SELECT 
-          t.TaskID,
-          t.TaskName,
-          t.TaskPlanned,
-          t.IsTaskSelected,
-          t.IsDateFixed,
-          t.PlannedDate,
-          t.DepId,
-          t.Priority,
-          t.PredecessorID,
-          t.DaysRequired,
-          t.linkTasks,
-          d.WorkflowDtlId,
-          d.WorkflowName,
-          d.TimeStarted,
-          d.TimeFinished,
-          d.DelayReason,
-          d.Delay,
-          pr.ProcessName,
-          pj.ProjectID,
-          pj.ProjectName
-        FROM tblWorkflowDtl d
-        INNER JOIN tblTasks t ON d.TaskID = t.TaskID
-        INNER JOIN tblWorkflowHdr hdr ON d.workFLowHdrId = hdr.WorkFlowID
-        INNER JOIN tblProcess pr ON hdr.ProcessID = pr.NumberOfProccessID
-        INNER JOIN tblProject pj ON hdr.ProjectID = pj.ProjectID
-        WHERE d.workFLowHdrId = @HdrID AND t.DepId = @DepId
-      `);
+  const sessionUser = req.session.user;
 
-    const departmentResult = await pool.request()
-      .input('DepartmentID', sql.Int, DepId)
-      .query(`
-        SELECT DepartmentID, DeptName 
-        FROM tblDepartments 
-        WHERE DepartmentID = @DepartmentID
-      `);
+  if (!sessionUser || !sessionUser.DepartmentId) {
+    return res.status(401).send("Unauthorized or session expired");
+  }
+
+  const DepId = sessionUser.DepartmentId;
+  const usrId = sessionUser.id;
+
+  try {
+    const request1 = pool.request();
+    request1.input('HdrID', sql.Int, hdrId);
+    request1.input('DepId', sql.Int, DepId);
+
+    const tasksResult = await request1.query(`
+      SELECT 
+        t.TaskID,
+        t.TaskName,
+        t.TaskPlanned,
+        t.IsTaskSelected,
+        t.IsDateFixed,
+        t.PlannedDate,
+        t.DepId,
+        t.Priority,
+        t.PredecessorID,
+        t.DaysRequired,
+        t.linkTasks,
+        d.WorkflowDtlId,
+        d.WorkflowName,
+        d.TimeStarted,
+        d.TimeFinished,
+        d.DelayReason,
+        d.Delay,
+        pr.ProcessName,
+        pj.ProjectID,
+        pj.ProjectName
+      FROM tblWorkflowDtl d
+      INNER JOIN tblTasks t ON d.TaskID = t.TaskID
+      INNER JOIN tblWorkflowHdr hdr ON d.workFLowHdrId = hdr.WorkFlowID
+      INNER JOIN tblProcess pr ON hdr.ProcessID = pr.NumberOfProccessID
+      INNER JOIN tblProject pj ON hdr.ProjectID = pj.ProjectID
+      WHERE d.workFLowHdrId = @HdrID AND t.DepId = @DepId
+    `);
+
+    const request2 = pool.request();
+    request2.input('DepartmentID', sql.Int, DepId);
+
+    const departmentResult = await request2.query(`
+      SELECT DepartmentID, DeptName 
+      FROM tblDepartments 
+      WHERE DepartmentID = @DepartmentID
+    `);
 
     const department = departmentResult.recordset[0] || { DeptName: 'Unknown' };
 
     const user = {
-      id: req.session.user.id,
-      name: req.session.user.name,
-      usrAdmin: req.session.user.usrAdmin,
-      DepartmentId: req.session.user.DepartmentId,
+      id: usrId,
+      name: sessionUser.name,
+      usrAdmin: sessionUser.usrAdmin,
+      DepartmentId: sessionUser.DepartmentId,
       DeptName: department.DeptName
     };
 
-    res.render("userpage", {
+    console.log("Tasks retrieved:", tasksResult.recordset); 
+
+    res.render("userpage.ejs", {
       tasks: tasksResult.recordset,
       hdrId,
       user
     });
-
   } catch (err) {
     console.error("Error loading user page with department info:", err);
     res.status(500).send("Failed to load user page.");

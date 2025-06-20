@@ -17,11 +17,20 @@
       <p id="packageName"></p>
      <select name="project" id="project">
   <option value="none">none</option>
-  <% tasks.forEach(task => { %>
-    <option value="<%= task.projectID %>"><%= task.projectName %></option>
-  <% }) %>
-</select>
+<% 
+  const seenProjects = new Set(); 
+  tasks.forEach(task => {
+    const key = task.ProjectID + '|' + task.ProjectName;
+    if (!seenProjects.has(key)) {
+      seenProjects.add(key);
+%>
+  <option value="<%= task.ProjectID %>"><%= task.ProjectName %></option>
+<% 
+    }
+  });
+%>
 
+</select>
     </div>
     <div class="user-info">
       <div class="user-avatar">RK</div>
@@ -119,6 +128,8 @@ const navLinks = document.querySelectorAll('.main-nav a, .mobile-nav a');
 let activeProcessId = null;
 let isLoading = false;
 let lastActivity = new Date();
+ const tasks = <%- JSON.stringify(tasks) %>;
+  console.log("Loaded tasks:", tasks);
 
 setInterval(() => {
   if (new Date() - lastActivity > 300000) { 
