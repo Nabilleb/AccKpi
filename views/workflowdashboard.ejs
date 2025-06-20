@@ -227,7 +227,6 @@
                     </tr>
                 </thead>
                 <tbody id="workflowTableBody">
-                    <!-- Data will be populated here -->
                 </tbody>
             </table>
 
@@ -238,18 +237,9 @@
             <div class="pagination">
                 <div class="page-info" id="pageInfo">Showing 0 to 0 of 0 entries</div>
                 <div class="page-controls" id="paginationControls">
-                    <!-- Pagination buttons will be added here -->
                 </div>
             </div>
         </div>
-    </div>
-
-    <div class="context-menu" id="contextMenu" style="display: none;">
-        <div class="context-menu-item" data-action="edit">Edit</div>
-        <div class="context-menu-item" data-action="duplicate">Duplicate</div>
-        <div class="context-menu-item" data-action="change-status">Change Status</div>
-        <div class="context-menu-item" data-action="add-dependency">Add Dependency</div>
-        <div class="context-menu-item" data-action="delete">Delete</div>
     </div>
 
 <script>
@@ -276,7 +266,6 @@ const noResultsMessage = document.getElementById('noResultsMessage');
 const loadingIndicator = document.getElementById('loadingIndicator');
 const pageInfo = document.getElementById('pageInfo');
 const paginationControls = document.getElementById('paginationControls');
-const contextMenu = document.getElementById('contextMenu');
 
 // Initialize the dashboard
 document.addEventListener("DOMContentLoaded", async () => {
@@ -336,19 +325,6 @@ function setupEventListeners() {
             }
             updateTable();
         });
-    });
-    
-    // Context menu
-    document.addEventListener('click', () => {
-        contextMenu.style.display = 'none';
-    });
-    
-    // Right-click for context menu
-    document.addEventListener('contextmenu', (e) => {
-        if (e.target.closest('tr')) {
-            e.preventDefault();
-            showContextMenu(e, e.target.closest('tr'));
-        }
     });
 }
 
@@ -585,57 +561,6 @@ function updatePagination() {
     paginationControls.appendChild(nextButton);
 }
 
-// Show context menu
-function showContextMenu(e, row) {
-    contextMenu.style.display = 'block';
-    contextMenu.style.left = `${e.pageX}px`;
-    contextMenu.style.top = `${e.pageY}px`;
-    
-    const hdrId = row.getAttribute('data-hdrid');
-    contextMenu.setAttribute('data-hdrid', hdrId);
-    
-    // Position the menu so it doesn't go off-screen
-    const menuWidth = contextMenu.offsetWidth;
-    const menuHeight = contextMenu.offsetHeight;
-    
-    if (e.pageX + menuWidth > window.innerWidth) {
-        contextMenu.style.left = `${window.innerWidth - menuWidth}px`;
-    }
-    
-    if (e.pageY + menuHeight > window.innerHeight) {
-        contextMenu.style.top = `${window.innerHeight - menuHeight}px`;
-    }
-}
-
-// Handle context menu actions
-contextMenu.querySelectorAll('.context-menu-item').forEach(item => {
-    item.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const action = item.getAttribute('data-action');
-        const hdrId = contextMenu.getAttribute('data-hdrid');
-        
-        switch (action) {
-            case 'edit':
-                window.location.href = `/workflow/edit/${hdrId}`;
-                break;
-            case 'duplicate':
-                duplicateWorkflow(hdrId);
-                break;
-            case 'change-status':
-                changeStatus(hdrId);
-                break;
-            case 'add-dependency':
-                addDependency(hdrId);
-                break;
-            case 'delete':
-                deleteWorkflow(hdrId);
-                break;
-        }
-        
-        contextMenu.style.display = 'none';
-    });
-});
-
 // Export data to CSV
 function exportData() {
     if (filteredWorkflows.length === 0) {
@@ -669,13 +594,6 @@ function exportData() {
     link.click();
     document.body.removeChild(link);
 }
-
-
-
-
-
-
-
 </script>
 </body>
 </html>

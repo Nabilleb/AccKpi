@@ -130,11 +130,12 @@ app.get("/addTask",isAdmin, async (req, res) => {
 });
 
 app.get("/workFlowDash", ensureAuthenticated, async (req, res)=>{
+
 res.render("workflowdashboard.ejs");
 })
 
 
-app.get("/api/workFlowDashData", ensureAuthenticated, async (req, res) => {
+app.get("/api/workFlowDashData", async (req, res) => {
   const DepId = req.session.user.DepartmentId;
 
   try {
@@ -162,12 +163,15 @@ app.get("/api/workFlowDashData", ensureAuthenticated, async (req, res) => {
 });
 
 
-app.get("/userpage/:hdrId", ensureAuthenticated, async (req, res) => {
+app.get("/userpage/:hdrId", async (req, res) => {
   const hdrId = req.params.hdrId;
-
+  const DepId = req.session.user.DepartmentId;
+  const usrId = req.session.user.id;
+console.log(req.session.user)
   try {
-    const result = await pool.request()
+    const tasksResult = await pool.request()
       .input('HdrID', sql.Int, hdrId)
+      .input('DepId', sql.Int, DepId)
       .query(`
         SELECT 
           t.TaskID,
@@ -186,21 +190,48 @@ app.get("/userpage/:hdrId", ensureAuthenticated, async (req, res) => {
           d.TimeStarted,
           d.TimeFinished,
           d.DelayReason,
-          d.Delay
+          d.Delay,
+          pr.ProcessName,
+          pj.ProjectID,
+          pj.ProjectName
         FROM tblWorkflowDtl d
         INNER JOIN tblTasks t ON d.TaskID = t.TaskID
-        WHERE d.workFLowHdrId = @HdrID
+        INNER JOIN tblWorkflowHdr hdr ON d.workFLowHdrId = hdr.WorkFlowID
+        INNER JOIN tblProcess pr ON hdr.ProcessID = pr.NumberOfProccessID
+        INNER JOIN tblProject pj ON hdr.ProjectID = pj.ProjectID
+        WHERE d.workFLowHdrId = @HdrID AND t.DepId = @DepId
       `);
 
-    res.render("userpage.ejs", {
-      tasks: result.recordset,
-      hdrId: hdrId
+    const departmentResult = await pool.request()
+      .input('DepartmentID', sql.Int, DepId)
+      .query(`
+        SELECT DepartmentID, DeptName 
+        FROM tblDepartments 
+        WHERE DepartmentID = @DepartmentID
+      `);
+
+    const department = departmentResult.recordset[0] || { DeptName: 'Unknown' };
+
+    const user = {
+      id: req.session.user.id,
+      name: req.session.user.name,
+      usrAdmin: req.session.user.usrAdmin,
+      DepartmentId: req.session.user.DepartmentId,
+      DeptName: department.DeptName
+    };
+
+    res.render("userpage", {
+      tasks: tasksResult.recordset,
+      hdrId,
+      user
     });
+
   } catch (err) {
-    console.error("Error loading user page for HdrID:", err);
-    res.status(500).send("Error loading user page.");
+    console.error("Error loading user page with department info:", err);
+    res.status(500).send("Failed to load user page.");
   }
 });
+
 
 
 

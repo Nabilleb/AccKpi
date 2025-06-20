@@ -17,8 +17,8 @@
       <p id="packageName"></p>
      <select name="project" id="project">
   <option value="none">none</option>
-  <% projects.forEach(project => { %>
-    <option value="<%= project.projectID %>"><%= project.projectName %></option>
+  <% tasks.forEach(task => { %>
+    <option value="<%= task.projectID %>"><%= task.projectName %></option>
   <% }) %>
 </select>
 
@@ -26,8 +26,8 @@
     <div class="user-info">
       <div class="user-avatar">RK</div>
       <div>
-        <p><%=usrDesc %></p>
-        <small><%=department %> Department</small>
+        <p><%=user.name %></p>
+        <small><%=user.DeptName %> Department</small>
       </div>
       <button class="logout-btn"> <a href="/logout">Logout</a></button>
     </div>
@@ -111,9 +111,9 @@
 </div>
 
 <script>
-const userId = "<%= userId %>";
-const deptId = "<%= departmentID %>";
-const username = "<%=usrDesc%>"
+const userId = "<%= user.id %>";
+const deptId = "<%= user.DepartmentId %>";
+const username = "<%=user.name%>"
 const tbody = document.querySelector('.tasks-table tbody');
 const navLinks = document.querySelectorAll('.main-nav a, .mobile-nav a');
 let activeProcessId = null;
