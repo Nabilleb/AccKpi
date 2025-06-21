@@ -1355,7 +1355,6 @@ app.post('/finish-task/:taskId', async (req, res) => {
     const planned = new Date(PlannedDate);
     const delay = Math.max(0, Math.ceil((finished - planned) / (1000 * 60 * 60 * 24)));
 
-    // Update current task as finished
     await pool.request()
       .input('taskId', taskId)
       .input('finishTime', finishTime)
@@ -1376,7 +1375,7 @@ app.post('/finish-task/:taskId', async (req, res) => {
       .query(`
         SELECT TOP 1 t.TaskID, t.DaysRequired
         FROM tblTasks t
-        JOIN tblWorkflow w ON t.TaskID = w.TaskID
+        JOIN tblWorkflowDtl w ON t.TaskID = w.TaskID
         WHERE t.DepId = @depId
           AND t.IsTaskSelected = 0
           AND w.TimeFinished IS NULL
@@ -1421,14 +1420,13 @@ app.post('/finish-task/:taskId', async (req, res) => {
       }
     }
 
-    // Mark next task as selected
     await pool.request()
       .input('depId', DepId)
       .query(`
         ;WITH NextTask AS (
           SELECT TOP 1 t.TaskID
           FROM tblTasks t
-          JOIN tblWorkflow w ON t.TaskID = w.TaskID
+          JOIN tblWorkflowDtl w ON t.TaskID = w.TaskID
           WHERE t.DepId = @depId
             AND t.IsTaskSelected = 0
             AND w.TimeFinished IS NULL
@@ -1440,17 +1438,15 @@ app.post('/finish-task/:taskId', async (req, res) => {
         JOIN NextTask nt ON t.TaskID = nt.TaskID
       `);
 
-    // Check if department has completed all tasks
     const remaining = await pool.request()
       .input('depId', DepId)
       .query(`
         SELECT COUNT(*) AS Remaining
         FROM tblTasks t
-        JOIN tblWorkflow w ON t.TaskID = w.TaskID
+        JOIN tblWorkflowDtl w ON t.TaskID = w.TaskID
         WHERE t.DepId = @depId AND w.TimeFinished IS NULL
       `);
 
-    // If department completed all tasks, activate next department
     if (remaining.recordset[0].Remaining === 0) {
       const processInfo = await pool.request()
         .input('depId', DepId)
@@ -1476,7 +1472,6 @@ app.post('/finish-task/:taskId', async (req, res) => {
         if (nextDeptResult.recordset.length > 0) {
           const nextDepId = nextDeptResult.recordset[0].DepartmentID;
 
-          // Send email notification to next department
           const deptEmailResult = await pool.request()
             .input('depId', nextDepId)
             .query(`
@@ -1509,14 +1504,13 @@ app.post('/finish-task/:taskId', async (req, res) => {
             });
           }
 
-          // Select first task for next department
           await pool.request()
             .input('nextDepId', nextDepId)
             .query(`
               ;WITH NextTask AS (
                 SELECT TOP 1 t.TaskID
                 FROM tblTasks t
-                JOIN tblWorkflow w ON t.TaskID = w.TaskID
+                JOIN tblWorkflowDtl w ON t.TaskID = w.TaskID
                 WHERE t.DepId = @nextDepId
                   AND t.IsTaskSelected = 0
                   AND w.TimeFinished IS NULL

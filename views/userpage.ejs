@@ -174,17 +174,18 @@ function renderTasks(tasks) {
       extraButtons = `<button class="row-save-btn" data-task-id="${task.TaskID}"><i class="fas fa-save"></i> Save</button>`;
     }
 
-    tr.innerHTML = `
-      <td>${task.TaskName || ''}</td>
-      <td>${task.TaskPlanned || ''}</td>
-      <td>${plannedDate}</td>
-      <td>${task.DaysRequired}</td>
-      <td>${finishDate}</td>
-      <td>${status}</td>
-      <td>${task.Delay !== null ? task.Delay : 0}</td>
-      <td>${delayInput}</td>
-      <td><div class="button-container">${actionButton}${extraButtons}</div></td>
-    `;
+  tr.innerHTML = `
+  <td>${task.TaskName || ''}</td>
+  <td>${task.TaskPlanned || ''}</td>
+  <td>${plannedDate}</td>
+  ${taskPlannedCell}
+  <td>${finishDate}</td>
+  <td>${status}</td>
+  <td>${task.Delay !== null ? task.Delay : 0}</td>
+  <td>${delayInput}</td>
+  <td><div class="button-container">${actionButton}${extraButtons}</div></td>
+`;
+
     tbody.appendChild(tr);
   });
 }
@@ -233,70 +234,49 @@ tbody.addEventListener('click', async (e) => {
     }
   }
 
-  if (e.target.classList.contains('task-start-btn')) {
-    if (!confirm('Are you sure you want to start this task?')) return;
-    const originalHTML = e.target.innerHTML;
-    try {
-      e.target.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Starting...';
-      const now = new Date().toISOString();
-      await fetch(`/start-task/${taskId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ startTime: now })
-      });
+ if (e.target.classList.contains('task-start-btn')) {
+  if (!confirm('Are you sure you want to start this task?')) return;
+  const originalHTML = e.target.innerHTML;
+  try {
+    e.target.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Starting...';
+    const now = new Date().toISOString();
+    await fetch(`/start-task/${taskId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ startTime: now })
+    });
 
-      const task = taskList.find(t => t.TaskID == taskId);
-      if (task) task.TimeStarted = now;
-
-      renderTasks(taskList);
-    } catch (err) {
-      showError("Failed to start task");
-    } finally {
-      e.target.innerHTML = originalHTML;
-    }
+    window.location.reload(); // ✅ Reloads page with correct DB data
+  } catch (err) {
+    showError("Failed to start task");
+  } finally {
+    e.target.innerHTML = originalHTML;
   }
+}
 
-  if (e.target.classList.contains('task-finish-btn')) {
-    if (!confirm('Are you sure you want to mark this task as finished?')) return;
-    const originalHTML = e.target.innerHTML;
-    try {
-      e.target.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Finishing...';
-      const now = new Date().toISOString();
-      await fetch(`/finish-task/${taskId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ finishTime: now })
-      });
+if (e.target.classList.contains('task-finish-btn')) {
+  if (!confirm('Are you sure you want to mark this task as finished?')) return;
+  const originalHTML = e.target.innerHTML;
+  try {
+    e.target.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Finishing...';
+    const now = new Date().toISOString();
+    await fetch(`/finish-task/${taskId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ finishTime: now })
+    });
 
-      // 1. Finish current task
-      const finishedTask = taskList.find(t => t.TaskID == taskId);
-      if (finishedTask) {
-        finishedTask.TimeFinished = now;
-        finishedTask.IsTaskSelected = 0;
-      }
-
-      // 2. Activate next task by priority in same department
-      const nextTask = taskList
-        .filter(t => t.DepId == deptId && !t.TimeFinished && !t.IsTaskSelected)
-        .sort((a, b) => a.Priority - b.Priority)[0];
-
-      if (nextTask) {
-        nextTask.IsTaskSelected = 1;
-        const plannedDate = new Date();
-        plannedDate.setDate(plannedDate.getDate() + 1 + (nextTask.DaysRequired || 1));
-        nextTask.PlannedDate = plannedDate.toISOString();
-      }
-
-      renderTasks(taskList);
-    } catch (err) {
-      showError("Failed to finish task");
-    } finally {
-      e.target.innerHTML = originalHTML;
-    }
+    window.location.reload(); // ✅ Refreshes view with correct selected task
+  } catch (err) {
+    showError("Failed to finish task");
+  } finally {
+    e.target.innerHTML = originalHTML;
   }
+}
+
 });
 
-renderTasks(taskList); // Initial call on page load
+renderTasks(taskList); 
 </script>
 
 
