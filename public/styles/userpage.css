@@ -101,6 +101,14 @@
     margin: 0 4px;
   }
 }
+.department-header {
+  background-color: #dbeafc;
+  font-weight: bold;
+  font-size: 1rem;
+}
+.department-label {
+  padding: 8px;
+}
 
     .user-info {
       display: flex;

@@ -58,6 +58,8 @@
     <i class="fas fa-bars"></i>
   </button>
 <section class="tasks-section">
+  <section class="department-tasks-container">
+</section>
   <h2 class="section-title">
     <i class="fas fa-tasks"></i>
     My Tasks
@@ -124,71 +126,98 @@ function createErrorElement() {
 
 function renderTasks(tasks) {
   tbody.innerHTML = '';
+
   if (tasks.length === 0) {
     tbody.innerHTML = `<tr><td colspan="9" class="empty-message">No tasks found.</td></tr>`;
     return;
   }
 
-  tasks.forEach((task) => {
-    const tr = document.createElement('tr');
-    const isOwnDepartment = task.DepId == deptId;
-
-    if (task.IsTaskSelected) {
-      tr.classList.add('active-task-row');
+  // Group tasks by department
+  const grouped = {};
+  tasks.forEach(task => {
+    if (!grouped[task.DepId]) {
+      grouped[task.DepId] = {
+        deptName: task.DeptName || `Department ${task.DepId}`,
+        tasks: []
+      };
     }
+    grouped[task.DepId].tasks.push(task);
+  });
 
-    let status = '';
-    if (!task.TimeFinished && task.IsTaskSelected) {
-      status = '<span class="status-badge status-pending">Pending</span>';
-    } else if (task.TimeFinished && task.Delay > 0) {
-      status = '<span class="status-badge status-overdue">Overdue</span>';
-    } else if (task.TimeFinished) {
-      status = '<span class="status-badge status-completed">Completed</span>';
-    }
-
-    const plannedDate = task.PlannedDate ? task.PlannedDate.split('T')[0] : '';
-    const finishDate = task.TimeFinished ? task.TimeFinished.split('T')[0] : '';
-    const delayReason = task.DelayReason || '';
-    const delayInputDisabled = !isOwnDepartment || !(task.TimeFinished && task.Delay > 0) ? 'disabled' : '';
-
-    const delayInput = `
-      <input type="text" value="${delayReason}" class="delay-reason-input" data-task-id="${task.TaskID}" 
-        ${delayInputDisabled} placeholder="${delayInputDisabled ? '' : 'Enter delay reason...'}">
+  // Render by department
+  Object.values(grouped).forEach(group => {
+    // Insert a header row for the department
+    const deptRow = document.createElement('tr');
+    deptRow.innerHTML = `
+      <td colspan="9" class="department-label">
+        <strong>Department:</strong> ${group.deptName}
+      </td>
     `;
+    deptRow.classList.add('department-header');
+    tbody.appendChild(deptRow);
 
-    const taskPlannedCell = !task.isDateFixed && isOwnDepartment
-      ? `<td><input type="number" min="1" value="${task.DaysRequired}" class="editable-days" data-task-id="${task.TaskID}"></td>`
-      : `<td>${task.DaysRequired}</td>`;
+    group.tasks.forEach(task => {
+      const tr = document.createElement('tr');
+      const isOwnDepartment = task.DepId == deptId;
 
-    let actionButton = '';
-    if (isOwnDepartment && task.IsTaskSelected) {
-      if (!task.TimeStarted) {
-        actionButton = `<button class="task-start-btn" data-task-id="${task.TaskID}"><i class="fas fa-play"></i> Start</button>`;
-      } else if (!task.TimeFinished) {
-        actionButton = `<button class="task-finish-btn" data-task-id="${task.TaskID}"><i class="fas fa-flag-checkered"></i> Finish</button>`;
+      if (task.IsTaskSelected) {
+        tr.classList.add('active-task-row');
       }
-    }
 
-    let extraButtons = '';
-    if (isOwnDepartment) {
-      extraButtons = `<button class="row-save-btn" data-task-id="${task.TaskID}"><i class="fas fa-save"></i> Save</button>`;
-    }
+      let status = '';
+      if (!task.TimeFinished && task.IsTaskSelected) {
+        status = '<span class="status-badge status-pending">Pending</span>';
+      } else if (task.TimeFinished && task.Delay > 0) {
+        status = '<span class="status-badge status-overdue">Overdue</span>';
+      } else if (task.TimeFinished) {
+        status = '<span class="status-badge status-completed">Completed</span>';
+      }
 
-  tr.innerHTML = `
-  <td>${task.TaskName || ''}</td>
-  <td>${task.TaskPlanned || ''}</td>
-  <td>${plannedDate}</td>
-  ${taskPlannedCell}
-  <td>${finishDate}</td>
-  <td>${status}</td>
-  <td>${task.Delay !== null ? task.Delay : 0}</td>
-  <td>${delayInput}</td>
-  <td><div class="button-container">${actionButton}${extraButtons}</div></td>
-`;
+      const plannedDate = task.PlannedDate ? task.PlannedDate.split('T')[0] : '';
+      const finishDate = task.TimeFinished ? task.TimeFinished.split('T')[0] : '';
+      const delayReason = task.DelayReason || '';
+      const delayInputDisabled = !isOwnDepartment || !(task.TimeFinished && task.Delay > 0) ? 'disabled' : '';
 
-    tbody.appendChild(tr);
+      const delayInput = `
+        <input type="text" value="${delayReason}" class="delay-reason-input" data-task-id="${task.TaskID}" 
+          ${delayInputDisabled} placeholder="${delayInputDisabled ? '' : 'Enter delay reason...'}">
+      `;
+
+      const taskPlannedCell = !task.isDateFixed && isOwnDepartment
+        ? `<td><input type="number" min="1" value="${task.DaysRequired}" class="editable-days" data-task-id="${task.TaskID}"></td>`
+        : `<td>${task.DaysRequired}</td>`;
+
+      let actionButton = '';
+      if (isOwnDepartment && task.IsTaskSelected) {
+        if (!task.TimeStarted) {
+          actionButton = `<button class="task-start-btn" data-task-id="${task.TaskID}"><i class="fas fa-play"></i> Start</button>`;
+        } else if (!task.TimeFinished) {
+          actionButton = `<button class="task-finish-btn" data-task-id="${task.TaskID}"><i class="fas fa-flag-checkered"></i> Finish</button>`;
+        }
+      }
+
+      let extraButtons = '';
+      if (isOwnDepartment) {
+        extraButtons = `<button class="row-save-btn" data-task-id="${task.TaskID}"><i class="fas fa-save"></i> Save</button>`;
+      }
+
+      tr.innerHTML = `
+        <td>${task.TaskName || ''}</td>
+        <td>${task.TaskPlanned || ''}</td>
+        <td>${plannedDate}</td>
+        ${taskPlannedCell}
+        <td>${finishDate}</td>
+        <td>${status}</td>
+        <td>${task.Delay !== null ? task.Delay : 0}</td>
+        <td>${delayInput}</td>
+        <td><div class="button-container">${actionButton}${extraButtons}</div></td>
+      `;
+
+      tbody.appendChild(tr);
+    });
   });
 }
+
 
 tbody.addEventListener('click', async (e) => {
   e.preventDefault();
@@ -246,7 +275,7 @@ tbody.addEventListener('click', async (e) => {
       body: JSON.stringify({ startTime: now })
     });
 
-    window.location.reload(); // ✅ Reloads page with correct DB data
+    window.location.reload();
   } catch (err) {
     showError("Failed to start task");
   } finally {
