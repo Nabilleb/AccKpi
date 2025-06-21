@@ -188,37 +188,38 @@ app.get("/userpage/:hdrId", async (req, res) => {
     const request1 = pool.request();
     request1.input('HdrID', sql.Int, hdrId);
     request1.input('DepId', sql.Int, DepId);
+const tasksResult = await request1.query(`
+  SELECT 
+    t.TaskID,
+    t.TaskName,
+    t.TaskPlanned,
+    t.IsTaskSelected,
+    t.IsDateFixed,
+    t.PlannedDate,
+    t.DepId,
+    t.Priority,
+    t.PredecessorID,
+    t.DaysRequired,
+    t.linkTasks,
+    d.WorkflowDtlId,
+    d.WorkflowName,
+    d.TimeStarted,
+    d.TimeFinished,
+    d.DelayReason,
+    d.Delay,
+    pr.NumberOfProccessID,
+    pr.ProcessName,
+    pj.ProjectID,
+    pj.ProjectName
+  FROM tblWorkflowDtl d
+  INNER JOIN tblTasks t ON d.TaskID = t.TaskID
+  INNER JOIN tblWorkflowHdr hdr ON d.workFLowHdrId = hdr.WorkFlowID
+  INNER JOIN tblProcess pr ON hdr.ProcessID = pr.NumberOfProccessID
+  INNER JOIN tblProject pj ON hdr.ProjectID = pj.ProjectID
+  WHERE d.workFLowHdrId = @HdrID
+  ORDER BY t.Priority ASC
+`);
 
-    const tasksResult = await request1.query(`
-      SELECT 
-        t.TaskID,
-        t.TaskName,
-        t.TaskPlanned,
-        t.IsTaskSelected,
-        t.IsDateFixed,
-        t.PlannedDate,
-        t.DepId,
-        t.Priority,
-        t.PredecessorID,
-        t.DaysRequired,
-        t.linkTasks,
-        d.WorkflowDtlId,
-        d.WorkflowName,
-        d.TimeStarted,
-        d.TimeFinished,
-        d.DelayReason,
-        d.Delay,
-        pr.NumberOfProccessID,
-        pr.ProcessName,
-        pj.ProjectID,
-        pj.ProjectName
-      FROM tblWorkflowDtl d
-      INNER JOIN tblTasks t ON d.TaskID = t.TaskID
-      INNER JOIN tblWorkflowHdr hdr ON d.workFLowHdrId = hdr.WorkFlowID
-      INNER JOIN tblProcess pr ON hdr.ProcessID = pr.NumberOfProccessID
-      INNER JOIN tblProject pj ON hdr.ProjectID = pj.ProjectID
-      WHERE d.workFLowHdrId = @HdrID AND t.DepId = @DepId
-    `);
 
     const request2 = pool.request();
     request2.input('DepartmentID', sql.Int, DepId);
