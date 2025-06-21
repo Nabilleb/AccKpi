@@ -208,6 +208,7 @@ app.get("/userpage/:hdrId", async (req, res) => {
         d.TimeFinished,
         d.DelayReason,
         d.Delay,
+        pr.NumberOfProccessID,
         pr.ProcessName,
         pj.ProjectID,
         pj.ProjectName
@@ -455,7 +456,7 @@ if (!isActive) {
   .query(
     `SELECT T.TaskID,T.TaskName,T.TaskPlanned, T.DepId,T.PlannedDate,T.isTaskSelected, T.isDateFixed,T.DaysRequired, W.Delay,W.TimeStarted,W.TimeFinished, W.DelayReason
      FROM tblTasks T
-     JOIN tblWorkflow W ON W.TaskID = T.TaskID
+     JOIN tblWorkflowDtl W ON W.TaskID = T.TaskID
      JOIN tblProcessDepartment P ON P.DepartmentID = @departmentId AND P.ProcessID = @processId
      WHERE T.DepId = @departmentId
      ORDER BY Priority

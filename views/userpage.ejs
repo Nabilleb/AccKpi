@@ -91,9 +91,8 @@
 <script>
 const userId = "<%= user.id %>";
 const deptId = "<%= user.DepartmentId %>";
-const tasks1 = <%- JSON.stringify(tasks) %>;
+const taskList = <%- JSON.stringify(tasks) %>; // local task list
 const tbody = document.querySelector('.tasks-table tbody');
-let isLoading = false;
 
 function showError(message) {
   const errorEl = document.getElementById('error-message') || createErrorElement();
@@ -109,14 +108,22 @@ function showError(message) {
 function createErrorElement() {
   const errorEl = document.createElement('div');
   errorEl.id = 'error-message';
+  errorEl.style.position = 'fixed';
+  errorEl.style.bottom = '20px';
+  errorEl.style.right = '20px';
+  errorEl.style.background = '#f44336';
+  errorEl.style.color = '#fff';
+  errorEl.style.padding = '10px 20px';
+  errorEl.style.borderRadius = '5px';
+  errorEl.style.opacity = 0;
+  errorEl.style.transition = 'opacity 0.3s';
+  errorEl.style.zIndex = 1000;
   document.body.appendChild(errorEl);
   return errorEl;
 }
 
 function renderTasks(tasks) {
-  if (!tbody) return;
   tbody.innerHTML = '';
-
   if (tasks.length === 0) {
     tbody.innerHTML = `<tr><td colspan="9" class="empty-message">No tasks found.</td></tr>`;
     return;
@@ -125,6 +132,10 @@ function renderTasks(tasks) {
   tasks.forEach((task) => {
     const tr = document.createElement('tr');
     const isOwnDepartment = task.DepId == deptId;
+
+    if (task.IsTaskSelected) {
+      tr.classList.add('active-task-row');
+    }
 
     let status = '';
     if (!task.TimeFinished && task.IsTaskSelected) {
@@ -180,8 +191,6 @@ function renderTasks(tasks) {
 
 tbody.addEventListener('click', async (e) => {
   e.preventDefault();
-  if (isLoading) return;
-
   const taskId = e.target.dataset.taskId;
   const row = e.target.closest('tr');
 
@@ -214,15 +223,10 @@ tbody.addEventListener('click', async (e) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ updates })
       });
-      const data = await res.json();
-      if (res.ok) {
-        showError('Changes saved successfully');
-        renderTasks(tasks1);
-      } else {
-        throw new Error(data.error || 'Save failed');
-      }
+
+      if (!res.ok) throw new Error((await res.json()).error || 'Save failed');
+      showError('Changes saved successfully');
     } catch (err) {
-      console.error('Save error:', err);
       showError(err.message);
     } finally {
       e.target.innerHTML = originalHTML;
@@ -240,9 +244,12 @@ tbody.addEventListener('click', async (e) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ startTime: now })
       });
-      renderTasks(tasks1);
+
+      const task = taskList.find(t => t.TaskID == taskId);
+      if (task) task.TimeStarted = now;
+
+      renderTasks(taskList);
     } catch (err) {
-      console.error('Start error:', err);
       showError("Failed to start task");
     } finally {
       e.target.innerHTML = originalHTML;
@@ -260,9 +267,28 @@ tbody.addEventListener('click', async (e) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ finishTime: now })
       });
-      renderTasks(tasks1);
+
+      // 1. Finish current task
+      const finishedTask = taskList.find(t => t.TaskID == taskId);
+      if (finishedTask) {
+        finishedTask.TimeFinished = now;
+        finishedTask.IsTaskSelected = 0;
+      }
+
+      // 2. Activate next task by priority in same department
+      const nextTask = taskList
+        .filter(t => t.DepId == deptId && !t.TimeFinished && !t.IsTaskSelected)
+        .sort((a, b) => a.Priority - b.Priority)[0];
+
+      if (nextTask) {
+        nextTask.IsTaskSelected = 1;
+        const plannedDate = new Date();
+        plannedDate.setDate(plannedDate.getDate() + 1 + (nextTask.DaysRequired || 1));
+        nextTask.PlannedDate = plannedDate.toISOString();
+      }
+
+      renderTasks(taskList);
     } catch (err) {
-      console.error('Finish error:', err);
       showError("Failed to finish task");
     } finally {
       e.target.innerHTML = originalHTML;
@@ -270,9 +296,21 @@ tbody.addEventListener('click', async (e) => {
   }
 });
 
-// Render tasks on load
-renderTasks(tasks1);
+renderTasks(taskList); // Initial call on page load
 </script>
+
+
+<style>
+.active-task-row {
+  background-color: #e3f7ff;
+  animation: highlightTask 1s ease-in-out;
+}
+@keyframes highlightTask {
+  0% { background-color: #ffffcc; }
+  100% { background-color: #e3f7ff; }
+}
+</style>
+
 
 
 
