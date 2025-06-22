@@ -91,6 +91,24 @@
           </div>
         </div>
       </div>
+<div class="processgrid">
+  <% processes.forEach(process => { %>
+    <div class="process-card" data-process-id="<%= process.NumberOfProccessID %>">
+      <h3><%= process.ProcessName %></h3>
+      <p><%= process.processDesc || 'No description provided.' %></p>
+    </div>
+  <% }) %>
+</div>
+
+
+<div id="process-flow-modal" class="modal" style="display:none;">
+  <div class="modal-content">
+    <span id="closeModal" class="close">&times;</span>
+    <h3 id="processTitle">Process Flow</h3>
+    <ul id="processSteps"></ul>
+  </div>
+</div>
+
 
       <h3 id="activityTitle" class="section-title"><i class="fas fa-clipboard-list"></i> Procurement Activities</h3>
       <input type="text" id="taskSearchInput" placeholder="Search tasks..." style="margin: 10px 0; padding: 6px; width: 100%; max-width: 300px;">
@@ -115,20 +133,17 @@
 
 <script>
   document.addEventListener('DOMContentLoaded', () => {
-    // Toast notification function
     function showToast(message, type = 'success') {
       const toast = document.createElement('div');
       toast.className = `toast-notification toast-${type}`;
       toast.textContent = message;
       document.body.appendChild(toast);
       
-      // Animation for toast entry
       setTimeout(() => {
         toast.style.opacity = '1';
         toast.style.transform = 'translateY(0)';
       }, 10);
       
-      // Auto-remove after 3 seconds
       setTimeout(() => {
         toast.style.opacity = '0';
         toast.style.transform = 'translateY(-20px)';
@@ -136,7 +151,6 @@
       }, 3000);
     }
 
-    // Search functionality
     const searchInput = document.createElement('input');
     searchInput.type = 'text';
     searchInput.placeholder = 'Search tasks...';
@@ -147,7 +161,6 @@
     searchInput.style.borderRadius = '4px';
     searchInput.style.border = '1px solid #ddd';
     
-    // Insert search input before the table
     const table = document.querySelector('table');
     if (table) {
       table.parentNode.insertBefore(searchInput, table);
@@ -205,7 +218,6 @@
 
     function refreshTasks() {
       if (currentDepartmentID) {
-        // Add loading animation
         const tbody = document.querySelector("tbody");
         tbody.innerHTML = '<tr class="loading-row"><td colspan="7"><div class="loading-spinner"></div></td></tr>';
         
@@ -222,7 +234,6 @@
         const departmentID = link.dataset.id;
         currentDepartmentID = departmentID;
 
-        // Add animation to title change
         activityTitle.style.opacity = '0';
         setTimeout(() => {
           activityTitle.innerHTML = `<i class="fas fa-clipboard-list"></i> ${departmentName} Activities`;
@@ -412,7 +423,41 @@
         }, 300);
       }
     });
+document.querySelectorAll('.process-card').forEach(card => {
+  card.addEventListener('click', async () => {
+    const processId = card.dataset.processId;
+    const processName = card.querySelector("h3").textContent;
+    console.log(card.dataset)
+    try {
+      const res = await fetch(`/process/${processId}/departments`);
+      const steps = await res.json();
+
+      const stepsList = document.getElementById('processSteps');
+      stepsList.innerHTML = '';
+      steps.forEach(step => {
+        const li = document.createElement('li');
+        li.innerHTML = `
+          <strong>Step ${step.StepOrder || '-'}</strong> - ${step.DeptName} 
+          ${step.IsActive ? '<span style="color:green">(Active)</span>' : ''}
+        `;
+        stepsList.appendChild(li);
+      });
+
+      document.getElementById('processTitle').textContent = `Process Flow: ${processName}`;
+      document.getElementById('process-flow-modal').style.display = 'block';
+    } catch (err) {
+      alert("Error loading process flow");
+    }
   });
+});
+
+document.getElementById('closeModal').addEventListener('click', () => {
+  document.getElementById('process-flow-modal').style.display = 'none';
+});
+
+  });
+
+  
 </script>
 
 <style>

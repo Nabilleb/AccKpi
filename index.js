@@ -285,7 +285,7 @@ app.get('/api/tasks/by-department/:departmentID', async (req, res) => {
     FROM tblTasks T
     LEFT JOIN (
       SELECT *, ROW_NUMBER() OVER (PARTITION BY TaskID ORDER BY TimeFinished DESC) AS rn
-      FROM tblWorkflow
+      FROM tblWorkflowDtl
     ) W ON T.TaskID = W.TaskID AND W.rn = 1
     WHERE T.DepId = @departmentID
     ORDER BY T.Priority;
@@ -531,7 +531,7 @@ app.get('/department/:departmentId/tasks', async (req, res) => {
                T.DepId, T.IsDateFixed,T.DaysRequired,
                 W.Delay, W.DelayReason
         FROM tblTasks T
-        LEFT JOIN tblWorkflow W ON T.TaskID = W.TaskID
+        LEFT JOIN tblWorkflowDtl W ON T.TaskID = W.TaskID
         WHERE T.DepID = @departmentId
       `);
 
@@ -557,7 +557,7 @@ app.get("/getWorkflow", async (req, res) => {
       .input("TaskID", sql.Int, TaskID)
       .input("PkgeID", sql.Int, PkgeID)
       .query(`
-        SELECT TOP 1 * FROM tblWorkflow
+        SELECT TOP 1 * FROM tblWorkflowDtl
         WHERE TaskID = @TaskID AND PkgeID = @PkgeID
       `);
 
@@ -573,16 +573,56 @@ app.get("/getWorkflow", async (req, res) => {
 });
 
 
-app.get("/adminpage", ensureAuthenticated, (req, res) => {
+app.get("/adminpage", ensureAuthenticated, async (req, res) => {
   const user = req.session.user;
 
-  if (user && user.usrAdmin) {
-    res.render("homepage.ejs", { user });
-  } else {
-    res.status(403).send("Forbidden: Admins only");
+  if (!user || !user.usrAdmin) {
+    return res.status(403).send("Forbidden: Admins only");
+  }
+
+  try {
+    const request = pool.request();
+    const result = await request.query(`
+      SELECT NumberOfProccessID, ProcessName, processDesc
+      FROM tblProcess
+      ORDER BY NumberOfProccessID
+    `);
+
+    res.render("homepage.ejs", {
+      user,
+      processes: result.recordset 
+    });
+  } catch (err) {
+    console.error("Error fetching processes:", err);
+    res.status(500).send("Server error");
   }
 });
 
+app.get("/process/:id/departments", async (req, res) => {
+  const processId = req.params.id;
+console.log("process id", processId)
+  try {
+    const request = pool.request();
+    request.input("processId", processId);
+    const result = await request.query(`
+      SELECT 
+        pd.ProcessID,
+        pd.DepartmentID,
+        pd.StepOrder,
+        pd.IsActive,
+        d.DeptName
+      FROM tblProcessDepartment pd
+      JOIN tblDepartments d ON d.DepartmentID = pd.DepartmentID
+      WHERE pd.ProcessID = @processId
+      ORDER BY pd.StepOrder
+    `);
+
+    res.json(result.recordset);
+  } catch (err) {
+    console.error("Error fetching departments for process:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
 
 app.get("/api/departments", async (req, res) => {
   try {
@@ -615,7 +655,7 @@ app.post('/tasks/:id/update', async (req, res) => {
     `;
 
     await sql.query`
-      UPDATE tblWorkflow
+      UPDATE tblWorkflowDtl
       SET DelayReason = ${DelayReason}
       WHERE TaskID = ${id} AND usrID = ${usrID}
     `;
@@ -745,7 +785,7 @@ VALUES (@TaskName, @TaskPlanned, @IsTaskSelected, @IsDateFixed, @PlannedDate, @D
       .input('WorkflowName', sql.NVarChar, workflowName)
       .input('TaskID', sql.Int, newTaskId)
       .query(`
-        INSERT INTO tblWorkflow (WorkflowName, TaskID)
+        INSERT INTO tblWorkflowDtl (WorkflowName, TaskID)
         VALUES (@WorkflowName, @TaskID)
       `);
 if(!req.session.user.usrAdmin){
@@ -786,7 +826,7 @@ app.get('/task-selected', async (req, res) => {
         w.Delay,
         d.DeptName
       FROM tblTasks t
-      LEFT JOIN tblWorkflow w ON t.TaskID = w.TaskID
+      LEFT JOIN tblWorkflowDtl w ON t.TaskID = w.TaskID
       LEFT JOIN tblDepartments d ON t.DepId = d.DepartmentID
       ORDER BY t.DepId, t.TaskID ASC
     `);
@@ -820,7 +860,7 @@ app.get('/edit-task/:id', async (req, res) => {
       .query(`
         SELECT t.*, w.TimeFinished 
         FROM tblTasks t
-        LEFT JOIN tblWorkflow w ON t.TaskID = w.TaskID
+        LEFT JOIN tblWorkflowDtl w ON t.TaskID = w.TaskID
         WHERE t.TaskID = @TaskID
       `);
 
@@ -863,7 +903,7 @@ app.delete('/delete-task/:taskId', async (req, res) => {
       `);
 
       await request.query(`
-        DELETE FROM tblWorkflow
+        DELETE FROM tblWorkflowDtl
         WHERE TaskID = @TaskID
       `);
 
@@ -964,7 +1004,7 @@ app.post("/postWorkflow", async (req, res) => {
       .input('TaskID', sql.Int, TaskID)
       .input('PkgeID', sql.Int, PkgeID)
       .query(`
-        SELECT TOP 1 * FROM tblWorkflow 
+        SELECT TOP 1 * FROM tblWorkflowDtl
         WHERE TaskID = @TaskID AND PkgeID = @PkgeID
       `);
 
@@ -985,7 +1025,7 @@ app.post("/postWorkflow", async (req, res) => {
           .input('TaskID', sql.Int, TaskID)
           .input('PkgeID', sql.Int, PkgeID)
           .query(`
-            UPDATE tblWorkflow
+            UPDATE tblWorkflowDtl
             SET WorkflowName = @WorkflowName,
                 usrID = @usrID,
                 TimeStarted = @TimeStarted,
@@ -1006,7 +1046,7 @@ app.post("/postWorkflow", async (req, res) => {
         .input('TimeStarted', sql.DateTime, timeStartedFormatted)
         .input('TimeFinished', sql.DateTime, timeFinishedFormatted)
         .query(`
-          INSERT INTO tblWorkflow (
+          INSERT INTO tblWorkflowDtl (
             WorkflowName, usrID, TaskID, PkgeID, TimeStarted, TimeFinished
           )
           VALUES (
