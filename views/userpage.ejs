@@ -6,35 +6,475 @@
   <title>My Tasks | Engineering System</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="/styles/userpage.css">
- <link rel="stylesheet" href="/styles/homepage.css">
+  <link rel="stylesheet" href="/styles/homepage.css">
+  <style>
+    :root {
+      --primary: #005bab;
+      --primary-dark: #003f7f;
+      --primary-light: #e6f0ff;
+      --accent: #007acc;
+      --accent-dark: #005f99;
+      --text: #333333;
+      --text-light: #666666;
+      --border: #e0e0e0;
+      --background: #f8fafc;
+      --white: #ffffff;
+      --success: #28a745;
+      --warning: #ffc107;
+      --danger: #dc3545;
+      --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background-color: var(--background);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    /* Header */
+    .dashboard-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: var(--white);
+      padding: 1rem 2rem;
+      border-bottom: 3px solid var(--primary);
+      box-shadow: var(--shadow);
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .logo {
+      height: 40px;
+    }
+
+    .hierarchy-display {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 16px;
+      margin: 16px 0;
+    }
+
+    .hierarchy-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background-color: #f5f5f5;
+      padding: 8px 12px;
+      border-radius: 6px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .hierarchy-label {
+      font-weight: 600;
+      color: #555;
+    }
+
+    .hierarchy-value {
+      font-weight: 500;
+      color: #333;
+    }
+
+    .hierarchy-arrow {
+      width: 20px;
+      height: 20px;
+      fill: #666;
+      margin-left: 4px;
+    }
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .user-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background-color: var(--primary-light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--primary);
+      font-weight: bold;
+    }
+
+    .logout-btn {
+      background-color: var(--primary);
+      color: var(--white);
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .logout-btn:hover {
+      background-color: var(--primary-dark);
+    }
+
+    /* Main Content */
+    .main-content {
+      max-width: 1200px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+    }
+
+    /* Tasks Section */
+    .tasks-section {
+      background-color: var(--white);
+      padding: 1.5rem;
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+    }
+
+    .section-title {
+      font-size: 1.25rem;
+      color: var(--primary-dark);
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .section-title i {
+      color: var(--accent);
+    }
+
+    /* Department Tables */
+    .department-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      margin-bottom: 2rem;
+      font-size: 0.9rem;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+
+    .department-table:last-child {
+      margin-bottom: 0;
+    }
+
+    .department-header {
+      background-color: var(--primary);
+      color: var(--white);
+      padding: 0.85rem 1rem;
+      text-align: left;
+      font-weight: 600;
+      font-size: 1rem;
+    }
+
+    .department-header th {
+      padding: 0.85rem 1rem;
+    }
+
+    .department-table th {
+      background-color: var(--primary);
+      color: var(--white);
+      padding: 0.85rem 1rem;
+      text-align: left;
+      font-weight: 600;
+    }
+
+    .department-table td {
+      padding: 0.85rem 1rem;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+      position: relative;
+    }
+
+    .department-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .department-table tr:nth-child(even) {
+      background-color: rgba(0, 91, 171, 0.03);
+    }
+
+    .department-table tr:hover {
+      background-color: rgba(0, 91, 171, 0.07);
+    }
+
+    /* Status badges */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.35rem 0.75rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .status-pending {
+      background-color: rgba(255, 193, 7, 0.15);
+      color: var(--warning);
+    }
+
+    .status-completed {
+      background-color: rgba(40, 167, 69, 0.15);
+      color: var(--success);
+    }
+
+    .status-overdue {
+      background-color: rgba(220, 53, 69, 0.15);
+      color: var(--danger);
+    }
+
+    /* Editable fields */
+    .editable-days {
+      padding: 0.5rem;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      background-color: var(--white);
+      width: 60px;
+      text-align: center;
+      transition: var(--transition);
+    }
+
+    .editable-days:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.2);
+    }
+
+    .delay-reason-input {
+      padding: 0.5rem;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      background-color: var(--white);
+      transition: var(--transition);
+      width: 100%;
+    }
+
+    .delay-reason-input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.2);
+    }
+
+    /* Button styles */
+    .button-container {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .task-start-btn {
+      background-color: var(--accent);
+      color: white;
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 4px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .task-start-btn:hover {
+      background-color: var(--accent-dark);
+    }
+
+    .task-finish-btn {
+      background-color: var(--success);
+      color: white;
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 4px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .task-finish-btn:hover {
+      background-color: #218838;
+    }
+
+    .row-save-btn {
+      background-color: var(--success);
+      color: white;
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 4px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .row-save-btn:hover {
+      background-color: #218838;
+    }
+
+    /* Active task row */
+    .active-task-row {
+      background-color: #e3f7ff;
+      animation: highlightTask 1s ease-in-out;
+    }
+
+    @keyframes highlightTask {
+      0% { background-color: #ffffcc; }
+      100% { background-color: #e3f7ff; }
+    }
+
+    /* Empty message */
+    .empty-message {
+      text-align: center;
+      padding: 2rem;
+      color: var(--text-light);
+      font-style: italic;
+    }
+
+    /* Department label */
+    .department-label {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--primary-dark);
+      padding: 1rem;
+      background-color: #f0f7ff;
+      border-bottom: 2px solid var(--primary-light);
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      .dashboard-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+        padding: 1rem;
+      }
+      
+      .header-left {
+        flex-wrap: wrap;
+      }
+      
+      .user-info {
+        width: 100%;
+        justify-content: space-between;
+      }
+      
+      .department-table {
+        display: block;
+        overflow-x: auto;
+      }
+      
+      .button-container {
+        flex-direction: column;
+      }
+      
+      .task-start-btn,
+      .task-finish-btn,
+      .row-save-btn {
+        width: 100%;
+      }
+    }
+
+    /* Modal styles */
+    .modal {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: rgba(0,0,0,0.5);
+      display: flex; justify-content: center; align-items: center;
+      z-index: 1000;
+    }
+
+    .modal-content {
+      background: white;
+      padding: 20px 30px;
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    .modal-actions {
+      margin-top: 15px;
+      display: flex;
+      justify-content: space-around;
+    }
+
+    .modal-content input[type="date"] {
+      padding: 5px;
+      font-size: 16px;
+    }
+
+    .modal-content button {
+      padding: 6px 12px;
+      cursor: pointer;
+    }
+
+    /* Back button */
+    .back-button {
+      background-color: var(--primary);
+      color: white;
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .back-button:hover {
+      background-color: var(--primary-dark);
+    }
+
+    /* Error message */
+    #error-message {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #f44336;
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: 5px;
+      opacity: 0;
+      transition: opacity 0.3s;
+      z-index: 1000;
+    }
+  </style>
 </head>
 <body>
   <header class="dashboard-header">
-    
     <div class="header-left">
       <img src="/images/accNewLog.webp" alt="Company Logo" class="logo">
       <h1>Task Management</h1>
       
-<div class="hierarchy-display">
-  <div class="hierarchy-item">
-    <span class="hierarchy-label">Process:</span>
-    <span class="hierarchy-value"><%= tasks[0]?.ProcessName || 'N/A' %></span>
-    <svg class="hierarchy-arrow" viewBox="0 0 24 24">
-      <path d="M8.59 16.59L13.17 12L8.59 7.41L10 6L16 12L10 18L8.59 16.59Z"/>
-    </svg>
-  </div>
-  <div class="hierarchy-item">
-    <span class="hierarchy-label">Project:</span>
-    <span class="hierarchy-value"><%= tasks[0]?.ProjectName || 'N/A' %></span>
-    <svg class="hierarchy-arrow" viewBox="0 0 24 24">
-      <path d="M8.59 16.59L13.17 12L8.59 7.41L10 6L16 12L10 18L8.59 16.59Z"/>
-    </svg>
-  </div>
-  <div class="hierarchy-item">
-    <span class="hierarchy-label">Package:</span>
-    <span class="hierarchy-value"><%= tasks[0]?.PackageName || 'N/A' %></span>
-  </div>
-</div>
+      <div class="hierarchy-display">
+        <div class="hierarchy-item">
+          <span class="hierarchy-label">Process:</span>
+          <span class="hierarchy-value"><%= tasks[0]?.ProcessName || 'N/A' %></span>
+          <svg class="hierarchy-arrow" viewBox="0 0 24 24">
+            <path d="M8.59 16.59L13.17 12L8.59 7.41L10 6L16 12L10 18L8.59 16.59Z"/>
+          </svg>
+        </div>
+        <div class="hierarchy-item">
+          <span class="hierarchy-label">Project:</span>
+          <span class="hierarchy-value"><%= tasks[0]?.ProjectName || 'N/A' %></span>
+          <svg class="hierarchy-arrow" viewBox="0 0 24 24">
+            <path d="M8.59 16.59L13.17 12L8.59 7.41L10 6L16 12L10 18L8.59 16.59Z"/>
+          </svg>
+        </div>
+        <div class="hierarchy-item">
+          <span class="hierarchy-label">Package:</span>
+          <span class="hierarchy-value"><%= tasks[0]?.PackageName || 'N/A' %></span>
+        </div>
+      </div>
     </div>
     <div class="user-info">
       <div class="user-avatar">RK</div>
@@ -43,291 +483,271 @@
         <small><%=user.DeptName %> Department</small>
       </div>
       <button class="logout-btn"> <a href="/logout">Logout</a></button>
-        <button class="back-button" onclick="window.location.href='/workflowdashboard'">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M20 11H7.83L13.42 5.41L12 4L4 12L12 20L13.41 18.59L7.83 13H20V11Z" fill="currentColor"/>
-    </svg>
-    Back to Dashboard
-  </button>
+      <button class="back-button" onclick="window.location.href='/workflowdashboard'">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M20 11H7.83L13.42 5.41L12 4L4 12L12 20L13.41 18.59L7.83 13H20V11Z" fill="currentColor"/>
+        </svg>
+        Back to Dashboard
+      </button>
     </div>
   </header>
-
-
 
   <button class="mobile-nav-toggle" id="mobileNavToggle">
     <i class="fas fa-bars"></i>
   </button>
-<section class="tasks-section">
-  <section class="department-tasks-container">
-</section>
-  <h2 class="section-title">
-    <i class="fas fa-tasks"></i>
-    My Tasks
-  </h2>
-  <table class="tasks-table">
-    <thead>
-      <tr>
-        <th>Task Name</th>
-        <th>Task Description</th>
-        <th>Planned Date</th>
-        <th>Days Required</th>
-        <th>Date Finished</th>
-        <th>Status</th>
-        <th>Days Delay</th>
-        <th>Delay Reason</th>
-        <th>Buttons</th>
-      </tr>
-    </thead>
-    <tbody>
-   
+
+  <section class="tasks-section">
+    <h2 class="section-title">
+      <i class="fas fa-tasks"></i>
+      My Tasks
+    </h2>
     
-    </tbody>
-  </table>
+    <div id="department-tables-container">
+      <!-- Department tables will be inserted here by JavaScript -->
+    </div>
+  </section>
 
+  <script>
+    const userId = "<%= user.id %>";
+    const deptId = "<%= user.DepartmentId %>";
+    const taskList = <%- JSON.stringify(tasks) %>; // local task list
+    const container = document.getElementById('department-tables-container');
 
-</section>
-
-
-  </main>
-
-<script>
-const userId = "<%= user.id %>";
-const deptId = "<%= user.DepartmentId %>";
-const taskList = <%- JSON.stringify(tasks) %>; // local task list
-const tbody = document.querySelector('.tasks-table tbody');
-
-function showError(message) {
-  const errorEl = document.getElementById('error-message') || createErrorElement();
-  errorEl.textContent = message;
-  errorEl.style.display = 'block';
-  setTimeout(() => errorEl.style.opacity = 1, 10);
-  setTimeout(() => {
-    errorEl.style.opacity = 0;
-    setTimeout(() => errorEl.style.display = 'none', 300);
-  }, 5000);
-}
-
-function createErrorElement() {
-  const errorEl = document.createElement('div');
-  errorEl.id = 'error-message';
-  errorEl.style.position = 'fixed';
-  errorEl.style.bottom = '20px';
-  errorEl.style.right = '20px';
-  errorEl.style.background = '#f44336';
-  errorEl.style.color = '#fff';
-  errorEl.style.padding = '10px 20px';
-  errorEl.style.borderRadius = '5px';
-  errorEl.style.opacity = 0;
-  errorEl.style.transition = 'opacity 0.3s';
-  errorEl.style.zIndex = 1000;
-  document.body.appendChild(errorEl);
-  return errorEl;
-}
-
-function renderTasks(tasks) {
-  tbody.innerHTML = '';
-
-  if (tasks.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="9" class="empty-message">No tasks found.</td></tr>`;
-    return;
-  }
-
-  // Group tasks by department
-  const grouped = {};
-  tasks.forEach(task => {
-    if (!grouped[task.DepId]) {
-      grouped[task.DepId] = {
-        deptName: task.DeptName || `Department ${task.DepId}`,
-        tasks: []
-      };
+    function showError(message) {
+      const errorEl = document.getElementById('error-message') || createErrorElement();
+      errorEl.textContent = message;
+      errorEl.style.display = 'block';
+      setTimeout(() => errorEl.style.opacity = 1, 10);
+      setTimeout(() => {
+        errorEl.style.opacity = 0;
+        setTimeout(() => errorEl.style.display = 'none', 300);
+      }, 5000);
     }
-    grouped[task.DepId].tasks.push(task);
-  });
 
-  // Render by department
-  Object.values(grouped).forEach(group => {
-    // Insert a header row for the department
-    const deptRow = document.createElement('tr');
-    deptRow.innerHTML = `
-      <td colspan="9" class="department-label">
-        <strong>Department:</strong> ${group.deptName}
-      </td>
-    `;
-    deptRow.classList.add('department-header');
-    tbody.appendChild(deptRow);
+    function createErrorElement() {
+      const errorEl = document.createElement('div');
+      errorEl.id = 'error-message';
+      errorEl.style.position = 'fixed';
+      errorEl.style.bottom = '20px';
+      errorEl.style.right = '20px';
+      errorEl.style.background = '#f44336';
+      errorEl.style.color = '#fff';
+      errorEl.style.padding = '10px 20px';
+      errorEl.style.borderRadius = '5px';
+      errorEl.style.opacity = 0;
+      errorEl.style.transition = 'opacity 0.3s';
+      errorEl.style.zIndex = 1000;
+      document.body.appendChild(errorEl);
+      return errorEl;
+    }
 
-    group.tasks.forEach(task => {
-      const tr = document.createElement('tr');
-      const isOwnDepartment = task.DepId == deptId;
+    function renderTasks(tasks) {
+      container.innerHTML = '';
 
-      if (task.IsTaskSelected) {
-        tr.classList.add('active-task-row');
+      if (tasks.length === 0) {
+        container.innerHTML = `<div class="empty-message">No tasks found.</div>`;
+        return;
       }
 
-      let status = '';
-      if (!task.TimeFinished && task.IsTaskSelected) {
-        status = '<span class="status-badge status-pending">Pending</span>';
-      } else if (task.TimeFinished && task.Delay > 0) {
-        status = '<span class="status-badge status-overdue">Overdue</span>';
-      } else if (task.TimeFinished) {
-        status = '<span class="status-badge status-completed">Completed</span>';
-      }
+      const grouped = {};
+      tasks.forEach(task => {
+        if (!grouped[task.DepId]) {
+          grouped[task.DepId] = {
+            deptName: task.DeptName || `Department ${task.DepId}`,
+            tasks: []
+          };
+        }
+        grouped[task.DepId].tasks.push(task);
+      });
 
-      const plannedDate = task.PlannedDate ? task.PlannedDate.split('T')[0] : '';
-      const finishDate = task.TimeFinished ? task.TimeFinished.split('T')[0] : '';
-      const delayReason = task.DelayReason || '';
-      const delayInputDisabled = !isOwnDepartment || !(task.TimeFinished && task.Delay > 0) ? 'disabled' : '';
+      Object.values(grouped).forEach(group => {
+        // Create department table container
+        const tableContainer = document.createElement('div');
+        tableContainer.className = 'department-table-container';
+        
+        // Create department label
+        const deptLabel = document.createElement('div');
+        deptLabel.className = 'department-label';
+        deptLabel.textContent = `Department: ${group.deptName}`;
+        tableContainer.appendChild(deptLabel);
+        
+        // Create table
+        const table = document.createElement('table');
+        table.className = 'department-table';
+        
+        // Create table header
+        const thead = document.createElement('thead');
+        thead.innerHTML = `
+          <tr>
+            <th>Task Name</th>
+            <th>Task Description</th>
+            <th>Planned Date</th>
+            <th>Days Required</th>
+            <th>Date Finished</th>
+            <th>Status</th>
+            <th>Days Delay</th>
+            <th>Delay Reason</th>
+            <th>Actions</th>
+          </tr>
+        `;
+        table.appendChild(thead);
+        
+        // Create table body
+        const tbody = document.createElement('tbody');
+        
+        group.tasks.forEach(task => {
+          const tr = document.createElement('tr');
+          const isOwnDepartment = task.DepId == deptId;
 
-      const delayInput = `
-        <input type="text" value="${delayReason}" class="delay-reason-input" data-task-id="${task.TaskID}" 
-          ${delayInputDisabled} placeholder="${delayInputDisabled ? '' : 'Enter delay reason...'}">
-      `;
+          if (task.IsTaskSelected) {
+            tr.classList.add('active-task-row');
+          }
 
-      const taskPlannedCell = !task.isDateFixed && isOwnDepartment
-        ? `<td><input type="number" min="1" value="${task.DaysRequired}" class="editable-days" data-task-id="${task.TaskID}"></td>`
-        : `<td>${task.DaysRequired}</td>`;
+          let status = '';
+          if (!task.TimeFinished && task.IsTaskSelected) {
+            status = '<span class="status-badge status-pending">Pending</span>';
+          } else if (task.TimeFinished && task.Delay > 0) {
+            status = '<span class="status-badge status-overdue">Overdue</span>';
+          } else if (task.TimeFinished) {
+            status = '<span class="status-badge status-completed">Completed</span>';
+          }
 
-      let actionButton = '';
-      if (isOwnDepartment && task.IsTaskSelected) {
-        if (!task.TimeStarted) {
-          actionButton = `<button class="task-start-btn" data-task-id="${task.TaskID}"><i class="fas fa-play"></i> Start</button>`;
-        } else if (!task.TimeFinished) {
-          actionButton = `<button class="task-finish-btn" data-task-id="${task.TaskID}"><i class="fas fa-flag-checkered"></i> Finish</button>`;
+          const plannedDate = task.PlannedDate ? task.PlannedDate.split('T')[0] : '';
+          const finishDate = task.TimeFinished ? task.TimeFinished.split('T')[0] : '';
+          const delayReason = task.DelayReason || '';
+          const delayInputDisabled = !isOwnDepartment || !(task.TimeFinished && task.Delay > 0) ? 'disabled' : '';
+
+          const delayInput = `
+            <input type="text" value="${delayReason}" class="delay-reason-input" data-task-id="${task.TaskID}" 
+              ${delayInputDisabled} placeholder="${delayInputDisabled ? '' : 'Enter delay reason...'}">
+          `;
+
+          const taskPlannedCell = !task.isDateFixed && isOwnDepartment
+            ? `<td><input type="number" min="1" value="${task.DaysRequired}" class="editable-days" data-task-id="${task.TaskID}"></td>`
+            : `<td>${task.DaysRequired}</td>`;
+
+          let actionButton = '';
+          if (isOwnDepartment && task.IsTaskSelected) {
+            if (!task.TimeStarted) {
+              actionButton = `<button class="task-start-btn" data-task-id="${task.TaskID}"><i class="fas fa-play"></i> Start</button>`;
+            } else if (!task.TimeFinished) {
+              actionButton = `<button class="task-finish-btn" data-task-id="${task.TaskID}"><i class="fas fa-flag-checkered"></i> Finish</button>`;
+            }
+          }
+
+          let extraButtons = '';
+          if (isOwnDepartment) {
+            extraButtons = `<button class="row-save-btn" data-task-id="${task.TaskID}"><i class="fas fa-save"></i> Save</button>`;
+          }
+
+          tr.innerHTML = `
+            <td>${task.TaskName || ''}</td>
+            <td>${task.TaskPlanned || ''}</td>
+            <td>${plannedDate}</td>
+            ${taskPlannedCell}
+            <td>${finishDate}</td>
+            <td>${status}</td>
+            <td>${task.Delay !== null ? task.Delay : 0}</td>
+            <td>${delayInput}</td>
+            <td><div class="button-container">${actionButton}${extraButtons}</div></td>
+          `;
+
+          tbody.appendChild(tr);
+        });
+        
+        table.appendChild(tbody);
+        tableContainer.appendChild(table);
+        container.appendChild(tableContainer);
+      });
+    }
+
+    // Event delegation for all buttons in the container
+    container.addEventListener('click', async (e) => {
+      e.preventDefault();
+      const taskId = e.target.dataset.taskId;
+      const row = e.target.closest('tr');
+
+      if (e.target.classList.contains('row-save-btn')) {
+        const originalHTML = e.target.innerHTML;
+        try {
+          const delayInput = row.querySelector('.delay-reason-input');
+          const daysInput = row.querySelector('.editable-days');
+          const updates = [];
+
+          if (delayInput && !delayInput.disabled && delayInput.value.trim() !== '') {
+            updates.push({ taskId, field: 'delayReason', value: delayInput.value, usrID: userId });
+          } else if (delayInput && delayInput.value.trim() !== '') {
+            showError("You can only enter a delay reason for overdue tasks");
+            return;
+          }
+
+          if (daysInput) {
+            updates.push({ taskId, field: 'daysRequired', value: daysInput.value, usrID: userId });
+          }
+
+          if (updates.length === 0) {
+            showError("No changes to save");
+            return;
+          }
+
+          e.target.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+          const res = await fetch('/save-task-updates', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ updates })
+          });
+
+          if (!res.ok) throw new Error((await res.json()).error || 'Save failed');
+          showError('Changes saved successfully');
+        } catch (err) {
+          showError(err.message);
+        } finally {
+          e.target.innerHTML = originalHTML;
         }
       }
 
-      let extraButtons = '';
-      if (isOwnDepartment) {
-        extraButtons = `<button class="row-save-btn" data-task-id="${task.TaskID}"><i class="fas fa-save"></i> Save</button>`;
+      if (e.target.classList.contains('task-start-btn')) {
+        if (!confirm('Are you sure you want to start this task?')) return;
+        const originalHTML = e.target.innerHTML;
+        try {
+          e.target.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Starting...';
+          const now = new Date().toISOString();
+          await fetch(`/start-task/${taskId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ startTime: now })
+          });
+
+          window.location.reload();
+        } catch (err) {
+          showError("Failed to start task");
+        } finally {
+          e.target.innerHTML = originalHTML;
+        }
       }
 
-      tr.innerHTML = `
-        <td>${task.TaskName || ''}</td>
-        <td>${task.TaskPlanned || ''}</td>
-        <td>${plannedDate}</td>
-        ${taskPlannedCell}
-        <td>${finishDate}</td>
-        <td>${status}</td>
-        <td>${task.Delay !== null ? task.Delay : 0}</td>
-        <td>${delayInput}</td>
-        <td><div class="button-container">${actionButton}${extraButtons}</div></td>
-      `;
+      if (e.target.classList.contains('task-finish-btn')) {
+        if (!confirm('Are you sure you want to mark this task as finished?')) return;
+        const originalHTML = e.target.innerHTML;
+        try {
+          e.target.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Finishing...';
+          const now = new Date().toISOString();
+          await fetch(`/finish-task/${taskId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ finishTime: now })
+          });
 
-      tbody.appendChild(tr);
-    });
-  });
-}
-
-
-tbody.addEventListener('click', async (e) => {
-  e.preventDefault();
-  const taskId = e.target.dataset.taskId;
-  const row = e.target.closest('tr');
-
-  if (e.target.classList.contains('row-save-btn')) {
-    const originalHTML = e.target.innerHTML;
-    try {
-      const delayInput = row.querySelector('.delay-reason-input');
-      const daysInput = row.querySelector('.editable-days');
-      const updates = [];
-
-      if (delayInput && !delayInput.disabled && delayInput.value.trim() !== '') {
-        updates.push({ taskId, field: 'delayReason', value: delayInput.value, usrID: userId });
-      } else if (delayInput && delayInput.value.trim() !== '') {
-        showError("You can only enter a delay reason for overdue tasks");
-        return;
+          window.location.reload();
+        } catch (err) {
+          showError("Failed to finish task");
+        } finally {
+          e.target.innerHTML = originalHTML;
+        }
       }
-
-      if (daysInput) {
-        updates.push({ taskId, field: 'daysRequired', value: daysInput.value, usrID: userId });
-      }
-
-      if (updates.length === 0) {
-        showError("No changes to save");
-        return;
-      }
-
-      e.target.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
-      const res = await fetch('/save-task-updates', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ updates })
-      });
-
-      if (!res.ok) throw new Error((await res.json()).error || 'Save failed');
-      showError('Changes saved successfully');
-    } catch (err) {
-      showError(err.message);
-    } finally {
-      e.target.innerHTML = originalHTML;
-    }
-  }
-
- if (e.target.classList.contains('task-start-btn')) {
-  if (!confirm('Are you sure you want to start this task?')) return;
-  const originalHTML = e.target.innerHTML;
-  try {
-    e.target.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Starting...';
-    const now = new Date().toISOString();
-    await fetch(`/start-task/${taskId}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ startTime: now })
     });
 
-    window.location.reload();
-  } catch (err) {
-    showError("Failed to start task");
-  } finally {
-    e.target.innerHTML = originalHTML;
-  }
-}
-
-if (e.target.classList.contains('task-finish-btn')) {
-  if (!confirm('Are you sure you want to mark this task as finished?')) return;
-  const originalHTML = e.target.innerHTML;
-  try {
-    e.target.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Finishing...';
-    const now = new Date().toISOString();
-    await fetch(`/finish-task/${taskId}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ finishTime: now })
-    });
-
-    window.location.reload(); // ✅ Refreshes view with correct selected task
-  } catch (err) {
-    showError("Failed to finish task");
-  } finally {
-    e.target.innerHTML = originalHTML;
-  }
-}
-
-});
-
-renderTasks(taskList); 
-</script>
-
-
-<style>
-.active-task-row {
-  background-color: #e3f7ff;
-  animation: highlightTask 1s ease-in-out;
-}
-@keyframes highlightTask {
-  0% { background-color: #ffffcc; }
-  100% { background-color: #e3f7ff; }
-}
-</style>
-
-
-
-
-
-
-
-
-
-
+    renderTasks(taskList);
+  </script>
 </body>
 </html>

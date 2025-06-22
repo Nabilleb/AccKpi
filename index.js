@@ -210,12 +210,14 @@ const tasksResult = await request1.query(`
     pr.NumberOfProccessID,
     pr.ProcessName,
     pj.ProjectID,
-    pj.ProjectName
+    pj.ProjectName,
+    dp.DeptName
   FROM tblWorkflowDtl d
   INNER JOIN tblTasks t ON d.TaskID = t.TaskID
   INNER JOIN tblWorkflowHdr hdr ON d.workFLowHdrId = hdr.WorkFlowID
   INNER JOIN tblProcess pr ON hdr.ProcessID = pr.NumberOfProccessID
   INNER JOIN tblProject pj ON hdr.ProjectID = pj.ProjectID
+  INNER JOIN tblDepartments dp ON dp.DepartmentID = t.DepId
   WHERE d.workFLowHdrId = @HdrID
   ORDER BY t.Priority ASC
 `);
