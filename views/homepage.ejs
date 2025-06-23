@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Engineering Project Dashboard</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="/styles/homepage.css">
   <style>
     :root {
       --primary: #005bab;
@@ -558,6 +559,10 @@
           <% }) %>
         </tbody>
       </table>
+      <div class="departmentFlow">
+            <h3 id="selectedProcessTitle" style="margin-top: 2rem;"></h3>
+<div id="departmentFlowGrid" class="department-flow-grid" data-department-id=""></div>
+</div>
     </section>
 
     <section class="activity-table">
@@ -575,8 +580,7 @@
             <th>Actions</th>
           </tr>
         </thead>
-        <tbody>
-          <!-- Tasks will be populated here -->
+        <tbody class="taskgrid">
         </tbody>
       </table>
     </section>
@@ -587,10 +591,12 @@
       <span class="close">&times;</span>
       <h3 class="process-flow-title"><i class="fas fa-project-diagram"></i> Process Flow: <span id="processTitle"></span></h3>
       <ul class="process-steps" id="processSteps">
-        <!-- Process steps will be populated here -->
       </ul>
     </div>
   </div>
+
+
+
 
 <script>
   document.addEventListener('DOMContentLoaded', () => {
@@ -612,6 +618,7 @@
       }, 3000);
     }
 
+    
     const searchInput = document.getElementById('taskSearchInput');
     searchInput.addEventListener('input', (e) => {
       const searchTerm = e.target.value.toLowerCase();
@@ -631,62 +638,193 @@
       });
     });
 
-    // Modal functionality
     const modal = document.getElementById('process-flow-modal');
     const closeBtn = document.querySelector('.close');
 
-    window.viewProcessFlow = function(processId, processName) {
-      fetch(`/process/${processId}/departments`)
-        .then(res => res.json())
-        .then(steps => {
-          const stepsList = document.getElementById('processSteps');
-          stepsList.innerHTML = '';
-          
-          steps.forEach((step, index) => {
-            const li = document.createElement('li');
-            li.className = `process-step ${step.IsActive ? 'step-active' : ''}`;
-            li.innerHTML = `
-              <div class="step-number">${step.StepOrder || index + 1}</div>
-              <div class="step-details">
-                <div class="step-department">${step.DeptName}</div>
-                <div class="step-status">${step.IsActive ? 'Active' : 'Pending'}</div>
-              </div>
-              ${index < steps.length - 1 ? '<div class="step-arrow"><i class="fas fa-arrow-right"></i></div>' : ''}
-            `;
-            stepsList.appendChild(li);
-          });
+   window.viewProcessFlow = function(processId, processName) {
+  fetch(`/process/${processId}/departments`)
+    .then(res => res.json())
+    .then(steps => {
+      const grid = document.getElementById("departmentFlowGrid");
+      const title = document.getElementById("selectedProcessTitle");
 
-          document.getElementById('processTitle').textContent = processName;
-          modal.style.display = 'flex';
-        })
-        .catch(err => {
-          showToast('Error loading process flow', 'error');
-          console.error(err);
-        });
-    };
+      title.textContent = `Flow for: ${processName}`;
+      grid.innerHTML = '';
 
-    closeBtn.addEventListener('click', () => {
-      modal.style.display = 'none';
+      steps.forEach((step, index) => {
+        const card = document.createElement("div");
+        card.className = `dept-card ${step.IsActive ? 'active' : ''}`;
+        card.setAttribute('data-process-id', processId);
+        card.setAttribute('data-department-id', step.DepartmentID);
+        card.innerHTML = `
+          <strong>Step ${step.StepOrder || index + 1}</strong><br>
+          ${step.DeptName}<br>
+          <small>${step.IsActive ? 'Active' : 'Inactive'}</small>
+        `;
+
+        card.addEventListener('click', () => {
+  const pid = card.getAttribute('data-process-id');
+  const did = card.getAttribute('data-department-id');
+    fetchTasksForDepartment(pid, did);
+});
+        grid.appendChild(card);
+
+        if (index < steps.length - 1) {
+          const arrow = document.createElement("div");
+          arrow.className = 'flow-arrow';
+          arrow.innerHTML = '<i class="fas fa-arrow-right"></i>';
+          grid.appendChild(arrow);
+        }
+      });
+    })
+    .catch(err => {
+      console.error("Error loading process flow:", err);
+      alert("Failed to load process flow");
     });
+};
 
-    window.addEventListener('click', (e) => {
-      if (e.target === modal) {
-        modal.style.display = 'none';
-      }
-    });
 
-    // Other existing functions...
-    function refreshTasks() {
-      // Your existing refreshTasks implementation
+function refreshTasks() {
+    const activeDeptCard = document.querySelector('.dept-card.active');
+    
+    if (!activeDeptCard) {
+        showToast('No department selected', 'warning');
+        return;
     }
 
-    document.addEventListener('click', async (e) => {
+    const processId = activeDeptCard.getAttribute('data-process-id');
+    const departmentId = activeDeptCard.getAttribute('data-department-id');
+    
+    if (!processId || !departmentId) {
+        showToast('Error: Missing process or department ID', 'error');
+        return;
+    }
+
+    const tbody = document.querySelector(".taskgrid");
+    tbody.innerHTML = '<tr class="loading-row"><td colspan="7"><div class="loading-spinner"></div> Loading tasks...</td></tr>';
+
+    fetchTasksForDepartment(processId, departmentId);
+}
+
+ function fetchTasksForDepartment(pid, did) {
+      fetch(`/api/tasks/by-department/${did}`)
+        .then(res => res.json())
+        .then(data => {
+          const tbody = document.querySelector(".taskgrid");
+          tbody.innerHTML = "";
+
+          if (data.length === 0) {
+            tbody.innerHTML = '<tr class="no-tasks"><td colspan="7">No tasks found for this department</td></tr>';
+            return;
+          }
+
+          data.forEach((task, index) => {
+            const row = document.createElement("tr");
+            row.style.opacity = '0';
+            row.style.transform = 'translateY(20px)';
+            row.style.transition = `opacity 0.3s ease, transform 0.3s ease ${index * 0.05}s`;
+
+            const plannedDate = task.PlannedDate
+              ? new Date(task.PlannedDate).toISOString().split("T")[0]
+              : "-";
+            const finishedDate = task.DateFinished
+              ? new Date(task.DateFinished).toISOString().split("T")[0]
+              : "-";
+
+            const status = task.Delay === null
+              ? `<span class="status-badge status-pending">Pending</span>`
+              : task.Delay > 0
+                ? `<span class="status-badge status-delayed">Delayed ${task.Delay} day(s)</span>`
+                : `<span class="status-badge status-on-time">On time</span>`;
+
+            row.innerHTML = `
+              <td>${task.TaskName}</td>
+              <td>${plannedDate}</td>
+              <td>${task.DaysRequired}</td>
+              <td>${finishedDate}</td>
+              <td>${status}</td>
+              <td>${task.DelayReason || ""}</td>
+              <td class="action-buttons">
+                ${!task.DateFinished ? 
+                  `<button class="edit-btn" data-task-id="${task.TaskID}">
+                    <i class="fas fa-edit"></i> Edit
+                  </button>` : ''}
+                
+                ${task.DateFinished ? 
+                  `<button class="delete-btn" data-task-id="${task.TaskID}">
+                    <i class="fas fa-trash-alt"></i> Delete
+                  </button>` : ''}
+              </td>
+            `;
+            row.setAttribute("data-finished", task.DateFinished ? "true" : "false");
+            row.setAttribute("data-delay", task.Delay || 0);
+            row.setAttribute("data-task-id", task.TaskID);
+            row.setAttribute("data-task-name", task.TaskName);
+
+            if (task.DateFinished || (task.Delay && task.Delay > 0)) {
+              row.style.opacity = "0.6";
+              row.style.cursor = "not-allowed";
+            }
+
+            if (task.IsTaskSelected) {
+              row.classList.add("active-task");
+            }
+         
+      
+            tbody.appendChild(row);
+
+            setTimeout(() => {
+              row.style.opacity = '1';
+              row.style.transform = 'translateY(0)';
+            }, index * 100);
+          });
+        })
+        .catch(err => {
+          console.error("❌ Error fetching tasks:", err);
+          showToast('Failed to load tasks', 'error');
+        });
+    }
+
+
+    
+  document.addEventListener('click', async (e) => {
       if (e.target.closest('.delete-btn')) {
-        // Your existing delete functionality
+        const taskId = e.target.closest('.delete-btn').dataset.taskId;
+        console.log(taskId)
+        if (!confirm('Are you sure you want to delete this finished task?')) {
+          return;
+        }
+
+        try {
+          const response = await fetch(`/delete-task/${taskId}`, {
+            method: 'DELETE'
+          });
+          
+          if (response.ok) {
+            showToast('Task deleted successfully');
+            refreshTasks();
+          } else {
+            const error = await response.json();
+            showToast(error.error || 'Failed to delete task', 'error');
+          }
+        } catch (err) {
+          console.error('Delete error:', err);
+          showToast('Network error - please try again', 'error');
+        }
       }
     });
 
-    // Add highlight animation style
+       document.addEventListener('click', (e) => {
+      if (e.target.closest('.edit-btn')) {
+        const taskId = e.target.closest('.edit-btn').dataset.taskId;
+        document.body.style.opacity = '0.7';
+        setTimeout(() => {
+          window.location.href = `/edit-task/${taskId}`;
+        }, 300);
+      }
+    });
+
+
     const style = document.createElement('style');
     style.textContent = `
       @keyframes highlight {

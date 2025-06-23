@@ -337,6 +337,46 @@
       font-size: 0.75rem;
       font-weight: 600;
     }
+.departmentFlow {
+  margin-top: 2rem;
+  padding: 1rem;
+  border-top: 2px solid #ccc;
+}
+
+.department-flow-grid {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.dept-card {
+  background: #fff;
+  border: 2px solid #ccc;
+  border-radius: 12px;
+  padding: 1rem;
+  width: 180px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  text-align: center;
+  transition: transform 0.3s;
+}
+
+.dept-card:hover {
+  transform: translateY(-5px);
+}
+
+.dept-card.active {
+  border-color: #28a745;
+  background-color: #eaf8f1;
+}
+
+.flow-arrow {
+  font-size: 1.5rem;
+  color: #888;
+  display: flex;
+  align-items: center;
+}
 
     .status-on-time {
       background-color: rgba(40, 167, 69, 0.1);

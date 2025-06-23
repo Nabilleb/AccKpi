@@ -616,7 +616,7 @@ console.log("process id", processId)
       WHERE pd.ProcessID = @processId
       ORDER BY pd.StepOrder
     `);
-
+console.log(result.recordset)
     res.json(result.recordset);
   } catch (err) {
     console.error("Error fetching departments for process:", err);
