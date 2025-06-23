@@ -3,10 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>My Tasks | Engineering System</title>
+  <title>Engineering Task Management | My Tasks</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="/styles/userpage.css">
-  <link rel="stylesheet" href="/styles/homepage.css">
   <style>
     :root {
       --primary: #005bab;
@@ -24,6 +22,9 @@
       --danger: #dc3545;
       --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
       --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      --card-bg: #ffffff;
+      --sidebar-bg: #2c3e50;
+      --sidebar-text: #ecf0f1;
     }
 
     * {
@@ -33,75 +34,45 @@
     }
 
     body {
-      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      font-family: 'Segoe UI', 'Roboto', system-ui, -apple-system, sans-serif;
       background-color: var(--background);
       color: var(--text);
       line-height: 1.6;
-    }
-
-    /* Header */
-    .dashboard-header {
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background-color: var(--white);
-      padding: 1rem 2rem;
-      border-bottom: 3px solid var(--primary);
-      box-shadow: var(--shadow);
+      min-height: 100vh;
     }
 
-    .header-left {
+    /* Sidebar Navigation */
+    .sidebar {
+      width: 250px;
+      background-color: var(--sidebar-bg);
+      color: var(--sidebar-text);
+      padding: 1.5rem 0;
       display: flex;
-      align-items: center;
-      gap: 1rem;
+      flex-direction: column;
+      transition: var(--transition);
+      box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
     }
 
-    .logo {
+    .sidebar-header {
+      padding: 0 1.5rem 1.5rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .sidebar-logo {
       height: 40px;
+      margin-bottom: 0.5rem;
     }
 
-    .hierarchy-display {
+    .sidebar-user {
       display: flex;
       align-items: center;
-      gap: 8px;
-      font-size: 16px;
-      margin: 16px 0;
+      gap: 0.75rem;
+      padding: 0.75rem 1.5rem;
+      margin-top: 1rem;
     }
 
-    .hierarchy-item {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      background-color: #f5f5f5;
-      padding: 8px 12px;
-      border-radius: 6px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    }
-
-    .hierarchy-label {
-      font-weight: 600;
-      color: #555;
-    }
-
-    .hierarchy-value {
-      font-weight: 500;
-      color: #333;
-    }
-
-    .hierarchy-arrow {
-      width: 20px;
-      height: 20px;
-      fill: #666;
-      margin-left: 4px;
-    }
-
-    .user-info {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-    }
-
-    .user-avatar {
+    .sidebar-user-avatar {
       width: 40px;
       height: 40px;
       border-radius: 50%;
@@ -113,75 +84,222 @@
       font-weight: bold;
     }
 
+    .sidebar-user-info h4 {
+      font-size: 0.95rem;
+      margin-bottom: 0.15rem;
+    }
+
+    .sidebar-user-info p {
+      font-size: 0.8rem;
+      opacity: 0.8;
+    }
+
+    .sidebar-nav {
+      flex: 1;
+      padding: 1rem 0;
+      overflow-y: auto;
+    }
+
+    .sidebar-nav a {
+      display: flex;
+      align-items: center;
+      padding: 0.75rem 1.5rem;
+      color: var(--sidebar-text);
+      text-decoration: none;
+      transition: var(--transition);
+      gap: 0.75rem;
+      font-weight: 500;
+      opacity: 0.9;
+    }
+
+    .sidebar-nav a:hover, .sidebar-nav a.active {
+      background-color: rgba(255, 255, 255, 0.1);
+      opacity: 1;
+    }
+
+    .sidebar-nav a i {
+      width: 20px;
+      text-align: center;
+    }
+
+    .sidebar-footer {
+      padding: 1rem 1.5rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
     .logout-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      width: 100%;
+      padding: 0.75rem;
+      background-color: rgba(231, 76, 60, 0.1);
+      color: var(--sidebar-text);
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: var(--transition);
+      font-weight: 500;
+    }
+
+    .logout-btn:hover {
+      background-color: rgba(231, 76, 60, 0.2);
+    }
+
+    /* Main Content */
+    .main-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Top Header */
+    .top-header {
+      background-color: var(--white);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      z-index: 10;
+    }
+
+    .breadcrumb {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.9rem;
+    }
+
+    .breadcrumb a {
+      color: var(--primary);
+      text-decoration: none;
+      transition: var(--transition);
+    }
+
+    .breadcrumb a:hover {
+      color: var(--primary-dark);
+    }
+
+    .breadcrumb-separator {
+      color: var(--text-light);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .back-button {
       background-color: var(--primary);
-      color: var(--white);
+      color: white;
       padding: 0.5rem 1rem;
       border: none;
       border-radius: 4px;
       cursor: pointer;
       transition: var(--transition);
-    }
-
-    .logout-btn:hover {
-      background-color: var(--primary-dark);
-    }
-
-    /* Main Content */
-    .main-content {
-      max-width: 1200px;
-      margin: 2rem auto;
-      padding: 0 1rem;
-    }
-
-    /* Tasks Section */
-    .tasks-section {
-      background-color: var(--white);
-      padding: 1.5rem;
-      border-radius: 8px;
-      box-shadow: var(--shadow);
-    }
-
-    .section-title {
-      font-size: 1.25rem;
-      color: var(--primary-dark);
-      margin-bottom: 1rem;
       display: flex;
       align-items: center;
       gap: 0.5rem;
+      font-weight: 500;
     }
 
-    .section-title i {
+    .back-button:hover {
+      background-color: var(--primary-dark);
+      transform: translateY(-1px);
+    }
+
+    /* Content Area */
+    .content-area {
+      flex: 1;
+      padding: 2rem;
+      overflow-y: auto;
+      background-color: var(--background);
+    }
+
+    /* Task Management Section */
+    .task-management {
+      background-color: var(--white);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .task-header {
+      padding: 1.5rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .task-header h2 {
+      color: var(--primary-dark);
+      font-size: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .task-header h2 i {
       color: var(--accent);
     }
 
+    .process-info {
+      display: flex;
+      gap: 1.5rem;
+      background-color: var(--primary-light);
+      padding: 1rem 1.5rem;
+      border-radius: 6px;
+      margin-bottom: 1.5rem;
+    }
+
+    .info-item {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .info-label {
+      font-size: 0.8rem;
+      color: var(--text-light);
+      font-weight: 500;
+      margin-bottom: 0.25rem;
+    }
+
+    .info-value {
+      font-weight: 600;
+      color: var(--primary-dark);
+    }
+
     /* Department Tables */
+    .department-section {
+      margin-bottom: 2.5rem;
+    }
+
+    .department-label {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--primary-dark);
+      padding: 1rem;
+      background-color: var(--primary-light);
+      border-radius: 6px 6px 0 0;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .department-label i {
+      color: var(--accent);
+    }
+
     .department-table {
       width: 100%;
       border-collapse: separate;
       border-spacing: 0;
-      margin-bottom: 2rem;
       font-size: 0.9rem;
-      border-radius: 8px;
-      overflow: hidden;
-      box-shadow: var(--shadow);
-    }
-
-    .department-table:last-child {
-      margin-bottom: 0;
-    }
-
-    .department-header {
-      background-color: var(--primary);
-      color: var(--white);
-      padding: 0.85rem 1rem;
-      text-align: left;
-      font-weight: 600;
-      font-size: 1rem;
-    }
-
-    .department-header th {
-      padding: 0.85rem 1rem;
     }
 
     .department-table th {
@@ -190,17 +308,14 @@
       padding: 0.85rem 1rem;
       text-align: left;
       font-weight: 600;
+      position: sticky;
+      top: 0;
     }
 
     .department-table td {
       padding: 0.85rem 1rem;
       border-bottom: 1px solid var(--border);
       vertical-align: middle;
-      position: relative;
-    }
-
-    .department-table tr:last-child td {
-      border-bottom: none;
     }
 
     .department-table tr:nth-child(even) {
@@ -209,6 +324,16 @@
 
     .department-table tr:hover {
       background-color: rgba(0, 91, 171, 0.07);
+    }
+
+    .department-table tr.active-task-row {
+      background-color: #e3f7ff;
+      animation: highlightTask 1s ease-in-out;
+    }
+
+    @keyframes highlightTask {
+      0% { background-color: #ffffcc; }
+      100% { background-color: #e3f7ff; }
     }
 
     /* Status badges */
@@ -246,6 +371,7 @@
       width: 60px;
       text-align: center;
       transition: var(--transition);
+      font-family: inherit;
     }
 
     .editable-days:focus {
@@ -261,6 +387,7 @@
       background-color: var(--white);
       transition: var(--transition);
       width: 100%;
+      font-family: inherit;
     }
 
     .delay-reason-input:focus {
@@ -285,10 +412,14 @@
       font-weight: 500;
       cursor: pointer;
       transition: var(--transition);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
     }
 
     .task-start-btn:hover {
       background-color: var(--accent-dark);
+      transform: translateY(-2px);
     }
 
     .task-finish-btn {
@@ -300,10 +431,14 @@
       font-weight: 500;
       cursor: pointer;
       transition: var(--transition);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
     }
 
     .task-finish-btn:hover {
       background-color: #218838;
+      transform: translateY(-2px);
     }
 
     .row-save-btn {
@@ -315,21 +450,14 @@
       font-weight: 500;
       cursor: pointer;
       transition: var(--transition);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
     }
 
     .row-save-btn:hover {
       background-color: #218838;
-    }
-
-    /* Active task row */
-    .active-task-row {
-      background-color: #e3f7ff;
-      animation: highlightTask 1s ease-in-out;
-    }
-
-    @keyframes highlightTask {
-      0% { background-color: #ffffcc; }
-      100% { background-color: #e3f7ff; }
+      transform: translateY(-2px);
     }
 
     /* Empty message */
@@ -338,50 +466,6 @@
       padding: 2rem;
       color: var(--text-light);
       font-style: italic;
-    }
-
-    /* Department label */
-    .department-label {
-      font-size: 1.1rem;
-      font-weight: 600;
-      color: var(--primary-dark);
-      padding: 1rem;
-      background-color: #f0f7ff;
-      border-bottom: 2px solid var(--primary-light);
-    }
-
-    /* Responsive adjustments */
-    @media (max-width: 768px) {
-      .dashboard-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 1rem;
-        padding: 1rem;
-      }
-      
-      .header-left {
-        flex-wrap: wrap;
-      }
-      
-      .user-info {
-        width: 100%;
-        justify-content: space-between;
-      }
-      
-      .department-table {
-        display: block;
-        overflow-x: auto;
-      }
-      
-      .button-container {
-        flex-direction: column;
-      }
-      
-      .task-start-btn,
-      .task-finish-btn,
-      .row-save-btn {
-        width: 100%;
-      }
     }
 
     /* Modal styles */
@@ -398,6 +482,8 @@
       padding: 20px 30px;
       border-radius: 8px;
       text-align: center;
+      max-width: 500px;
+      width: 90%;
     }
 
     .modal-actions {
@@ -416,26 +502,8 @@
       cursor: pointer;
     }
 
-    /* Back button */
-    .back-button {
-      background-color: var(--primary);
-      color: white;
-      padding: 0.5rem 1rem;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      transition: var(--transition);
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .back-button:hover {
-      background-color: var(--primary-dark);
-    }
-
     /* Error message */
-    #error-message {
+    .error-message {
       position: fixed;
       bottom: 20px;
       right: 20px;
@@ -446,99 +514,207 @@
       opacity: 0;
       transition: opacity 0.3s;
       z-index: 1000;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .error-message.show {
+      opacity: 1;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 1024px) {
+      .sidebar {
+        width: 220px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      body {
+        flex-direction: column;
+      }
+      
+      .sidebar {
+        width: 100%;
+        padding: 1rem;
+        flex-direction: row;
+        flex-wrap: wrap;
+      }
+      
+      .sidebar-header, .sidebar-user {
+        display: none;
+      }
+      
+      .sidebar-nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        padding: 0;
+      }
+      
+      .sidebar-nav a {
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+      }
+      
+      .sidebar-footer {
+        display: none;
+      }
+      
+      .department-table {
+        display: block;
+        overflow-x: auto;
+      }
+      
+      .button-container {
+        flex-direction: column;
+      }
+      
+      .task-start-btn,
+      .task-finish-btn,
+      .row-save-btn {
+        width: 100%;
+      }
+    }
+
+    @media (max-width: 576px) {
+      .top-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+        padding: 1rem;
+      }
+      
+      .content-area {
+        padding: 1rem;
+      }
+      
+      .process-info {
+        flex-direction: column;
+        gap: 0.5rem;
+      }
     }
   </style>
 </head>
 <body>
-  <header class="dashboard-header">
-    <div class="header-left">
-      <img src="/images/accNewLog.webp" alt="Company Logo" class="logo">
-      <h1>Task Management</h1>
-      
-      <div class="hierarchy-display">
-        <div class="hierarchy-item">
-          <span class="hierarchy-label">Process:</span>
-          <span class="hierarchy-value"><%= tasks[0]?.ProcessName || 'N/A' %></span>
-          <svg class="hierarchy-arrow" viewBox="0 0 24 24">
-            <path d="M8.59 16.59L13.17 12L8.59 7.41L10 6L16 12L10 18L8.59 16.59Z"/>
-          </svg>
-        </div>
-        <div class="hierarchy-item">
-          <span class="hierarchy-label">Project:</span>
-          <span class="hierarchy-value"><%= tasks[0]?.ProjectName || 'N/A' %></span>
-          <svg class="hierarchy-arrow" viewBox="0 0 24 24">
-            <path d="M8.59 16.59L13.17 12L8.59 7.41L10 6L16 12L10 18L8.59 16.59Z"/>
-          </svg>
-        </div>
-        <div class="hierarchy-item">
-          <span class="hierarchy-label">Package:</span>
-          <span class="hierarchy-value"><%= tasks[0]?.PackageName || 'N/A' %></span>
-        </div>
+  <!-- Sidebar Navigation -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <img src="/images/accNewLog.webp" alt="Company Logo" class="sidebar-logo">
+    </div>
+    
+    <div class="sidebar-user">
+      <div class="sidebar-user-avatar">RK</div>
+      <div class="sidebar-user-info">
+        <h4><%=user.name %></h4>
+        <p><%=user.DeptName %> Department</p>
       </div>
     </div>
-    <div class="user-info">
-      <div class="user-avatar">RK</div>
-      <div>
-        <p><%=user.name %></p>
-        <small><%=user.DeptName %> Department</small>
-      </div>
-      <button class="logout-btn"> <a href="/logout">Logout</a></button>
-      <button class="back-button" onclick="window.location.href='/workflowdashboard'">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M20 11H7.83L13.42 5.41L12 4L4 12L12 20L13.41 18.59L7.83 13H20V11Z" fill="currentColor"/>
-        </svg>
-        Back to Dashboard
+    
+    <nav class="sidebar-nav">
+      <a href="/workflowdashboard" class="active">
+        <i class="fas fa-tachometer-alt"></i>
+        Dashboard
+      </a>
+      <a href="/mytasks">
+        <i class="fas fa-tasks"></i>
+        My Tasks
+      </a>
+      <a href="#">
+        <i class="fas fa-project-diagram"></i>
+        Projects
+      </a>
+      <a href="#">
+        <i class="fas fa-calendar-alt"></i>
+        Schedule
+      </a>
+      <a href="#">
+        <i class="fas fa-chart-line"></i>
+        Reports
+      </a>
+      <a href="#">
+        <i class="fas fa-cog"></i>
+        Settings
+      </a>
+    </nav>
+    
+    <div class="sidebar-footer">
+      <button class="logout-btn" onclick="window.location.href='/logout'">
+        <i class="fas fa-sign-out-alt"></i>
+        Logout
       </button>
     </div>
-  </header>
+  </aside>
 
-  <button class="mobile-nav-toggle" id="mobileNavToggle">
-    <i class="fas fa-bars"></i>
-  </button>
+  <!-- Main Content Area -->
+  <main class="main-content">
+    <!-- Top Header -->
+    <header class="top-header">
+      <div class="breadcrumb">
+        <a href="/workflowdashboard">Dashboard</a>
+        <span class="breadcrumb-separator">/</span>
+        <span>My Tasks</span>
+      </div>
+      
+      <div class="header-actions">
+        <button class="back-button" onclick="window.location.href='/workflowdashboard'">
+          <i class="fas fa-arrow-left"></i>
+          Back to Dashboard
+        </button>
+      </div>
+    </header>
 
-  <section class="tasks-section">
-    <h2 class="section-title">
-      <i class="fas fa-tasks"></i>
-      My Tasks
-    </h2>
-    
-    <div id="department-tables-container">
-      <!-- Department tables will be inserted here by JavaScript -->
+    <!-- Content Area -->
+    <div class="content-area">
+      <section class="task-management">
+        <div class="task-header">
+          <h2>
+            <i class="fas fa-tasks"></i>
+            Task Management
+          </h2>
+        </div>
+        
+        <div class="process-info">
+          <div class="info-item">
+            <span class="info-label">Process</span>
+            <span class="info-value"><%= tasks[0]?.ProcessName || 'N/A' %></span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Project</span>
+            <span class="info-value"><%= tasks[0]?.ProjectName || 'N/A' %></span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Package</span>
+            <span class="info-value"><%= tasks[0]?.PackageName || 'N/A' %></span>
+          </div>
+        </div>
+        
+        <div id="department-tables-container">
+          <!-- Department tables will be inserted here by JavaScript -->
+        </div>
+      </section>
     </div>
-  </section>
+  </main>
+
+  <!-- Error Message -->
+  <div id="error-message" class="error-message">
+    <i class="fas fa-exclamation-circle"></i>
+    <span id="error-text"></span>
+  </div>
 
   <script>
     const userId = "<%= user.id %>";
     const deptId = "<%= user.DepartmentId %>";
     const taskList = <%- JSON.stringify(tasks) %>; // local task list
     const container = document.getElementById('department-tables-container');
+    const errorEl = document.getElementById('error-message');
+    const errorText = document.getElementById('error-text');
 
     function showError(message) {
-      const errorEl = document.getElementById('error-message') || createErrorElement();
-      errorEl.textContent = message;
-      errorEl.style.display = 'block';
-      setTimeout(() => errorEl.style.opacity = 1, 10);
-      setTimeout(() => {
-        errorEl.style.opacity = 0;
-        setTimeout(() => errorEl.style.display = 'none', 300);
-      }, 5000);
-    }
-
-    function createErrorElement() {
-      const errorEl = document.createElement('div');
-      errorEl.id = 'error-message';
-      errorEl.style.position = 'fixed';
-      errorEl.style.bottom = '20px';
-      errorEl.style.right = '20px';
-      errorEl.style.background = '#f44336';
-      errorEl.style.color = '#fff';
-      errorEl.style.padding = '10px 20px';
-      errorEl.style.borderRadius = '5px';
-      errorEl.style.opacity = 0;
-      errorEl.style.transition = 'opacity 0.3s';
-      errorEl.style.zIndex = 1000;
-      document.body.appendChild(errorEl);
-      return errorEl;
+      errorText.textContent = message;
+      errorEl.classList.add('show');
+      setTimeout(() => errorEl.classList.remove('show'), 5000);
     }
 
     function renderTasks(tasks) {
@@ -561,15 +737,15 @@
       });
 
       Object.values(grouped).forEach(group => {
-        // Create department table container
-        const tableContainer = document.createElement('div');
-        tableContainer.className = 'department-table-container';
+        // Create department section
+        const section = document.createElement('div');
+        section.className = 'department-section';
         
         // Create department label
         const deptLabel = document.createElement('div');
         deptLabel.className = 'department-label';
-        deptLabel.textContent = `Department: ${group.deptName}`;
-        tableContainer.appendChild(deptLabel);
+        deptLabel.innerHTML = `<i class="fas fa-building"></i> ${group.deptName}`;
+        section.appendChild(deptLabel);
         
         // Create table
         const table = document.createElement('table');
@@ -580,7 +756,7 @@
         thead.innerHTML = `
           <tr>
             <th>Task Name</th>
-            <th>Task Description</th>
+            <th>Description</th>
             <th>Planned Date</th>
             <th>Days Required</th>
             <th>Date Finished</th>
@@ -605,11 +781,11 @@
 
           let status = '';
           if (!task.TimeFinished && task.IsTaskSelected) {
-            status = '<span class="status-badge status-pending">Pending</span>';
+            status = '<span class="status-badge status-pending"><i class="fas fa-clock"></i> Pending</span>';
           } else if (task.TimeFinished && task.Delay > 0) {
-            status = '<span class="status-badge status-overdue">Overdue</span>';
+            status = '<span class="status-badge status-overdue"><i class="fas fa-exclamation-triangle"></i> Overdue</span>';
           } else if (task.TimeFinished) {
-            status = '<span class="status-badge status-completed">Completed</span>';
+            status = '<span class="status-badge status-completed"><i class="fas fa-check-circle"></i> Completed</span>';
           }
 
           const plannedDate = task.PlannedDate ? task.PlannedDate.split('T')[0] : '';
@@ -656,8 +832,8 @@
         });
         
         table.appendChild(tbody);
-        tableContainer.appendChild(table);
-        container.appendChild(tableContainer);
+        section.appendChild(table);
+        container.appendChild(section);
       });
     }
 
