@@ -149,6 +149,21 @@ app.get("/api/workFlowDashData", async (req, res) => {
   const DepId = req.session.user.DepartmentId;
 
   try {
+    // Step 1: Auto-complete workflows
+    await pool.request().query(`
+      UPDATE hdr
+      SET hdr.completionDate = GETDATE(), hdr.status = 'Completed'
+      FROM tblWorkflowHdr hdr
+      WHERE NOT EXISTS (
+        SELECT 1
+        FROM tblWorkflowDtl dtl
+        WHERE dtl.workFlowHdrId = hdr.workFlowID
+          AND dtl.TimeFinished IS NULL
+      )
+      AND hdr.status != 'Completed'
+    `);
+
+    // Step 2: Fetch workflow dashboard data
     const result = await pool.request()
       .input('DepId', sql.Int, DepId)
       .query(`
@@ -162,7 +177,8 @@ app.get("/api/workFlowDashData", async (req, res) => {
         LEFT JOIN tblProcess p ON hdr.ProcessID = p.NumberOfProccessID
         LEFT JOIN tblPackages pk ON hdr.PackageID = pk.PkgeID
         LEFT JOIN tblProject prj ON hdr.ProjectID = prj.ProjectID
-        WHERE hdr.DepId = @DepId
+        INNER JOIN tblProcessDepartment pd ON pd.ProcessID = hdr.ProcessID
+        WHERE pd.DepartmentID = @DepId
       `);
 
     res.json(result.recordset);
@@ -171,6 +187,7 @@ app.get("/api/workFlowDashData", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch workflow dashboard data" });
   }
 });
+
 
 
 app.get("/userpage/:hdrId", async (req, res) => {
