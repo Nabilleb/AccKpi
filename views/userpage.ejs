@@ -798,7 +798,7 @@
               ${delayInputDisabled} placeholder="${delayInputDisabled ? '' : 'Enter delay reason...'}">
           `;
 
-          const taskPlannedCell = !task.isDateFixed && isOwnDepartment
+          const taskPlannedCell = !task.IsDateFixed && isOwnDepartment
             ? `<td><input type="number" min="1" value="${task.DaysRequired}" class="editable-days" data-task-id="${task.TaskID}"></td>`
             : `<td>${task.DaysRequired}</td>`;
 
@@ -865,7 +865,7 @@
             showError("No changes to save");
             return;
           }
-
+          console.log(updates)
           e.target.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
           const res = await fetch('/save-task-updates', {
             method: 'PUT',
