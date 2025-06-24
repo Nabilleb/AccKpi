@@ -35,10 +35,7 @@
     </select>
   </div>
 
-  <div class="form-group">
-    <label for="PlannedDate">Planned Date</label>
-    <input type="datetime-local" id="PlannedDate" name="PlannedDate" value="<%= task.PlannedDate.toISOString().slice(0, 16) %>">
-  </div>
+ 
 
   <input type="hidden" name="TaskID" value="<%= task.TaskID %>">
 

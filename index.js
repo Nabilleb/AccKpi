@@ -149,7 +149,6 @@ app.get("/api/workFlowDashData", async (req, res) => {
   const DepId = req.session.user.DepartmentId;
 
   try {
-    // Step 1: Auto-complete workflows
     await pool.request().query(`
       UPDATE hdr
       SET hdr.completionDate = GETDATE(), hdr.status = 'Completed'
@@ -163,7 +162,6 @@ app.get("/api/workFlowDashData", async (req, res) => {
       AND hdr.status != 'Completed'
     `);
 
-    // Step 2: Fetch workflow dashboard data
     const result = await pool.request()
       .input('DepId', sql.Int, DepId)
       .query(`
@@ -963,7 +961,7 @@ app.post('/update-task/:id', async (req, res) => {
         PlannedDate = @PlannedDate 
         WHERE TaskID = @TaskID`);
 
-    res.redirect('/userpage'); 
+    res.redirect("/adminpage"); 
   } catch (err) {
     console.error(err);
     res.status(500).send('Error updating task');
