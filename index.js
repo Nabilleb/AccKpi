@@ -170,7 +170,8 @@ app.get("/api/workFlowDashData", async (req, res) => {
           p.ProcessName,
           pk.PkgeName AS PackageName,
           prj.ProjectName,
-          hdr.Status
+          hdr.Status,
+          hdr.completionDate
         FROM tblWorkflowHdr hdr
         LEFT JOIN tblProcess p ON hdr.ProcessID = p.NumberOfProccessID
         LEFT JOIN tblPackages pk ON hdr.PackageID = pk.PkgeID

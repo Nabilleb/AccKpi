@@ -6,7 +6,6 @@
     <link rel="stylesheet" href="/styles/workflowDash.css">
     <title>System Engineering Workflow Dashboard</title>
     <style>
-        /* Additional CSS for enhanced functionality */
         .status-badge {
             padding: 4px 8px;
             border-radius: 12px;
@@ -136,14 +135,7 @@
                     <option value="Blocked">Blocked</option>
                 </select>
             </div>
-            <div class="filter-group">
-                <label class="filter-label">Date Range</label>
-                <div class="date-range">
-                    <input type="date" id="startDateFilter" placeholder="Start date">
-                    <span>to</span>
-                    <input type="date" id="endDateFilter" placeholder="End date">
-                </div>
-            </div>
+          
         </div>
 
         <div class="table-container">
@@ -215,7 +207,7 @@
                         </th>
                         <th>
                             <div class="th-inner">
-                                Due Date
+                                Completed Date
                                 <span class="sort-icon" data-sort="DueDate">
                                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                         <path d="M7 10L12 15L17 10H7Z" fill="currentColor"/>
@@ -243,7 +235,6 @@
     </div>
 
 <script>
-// Global variables
 let allWorkflows = [];
 let filteredWorkflows = [];
 let currentPage = 1;
@@ -251,13 +242,10 @@ const rowsPerPage = 10;
 let sortColumn = 'HdrID';
 let sortDirection = 'asc';
 
-// DOM elements
 const searchInput = document.getElementById('searchInput');
 const projectFilter = document.getElementById('projectFilter');
 const processFilter = document.getElementById('processFilter');
 const statusFilter = document.getElementById('statusFilter');
-const startDateFilter = document.getElementById('startDateFilter');
-const endDateFilter = document.getElementById('endDateFilter');
 const resetFiltersBtn = document.getElementById('resetFiltersBtn');
 const newItemBtn = document.getElementById('newItemBtn');
 const exportBtn = document.getElementById('exportBtn');
@@ -267,14 +255,12 @@ const loadingIndicator = document.getElementById('loadingIndicator');
 const pageInfo = document.getElementById('pageInfo');
 const paginationControls = document.getElementById('paginationControls');
 
-// Initialize the dashboard
 document.addEventListener("DOMContentLoaded", async () => {
     await loadWorkflowData();
     setupEventListeners();
     updateTable();
 });
 
-// Load workflow data from API
 async function loadWorkflowData() {
     try {
         loadingIndicator.style.display = 'block';
@@ -292,28 +278,20 @@ async function loadWorkflowData() {
     }
 }
 
-// Set up event listeners
 function setupEventListeners() {
-    // Filter event listeners
     searchInput.addEventListener('input', applyFilters);
     projectFilter.addEventListener('change', applyFilters);
     processFilter.addEventListener('change', applyFilters);
     statusFilter.addEventListener('change', applyFilters);
-    startDateFilter.addEventListener('change', applyFilters);
-    endDateFilter.addEventListener('change', applyFilters);
     
-    // Reset filters
     resetFiltersBtn.addEventListener('click', resetFilters);
     
-    // New item button
     newItemBtn.addEventListener('click', () => {
         window.location.href = '/workflow/new';
     });
     
-    // Export button
     exportBtn.addEventListener('click', exportData);
     
-    // Sort columns
     document.querySelectorAll('.sort-icon').forEach(icon => {
         icon.addEventListener('click', (e) => {
             const column = e.currentTarget.getAttribute('data-sort');
@@ -328,19 +306,15 @@ function setupEventListeners() {
     });
 }
 
-// Apply all filters
 function applyFilters() {
-    currentPage = 1; // Reset to first page when filters change
+    currentPage = 1;
     
     const searchTerm = searchInput.value.toLowerCase();
     const projectValue = projectFilter.value;
     const processValue = processFilter.value;
     const statusValue = statusFilter.value;
-    const startDateValue = startDateFilter.value;
-    const endDateValue = endDateFilter.value;
     
     filteredWorkflows = allWorkflows.filter(workflow => {
-        // Search term filter (searches across multiple fields)
         const matchesSearch = !searchTerm || 
             (workflow.HdrID && workflow.HdrID.toString().includes(searchTerm)) ||
             (workflow.ProcessName && workflow.ProcessName.toLowerCase().includes(searchTerm)) ||
@@ -348,30 +322,11 @@ function applyFilters() {
             (workflow.ProjectName && workflow.ProjectName.toLowerCase().includes(searchTerm)) ||
             (workflow.Status && workflow.Status.toLowerCase().includes(searchTerm));
         
-        // Dropdown filters
         const matchesProject = !projectValue || (workflow.ProjectName === projectValue);
         const matchesProcess = !processValue || (workflow.ProcessName === processValue);
         const matchesStatus = !statusValue || (workflow.Status === statusValue);
         
-        // Date range filter
-        let matchesDate = true;
-        if (startDateValue || endDateValue) {
-            const dueDate = workflow.DueDate ? new Date(workflow.DueDate) : null;
-            
-            if (startDateValue && endDateValue) {
-                const startDate = new Date(startDateValue);
-                const endDate = new Date(endDateValue);
-                matchesDate = dueDate && dueDate >= startDate && dueDate <= endDate;
-            } else if (startDateValue) {
-                const startDate = new Date(startDateValue);
-                matchesDate = dueDate && dueDate >= startDate;
-            } else if (endDateValue) {
-                const endDate = new Date(endDateValue);
-                matchesDate = dueDate && dueDate <= endDate;
-            }
-        }
-        
-        return matchesSearch && matchesProject && matchesProcess && matchesStatus && matchesDate;
+        return matchesSearch && matchesProject && matchesProcess && matchesStatus;
     });
     
     updateTable();
@@ -441,7 +396,7 @@ function updateTable() {
                 <td>${workflow.PackageName || ''}</td>
                 <td>${workflow.ProjectName || ''}</td>
                 <td><span class="status-badge status-${workflow.Status ? workflow.Status.toLowerCase().replace(' ', '-') : ''}">${workflow.Status || ''}</span></td>
-                <td>${workflow.DueDate ? new Date(workflow.DueDate).toLocaleDateString() : ''}</td>
+                <td>${workflow.completionDate.split('T')[0] || ''}</td>
             </tr>
         `).join('');
         
@@ -561,14 +516,13 @@ function updatePagination() {
     paginationControls.appendChild(nextButton);
 }
 
-// Export data to CSV
 function exportData() {
     if (filteredWorkflows.length === 0) {
         alert('No data to export');
         return;
     }
     
-    const headers = ['HDR ID', 'Process', 'Package', 'Project', 'Status', 'Due Date'];
+    const headers = ['HDR ID', 'Process', 'Package', 'Project', 'Status', 'Completed Date'];
     const rows = filteredWorkflows.map(workflow => [
         workflow.HdrID,
         workflow.ProcessName || '',
