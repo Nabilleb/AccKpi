@@ -147,7 +147,6 @@ res.render("workflowdashboard.ejs");
 
 app.get("/api/workFlowDashData", async (req, res) => {
   const DepId = req.session.user.DepartmentId;
-
   try {
     await pool.request().query(`
       UPDATE hdr
@@ -179,7 +178,7 @@ app.get("/api/workFlowDashData", async (req, res) => {
         INNER JOIN tblProcessDepartment pd ON pd.ProcessID = hdr.ProcessID
         WHERE pd.DepartmentID = @DepId
       `);
-
+    console.log(result.recordset)
     res.json(result.recordset);
   } catch (err) {
     console.error("Error fetching workflow dashboard data:", err);
@@ -227,12 +226,14 @@ const tasksResult = await request1.query(`
     pr.ProcessName,
     pj.ProjectID,
     pj.ProjectName,
+    pk.PkgeName,
     dp.DeptName
   FROM tblWorkflowDtl d
   INNER JOIN tblTasks t ON d.TaskID = t.TaskID
   INNER JOIN tblWorkflowHdr hdr ON d.workFLowHdrId = hdr.WorkFlowID
   INNER JOIN tblProcess pr ON hdr.ProcessID = pr.NumberOfProccessID
   INNER JOIN tblProject pj ON hdr.ProjectID = pj.ProjectID
+  INNER JOIN tblPackages pk ON pk.PkgeId = hdr.packageID
   INNER JOIN tblDepartments dp ON dp.DepartmentID = t.DepId
   WHERE d.workFLowHdrId = @HdrID
   ORDER BY t.Priority ASC
@@ -834,7 +835,7 @@ app.get('/task-selected', async (req, res) => {
         t.PredecessorID,
         t.DaysRequired,
         t.linkTasks,
-        w.WorkflowID,
+        w.WorkflowDtlId,
         w.WorkflowName,
         w.TimeStarted,
         w.TimeFinished,
@@ -1393,7 +1394,6 @@ app.post('/finish-task/:taskId', async (req, res) => {
   try {
     const finished = new Date(finishTime);
 
-    // Get current task details
     const taskResult = await pool.request()
       .input('taskId', taskId)
       .query(`
@@ -1424,7 +1424,6 @@ app.post('/finish-task/:taskId', async (req, res) => {
       .input('taskId', taskId)
       .query(`UPDATE tblTasks SET IsTaskSelected = 0 WHERE TaskID = @taskId`);
 
-    // Find next task in the department
     const nextTaskResult = await pool.request()
       .input('depId', DepId)
       .query(`
@@ -1441,7 +1440,6 @@ app.post('/finish-task/:taskId', async (req, res) => {
       const nextTaskId = nextTaskResult.recordset[0].TaskID;
       const nextTaskDaysRequired = nextTaskResult.recordset[0].DaysRequired || 1;
 
-      // Calculate new planned date: finishTime + 1 day + next task's days required
       const nextPlannedDate = new Date(finished);
       nextPlannedDate.setDate(nextPlannedDate.getDate() + 1 + nextTaskDaysRequired);
 
@@ -1454,7 +1452,6 @@ app.post('/finish-task/:taskId', async (req, res) => {
           WHERE TaskID = @nextTaskId
         `);
 
-      // Update linked tasks with same planned date
       const linkedTasksResult = await pool.request()
         .input('linkTo', nextTaskId)
         .query(`
@@ -1576,6 +1573,54 @@ app.post('/finish-task/:taskId', async (req, res) => {
               FROM tblTasks t
               JOIN NextTask nt ON t.TaskID = nt.TaskID
             `);
+
+          const nextDeptTaskResult = await pool.request()
+            .input('nextDepId', nextDepId)
+            .query(`
+              SELECT TOP 1 t.TaskID, t.DaysRequired
+              FROM tblTasks t
+              JOIN tblWorkflowDtl w ON t.TaskID = w.TaskID
+              WHERE t.DepId = @nextDepId
+                AND t.IsTaskSelected = 1
+                AND w.TimeFinished IS NULL
+              ORDER BY t.Priority ASC, t.TaskID ASC
+            `);
+
+          if (nextDeptTaskResult.recordset.length > 0) {
+            const nextDeptTaskId = nextDeptTaskResult.recordset[0].TaskID;
+            const nextDeptDaysRequired = nextDeptTaskResult.recordset[0].DaysRequired || 1;
+
+            const plannedDate = new Date(finished);
+            plannedDate.setDate(plannedDate.getDate() + 1 + nextDeptDaysRequired);
+
+            await pool.request()
+              .input('plannedDate', plannedDate.toISOString().split('T')[0])
+              .input('taskId', nextDeptTaskId)
+              .query(`
+                UPDATE tblTasks
+                SET PlannedDate = @plannedDate
+                WHERE TaskID = @taskId
+              `);
+
+            const linkedNextDeptTasks = await pool.request()
+              .input('linkTo', nextDeptTaskId)
+              .query(`
+                SELECT TaskID
+                FROM tblTasks
+                WHERE linkTasks = @linkTo
+              `);
+
+            for (const row of linkedNextDeptTasks.recordset) {
+              await pool.request()
+                .input('plannedDate', plannedDate.toISOString().split('T')[0])
+                .input('linkedId', row.TaskID)
+                .query(`
+                  UPDATE tblTasks
+                  SET PlannedDate = @plannedDate
+                  WHERE TaskID = @linkedId
+                `);
+            }
+          }
         }
       }
     }
@@ -1586,6 +1631,7 @@ app.post('/finish-task/:taskId', async (req, res) => {
     res.status(500).json({ error: 'Failed to finish task' });
   }
 });
+
 
 app.get('/is-first-task/:taskId', async (req, res) => {
   const { taskId } = req.params;

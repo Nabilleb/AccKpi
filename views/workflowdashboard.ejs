@@ -396,7 +396,7 @@ function updateTable() {
                 <td>${workflow.PackageName || ''}</td>
                 <td>${workflow.ProjectName || ''}</td>
                 <td><span class="status-badge status-${workflow.Status ? workflow.Status.toLowerCase().replace(' ', '-') : ''}">${workflow.Status || ''}</span></td>
-                <td>${workflow.completionDate.split('T')[0] || ''}</td>
+<td>${workflow.completionDate ? workflow.completionDate.split('T')[0] : ''}</td>
             </tr>
         `).join('');
         

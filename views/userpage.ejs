@@ -617,9 +617,9 @@
         <i class="fas fa-tachometer-alt"></i>
         Dashboard
       </a>
-      <a href="/mytasks">
+      <a href="/task-selected">
         <i class="fas fa-tasks"></i>
-        My Tasks
+        View Tasks
       </a>
       <a href="#">
         <i class="fas fa-project-diagram"></i>
@@ -686,7 +686,7 @@
           </div>
           <div class="info-item">
             <span class="info-label">Package</span>
-            <span class="info-value"><%= tasks[0]?.PackageName || 'N/A' %></span>
+            <span class="info-value"><%= tasks[0]?.PkgeName || 'N/A' %></span>
           </div>
         </div>
         
@@ -706,7 +706,7 @@
   <script>
     const userId = "<%= user.id %>";
     const deptId = "<%= user.DepartmentId %>";
-    const taskList = <%- JSON.stringify(tasks) %>; // local task list
+    const taskList = <%- JSON.stringify(tasks) %>; 
     const container = document.getElementById('department-tables-container');
     const errorEl = document.getElementById('error-message');
     const errorText = document.getElementById('error-text');
@@ -798,10 +798,10 @@
               ${delayInputDisabled} placeholder="${delayInputDisabled ? '' : 'Enter delay reason...'}">
           `;
 
-          const taskPlannedCell = !task.IsDateFixed && isOwnDepartment
+          const taskPlannedCell = task.IsDateFixed && isOwnDepartment
             ? `<td><input type="number" min="1" value="${task.DaysRequired}" class="editable-days" data-task-id="${task.TaskID}"></td>`
             : `<td>${task.DaysRequired}</td>`;
-
+            
           let actionButton = '';
           if (isOwnDepartment && task.IsTaskSelected) {
             if (!task.TimeStarted) {
