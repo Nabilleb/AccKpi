@@ -107,38 +107,35 @@ app.post("/login", async (req, res) => {
         FROM tblUsers 
         WHERE usrEmail = @username AND usrPWD = @password
       `);
+      
     const project = await pool.request()
-                              .input('projectID', sql.Int, projectId)
-                              .query("SELECT * FROM tblProject WHERE projectID = @projectID")
-          console.log(project.recordset)
+      .input('projectID', sql.Int, projectId)
+      .query("SELECT * FROM tblProject WHERE projectID = @projectID");
+      
     if (result.recordset.length === 1) {
       const user = result.recordset[0];
-     const projectName = project.recordset[0].projectName
-    const  proID = project.recordset[0].projectID
+      const projectName = project.recordset[0].projectName;
+      const proID = project.recordset[0].projectID;
 
       req.session.user = {
         id: user.usrID,
         name: user.usrDesc,
         usrAdmin: user.usrAdmin,
         DepartmentId: user.DepartmentID,
-        projectName : projectName,
-        projectID : proID
+        projectName: projectName,
+        projectID: proID
       };
 
-      console.log("Login success, session user:", req.session.user);
-      
-      res.redirect(user.usrAdmin ? "/adminpage" : "/workFlowDash");
+      return res.json({ success: true, redirect: user.usrAdmin ? "/adminpage" : "/workFlowDash" });
     } else {
-      console.log("Login failed: No matching user");
-      res.status(401).send("Invalid username or password");
+      return res.json({ success: false, message: "Invalid username or password" });
     }
 
   } catch (err) {
     console.error("Login error:", err);
-    res.status(500).send("Internal server error");
+    return res.status(500).json({ success: false, message: "Internal server error" });
   }
 });
-
 
 app.get("/addPackage", isAdmin,async (req, res) => {
 res.render("packagefrom.ejs");
