@@ -89,12 +89,14 @@ app.use(session({
 }));
 
 
-app.get("/login",checkIfInSession ,(req,res) =>{
-  res.render("login.ejs")
+app.get("/login",checkIfInSession ,async(req,res) =>{    
+  const result = await pool.request()
+                          .query("SELECT * FROM tblProject")
+  res.render("login.ejs", {project:result.recordset})
 })
 
 app.post("/login", async (req, res) => {
-  const { username, password } = req.body;
+  const { username, password, projectId } = req.body;
 
   try {
     const result = await pool.request()
@@ -105,15 +107,22 @@ app.post("/login", async (req, res) => {
         FROM tblUsers 
         WHERE usrEmail = @username AND usrPWD = @password
       `);
-
+    const project = await pool.request()
+                              .input('projectID', sql.Int, projectId)
+                              .query("SELECT * FROM tblProject WHERE projectID = @projectID")
+          console.log(project.recordset)
     if (result.recordset.length === 1) {
       const user = result.recordset[0];
-      
+     const projectName = project.recordset[0].projectName
+    const  proID = project.recordset[0].projectID
+
       req.session.user = {
         id: user.usrID,
         name: user.usrDesc,
         usrAdmin: user.usrAdmin,
-        DepartmentId: user.DepartmentID
+        DepartmentId: user.DepartmentID,
+        projectName : projectName,
+        projectID : proID
       };
 
       console.log("Login success, session user:", req.session.user);
@@ -139,16 +148,24 @@ app.get("/addTask",isAdmin, async (req, res) => {
   res.render("task.ejs");
 });
 
-app.get("/workFlowDash", ensureAuthenticated, async (req, res)=>{
+app.get("/workFlowDash", async (req, res) => {
+  try {
+    const projects = await pool.request().query("SELECT projectID, projectName FROM tblProject");
+    res.render("workflowdashboard.ejs", { projects: projects.recordset });
+  } catch (err) {
+    console.error("Error loading projects:", err);
+    res.status(500).send("Error loading dashboard");
+  }
+});
 
-res.render("workflowdashboard.ejs");
-})
 
 
 app.get("/api/workFlowDashData", async (req, res) => {
-  const DepId = req.session.user.DepartmentId;
+  const projectID = req.query.projectID;
+
   try {
-    await pool.request().query(`
+
+        await pool.request().query(`
       UPDATE hdr
       SET hdr.completionDate = GETDATE(), hdr.status = 'Completed'
       FROM tblWorkflowHdr hdr
@@ -161,30 +178,37 @@ app.get("/api/workFlowDashData", async (req, res) => {
       AND hdr.status != 'Completed'
     `);
 
-    const result = await pool.request()
-      .input('DepId', sql.Int, DepId)
-      .query(`
-        SELECT 
-          hdr.WorkFlowID AS HdrID,
-          p.ProcessName,
-          pk.PkgeName AS PackageName,
-          prj.ProjectName,
-          hdr.Status,
-          hdr.completionDate
-        FROM tblWorkflowHdr hdr
-        LEFT JOIN tblProcess p ON hdr.ProcessID = p.NumberOfProccessID
-        LEFT JOIN tblPackages pk ON hdr.PackageID = pk.PkgeID
-        LEFT JOIN tblProject prj ON hdr.ProjectID = prj.ProjectID
-        INNER JOIN tblProcessDepartment pd ON pd.ProcessID = hdr.ProcessID
-        WHERE pd.DepartmentID = @DepId
-      `);
-    console.log(result.recordset)
+    const request = pool.request();
+    let query = `
+      SELECT 
+        hdr.WorkFlowID AS HdrID,
+        p.ProcessName,
+        pk.PkgeName AS PackageName,
+        prj.projectID,
+        prj.ProjectName,
+        hdr.Status,
+        hdr.completionDate
+      FROM tblWorkflowHdr hdr
+      LEFT JOIN tblProcess p ON hdr.ProcessID = p.NumberOfProccessID
+      LEFT JOIN tblPackages pk ON hdr.PackageID = pk.PkgeID
+      LEFT JOIN tblProject prj ON hdr.ProjectID = prj.ProjectID
+    `;
+
+    if (projectID) {
+      request.input('ProjectID', sql.Int, projectID);
+      query += ` WHERE hdr.ProjectID = @ProjectID`;
+    }
+
+    const result = await request.query(query);
     res.json(result.recordset);
   } catch (err) {
     console.error("Error fetching workflow dashboard data:", err);
     res.status(500).json({ error: "Failed to fetch workflow dashboard data" });
   }
 });
+
+
+
 
 
 

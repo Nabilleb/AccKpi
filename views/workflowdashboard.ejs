@@ -77,7 +77,7 @@
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M19 13H13V19H11V13H5V11H11V5H13V11H19V13Z" fill="currentColor"/>
                     </svg>
-                    New Item
+                    Add Workflow
                 </button>
                 <button class="btn btn-outline" id="exportBtn">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -103,16 +103,16 @@
         </div>
 
         <div class="filters">
-            <div class="filter-group">
-                <label class="filter-label">Project</label>
-                <select id="projectFilter">
-                    <option value="">All Projects</option>
-                    <option value="Satellite Launch">Satellite Launch</option>
-                    <option value="Network Upgrade">Network Upgrade</option>
-                    <option value="Data Center Migration">Data Center Migration</option>
-                    <option value="Security Overhaul">Security Overhaul</option>
-                </select>
-            </div>
+         <div class="filter-group">
+    <label class="filter-label">Project</label>
+    <select id="projectFilter">
+        <option value="">All Projects</option>
+        <% projects.forEach(project => { %>
+            <option value="<%= project.projectID %>"><%= project.projectName %></option>
+        <% }) %>
+    </select>
+</div>
+
             <div class="filter-group">
                 <label class="filter-label">Process</label>
                 <select id="processFilter">
@@ -412,6 +412,15 @@ function updateTable() {
     // Update pagination info
     updatePagination();
 }
+
+document.getElementById("projectFilter").addEventListener("change", async function () {
+  const selectedProjectID = this.value;
+
+  const res = await fetch(`/api/workFlowDashData?projectID=${selectedProjectID}`);
+  const workflows = await res.json();
+  updateTable(workflows); 
+});
+
 
 // Update pagination controls
 function updatePagination() {
