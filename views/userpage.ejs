@@ -1088,6 +1088,16 @@
             extraButtons = `<button class="row-save-btn" data-task-id="${task.TaskID}"><i class="fas fa-save"></i> Save</button>`;
           }
 
+          let nextTaskSelect = `
+    <select class="next-user-select" data-task-id="${task.TaskID}">
+     <option value="">Select user</option>
+     ${users.map(u => `<option value="${u.usrID}">${u.usrDesc}</option>`).join('')}
+   </select>
+   <button class="send-next-btn" data-task-id="${task.TaskID}">
+     <i class="fas fa-paper-plane"></i> Send
+  < /button>
+`;
+
           tr.innerHTML = `
             <td>${task.TaskName || ''}</td>
             <td>${task.TaskPlanned || ''}</td>
@@ -1097,6 +1107,7 @@
             <td>${status}</td>
             <td>${task.Delay !== null ? task.Delay : 0}</td>
             <td>${delayInput}</td>
+            <td> ${nextTaskSelect} </td>
             <td><div class="button-container">${actionButton}${extraButtons}</div></td>
           `;
 
