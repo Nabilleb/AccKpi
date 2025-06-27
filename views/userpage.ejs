@@ -901,6 +901,17 @@
     const errorText = document.getElementById('error-text');
     const successEl = document.getElementById('success-message');
     const successText = document.getElementById('success-text');
+    let users = []
+
+    async function loadUsers() {
+  try {
+    const res = await fetch("/api/users");
+    users = await res.json();
+    
+  } catch (err) {
+    console.error("Error loading users:", err);
+  }
+}
 
     function showError(message) {
       errorText.textContent = message;
@@ -969,7 +980,7 @@
 
     function renderTasks(tasks) {
       container.innerHTML = '';
-
+        
       if (tasks.length === 0) {
         container.innerHTML = `<div class="empty-message">No tasks found.</div>`;
         return;
@@ -1023,6 +1034,7 @@
             <th>Status</th>
             <th>Days Delay</th>
             <th>Delay Reason</th>
+            <th> next task to <
             <th>Actions</th>
           </tr>
         `;
@@ -1185,7 +1197,9 @@
     });
 
     // Initialize the page
-    document.addEventListener('DOMContentLoaded', () => {
+     document.addEventListener('DOMContentLoaded', async() => {
+      await loadUsers();
+      console.log(users)
       renderTasks(taskList);
       updateStatusCounts(taskList);
       

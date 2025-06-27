@@ -155,6 +155,19 @@ app.get("/workFlowDash", async (req, res) => {
   }
 });
 
+app.get("/api/users", async (req, res) => {
+  try {
+    const result = await pool.request().query(`
+      SELECT usrID, usrDesc 
+      FROM tblUsers
+    `);
+    console.log(result.recordset)
+    res.json(result.recordset);
+  } catch (err) {
+    console.error("Error fetching users:", err);
+    res.status(500).json({ error: "Failed to fetch users" });
+  }
+});
 
 
 app.get("/api/workFlowDashData", async (req, res) => {
