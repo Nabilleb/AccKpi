@@ -1089,11 +1089,11 @@
           }
 
           let nextTaskSelect = `
-    <select class="next-user-select" data-task-id="${task.TaskID}">
+    <select class=".assign-user-select" data-task-id="${task.TaskID}">
      <option value="">Select user</option>
      ${users.map(u => `<option value="${u.usrID}">${u.usrDesc}</option>`).join('')}
    </select>
-   <button class="send-next-btn" data-task-id="${task.TaskID}">
+   <button class= "assign-user-btn" data-task-id="${task.TaskID}">
      <i class="fas fa-paper-plane"></i> Send
   < /button>
 `;
@@ -1205,6 +1205,41 @@
           e.target.innerHTML = originalHTML;
         }
       }
+
+      if (e.target.classList.contains('assign-user-btn')) {
+        console.log("clicked")
+  const taskId = e.target.dataset.taskId;
+  const row = e.target.closest('tr');
+  const select = row.querySelector('.assign-user-select');
+
+  const selectedUserId = select.value;
+
+  if (!selectedUserId) {
+    showError("Please select a user before sending.");
+    return;
+  }
+
+  const originalHTML = e.target.innerHTML;
+
+  try {
+    e.target.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+
+    const res = await fetch(`/assign-user-to-task/${taskId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: selectedUserId })
+    });
+
+    if (!res.ok) throw new Error("Assignment failed");
+
+    showSuccess("User assigned successfully!");
+  } catch (err) {
+    showError("Failed to assign user");
+  } finally {
+    e.target.innerHTML = originalHTML;
+  }
+}
+
     });
 
     // Initialize the page

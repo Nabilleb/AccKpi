@@ -693,6 +693,63 @@ app.get("/logout", (req, res) => {
   res.redirect("/login");
 });
 
+app.post('/assign-user-to-task/:taskId', async (req, res) => {
+  const { taskId } = req.params;
+
+  try {
+    const userEmailResult = await pool.request()
+      .input('taskId', taskId)
+      .query(`
+        SELECT u.usrEmail, u.usrDesc
+        FROM tblWorkflowDtl w
+        JOIN tblUsers u ON w.usrID = u.usrID
+        WHERE w.TaskID = @taskId
+      `);
+
+    if (userEmailResult.recordset.length > 0) {
+      const assignedUser = userEmailResult.recordset[0];
+
+      const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+        user: 'Nabilgreen500@gmail.com',
+        pass: 'ruoh nygp ewxd slad'
+        }
+      });
+
+      const mailOptions = {
+        from: 'Nabilgreen500@gmail.com',
+        to: assignedUser.usrEmail,
+        subject: 'Task Assigned to You',
+        text: `Hello ${assignedUser.usrDesc},
+
+A task with ID ${taskId} has been assigned to you.
+
+Please log in to the Engineering Portal to begin your task.
+
+Regards,
+Engineering Project Dashboard`
+      };
+
+      transporter.sendMail(mailOptions, (err, info) => {
+        if (err) {
+          console.error('Error sending email to assigned user:', err);
+          res.status(500).json({ error: 'Failed to send email' });
+        } else {
+          console.log('Notification email sent to assigned user:', info.response);
+          res.status(200).json({ message: 'Email sent successfully' });
+        }
+      });
+    } else {
+      res.status(404).json({ error: 'No assigned user found for this task' });
+    }
+  } catch (error) {
+    console.error('Error assigning user to task:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+
 
 app.post('/tasks/:id/update', async (req, res) => {
   const { id } = req.params; 
