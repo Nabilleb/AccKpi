@@ -155,19 +155,30 @@ app.get("/workFlowDash", async (req, res) => {
   }
 });
 
-app.get("/api/users", async (req, res) => {
+app.get('/api/users', async (req, res) => {
+  const depId = req.query.depId;
+
   try {
-    const result = await pool.request().query(`
-      SELECT usrID, usrDesc 
+    let query = `
+      SELECT usrID, usrDesc
       FROM tblUsers
-    `);
-    console.log(result.recordset)
-    res.json(result.recordset);
+    `;
+    if (depId) {
+      query += ` WHERE DepartmentID = @depId`;
+    }
+
+    const request = pool.request();
+    if (depId) request.input('depId', sql.Int, depId);
+
+    const result = await request.query(query);
+
+    res.json({ users: result.recordset });
   } catch (err) {
-    console.error("Error fetching users:", err);
-    res.status(500).json({ error: "Failed to fetch users" });
+    console.error('Error fetching users:', err);
+    res.status(500).json({ error: 'Failed to fetch users' });
   }
 });
+
 
 
 app.get("/api/workFlowDashData", async (req, res) => {
@@ -272,7 +283,7 @@ const tasksResult = await request1.query(`
   WHERE d.workFLowHdrId = @HdrID
   ORDER BY t.Priority ASC
 `);
-
+console.log(tasksResult.recordset)
 
     const request2 = pool.request();
     request2.input('DepartmentID', sql.Int, DepId);
@@ -293,7 +304,6 @@ const tasksResult = await request1.query(`
       DeptName: department.DeptName
     };
 
-    console.log("Tasks retrieved:", tasksResult.recordset); 
 
     res.render("userpage.ejs", {
       tasks: tasksResult.recordset,
@@ -651,7 +661,6 @@ app.get("/adminpage", ensureAuthenticated, async (req, res) => {
 
 app.get("/process/:id/departments", async (req, res) => {
   const processId = req.params.id;
-console.log("process id", processId)
   try {
     const request = pool.request();
     request.input("processId", processId);
@@ -667,7 +676,6 @@ console.log("process id", processId)
       WHERE pd.ProcessID = @processId
       ORDER BY pd.StepOrder
     `);
-console.log(result.recordset)
     res.json(result.recordset);
   } catch (err) {
     console.error("Error fetching departments for process:", err);
@@ -1353,7 +1361,6 @@ WHERE
     AND PD.DepartmentID = @departmentId;
 
       `);
-      console.log(result.recordset)
     res.json(result.recordset);
   } catch (err) {
     console.error('Error fetching processes:', err);
@@ -1462,6 +1469,7 @@ app.post('/start-task/:taskId', async (req, res) => {
   const { startTime } = req.body;
 
   try {
+    // Update the task start time
     await pool.request()
       .input('taskId', taskId)
       .input('startTime', startTime)
@@ -1471,12 +1479,48 @@ app.post('/start-task/:taskId', async (req, res) => {
         WHERE TaskID = @taskId AND TimeStarted IS NULL
       `);
 
-    res.sendStatus(200);
+    // ✅ Get DepId of the current task
+    const depResult = await pool.request()
+      .input('taskId', taskId)
+      .query(`
+        SELECT DepId
+        FROM tblTasks
+        WHERE TaskID = @taskId
+      `);
+
+    const currentDepId = depResult.recordset[0]?.DepId;
+
+    // ✅ Find the next task in the same department (or your preferred logic)
+    const nextTaskResult = await pool.request()
+      .input('depId', currentDepId)
+      .query(`
+        SELECT TOP 1 TaskID, DepId
+        FROM tblTasks
+        WHERE DepId = @depId
+          AND IsTaskSelected = 0
+        ORDER BY Priority ASC, TaskID ASC
+      `);
+
+    let nextDepId = null;
+
+    if (nextTaskResult.recordset.length > 0) {
+      nextDepId = nextTaskResult.recordset[0].DepId;
+    }
+
+    // ✅ You now have the DepId of the next task (if any)
+    console.log('Next DepId:', nextDepId);
+
+    res.status(200).json({
+      message: 'Task started successfully',
+      nextDepId: nextDepId
+    });
+
   } catch (error) {
     console.error('Error starting task:', error);
     res.status(500).json({ error: 'Failed to start task' });
   }
 });
+
 
 app.post('/finish-task/:taskId', async (req, res) => {
   const { taskId } = req.params;

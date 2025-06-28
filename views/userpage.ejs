@@ -902,16 +902,16 @@
     const successEl = document.getElementById('success-message');
     const successText = document.getElementById('success-text');
     let users = []
-
-    async function loadUsers() {
+async function loadUsers(nextDepId) {
   try {
-    const res = await fetch("/api/users");
-    users = await res.json();
-    
+    const res = await fetch(`/api/users?depId=${nextDepId}`);
+    const data = await res.json();
+    users = data.users;
   } catch (err) {
     console.error("Error loading users:", err);
   }
 }
+
 
     function showError(message) {
       errorText.textContent = message;
@@ -978,9 +978,25 @@
       });
     }
 
-    function renderTasks(tasks) {
+   async function renderTasks(tasks) {
       container.innerHTML = '';
         
+   // First, sort tasks to be sure
+const sortedTasks = [...tasks].sort((a, b) => {
+  if (a.Priority !== b.Priority) return a.Priority - b.Priority;
+  return a.TaskID - b.TaskID;
+});
+
+// Find the index of the active task
+const activeIndex = sortedTasks.findIndex(t => t.IsTaskSelected);
+
+// Next task is the one after the active
+let nextDepId = null;
+if (activeIndex !== -1 && activeIndex + 1 < sortedTasks.length) {
+  nextDepId = sortedTasks[activeIndex + 1].DepId;
+}
+await loadUsers(nextDepId)
+ await loadUsers(nextDepId)
       if (tasks.length === 0) {
         container.innerHTML = `<div class="empty-message">No tasks found.</div>`;
         return;
