@@ -1485,33 +1485,49 @@
     }
 
     // Render tasks with sorting
-    async function renderTasks(tasks, sortBy = 'priority') {
+      async function renderTasks(tasks) {
       container.innerHTML = '';
       
-      // First, sort tasks based on the selected criteria
+      // First, sort tasks by department and then by task ID
       const sortedTasks = [...tasks].sort((a, b) => {
-        if (sortBy === 'priority') {
-          if (a.Priority !== b.Priority) return a.Priority - b.Priority;
-          return a.TaskID - b.TaskID;
-        } else if (sortBy === 'duedate') {
-          const dateA = a.PlannedDate ? new Date(a.PlannedDate) : null;
-          const dateB = b.PlannedDate ? new Date(b.PlannedDate) : null;
-          if (dateA && dateB) return dateA - dateB;
-          if (dateA) return -1;
-          if (dateB) return 1;
-          return a.TaskID - b.TaskID;
-        } else { // department
-          if (a.DeptName !== b.DeptName) return a.DeptName.localeCompare(b.DeptName);
-          return a.TaskID - b.TaskID;
-        }
+        if (a.DepId !== b.DepId) return a.DepId - b.DepId;
+        return a.TaskID - b.TaskID;
       });
 
-      // Find the index of the active task to determine next department
+      // Find the active task to determine current position in workflow
       const activeIndex = sortedTasks.findIndex(t => t.IsTaskSelected);
       let nextDepId = null;
+      let lastFinishedTask = null;
       
-      if (activeIndex !== -1 && activeIndex + 1 < sortedTasks.length) {
-        nextDepId = sortedTasks[activeIndex + 1].DepId;
+      if (activeIndex !== -1) {
+        // Get the current department
+        const currentDepId = sortedTasks[activeIndex].DepId;
+        
+        // Find next department with tasks
+        for (let i = activeIndex + 1; i < sortedTasks.length; i++) {
+          if (sortedTasks[i].DepId !== currentDepId) {
+            nextDepId = sortedTasks[i].DepId;
+            break;
+          }
+        }
+        
+        // Find last finished task in current department before active task
+        for (let i = activeIndex - 1; i >= 0; i--) {
+          if (sortedTasks[i].DepId === currentDepId && sortedTasks[i].TimeFinished) {
+            lastFinishedTask = sortedTasks[i];
+            break;
+          }
+        }
+        
+        // If no finished task found in current department, look in previous departments
+        if (!lastFinishedTask) {
+          for (let i = activeIndex - 1; i >= 0; i--) {
+            if (sortedTasks[i].TimeFinished) {
+              lastFinishedTask = sortedTasks[i];
+              break;
+            }
+          }
+        }
       }
       
       // Load users for the next department
@@ -1639,9 +1655,9 @@
             extraButtons = `<button class="row-save-btn" data-task-id="${task.TaskID}"><i class="fas fa-save"></i> Save</button>`;
           }
 
-          // User assignment dropdown
+          // User assignment dropdown - only show for the last finished task before department change
           let nextTaskSelect = '';
-          if (isOwnDepartment && task.IsTaskSelected && users.length > 0) {
+          if (lastFinishedTask && task.TaskID === lastFinishedTask.TaskID && isOwnDepartment && users.length > 0) {
             nextTaskSelect = `
               <div class="assign-user-container">
                 <select class="assign-user-select" data-task-id="${task.TaskID}">
