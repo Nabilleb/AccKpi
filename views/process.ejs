@@ -2,83 +2,351 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <link rel="stylesheet" href="/styles/process.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Add Process</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-light: #dbeafe;
+      --primary-dark: #1d4ed8;
+      --text: #1f2937;
+      --text-light: #6b7280;
+      --border: #e5e7eb;
+      --background: #f9fafb;
+      --white: #ffffff;
+      --success: #10b981;
+      --radius-sm: 4px;
+      --radius-md: 8px;
+      --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+      --transition: all 0.2s ease;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background-color: var(--background);
+      color: var(--text);
+      line-height: 1.5;
+      padding: 2rem;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    h1 {
+      color: var(--primary-dark);
+      margin-bottom: 1.5rem;
+      font-weight: 600;
+    }
+
+    form {
+      max-width: 800px;
+      margin: 0 auto;
+      background-color: var(--white);
+      padding: 2rem;
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow);
+    }
+
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 1rem;
+      transition: var(--transition);
+    }
+
+    input[type="text"]:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+    }
+
+    select {
+      width: 100%;
+      min-height: 150px;
+      padding: 0.5rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 1rem;
+      background-color: var(--white);
+      transition: var(--transition);
+    }
+
+    select:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+    }
+
+    option {
+      padding: 0.5rem;
+      margin: 0.25rem 0;
+      border-radius: var(--radius-sm);
+      transition: var(--transition);
+    }
+
+    option:hover {
+      background-color: var(--primary-light);
+    }
+
+    option:checked {
+      background-color: var(--primary);
+      color: var(--white);
+      font-weight: 500;
+    }
+
+    button {
+      background-color: var(--primary);
+      color: white;
+      padding: 0.75rem 1.5rem;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-weight: 500;
+      cursor: pointer;
+      transition: var(--transition);
+      font-size: 1rem;
+      margin-top: 1rem;
+      box-shadow: var(--shadow);
+    }
+
+    button:hover {
+      background-color: var(--primary-dark);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
+    }
+
+    #steps-list {
+      margin-top: 1rem;
+      padding: 1rem;
+      background-color: var(--primary-light);
+      border-radius: var(--radius-sm);
+      color: var(--primary-dark);
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+
+    #steps-list strong {
+      font-weight: 600;
+    }
+
+    .help-text {
+      display: block;
+      margin-top: 0.5rem;
+      font-size: 0.85rem;
+      color: var(--text-light);
+    }
+
+    .step-item {
+      display: flex;
+      align-items: center;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid rgba(37, 99, 235, 0.1);
+    }
+
+    .step-number {
+      display: inline-block;
+      width: 24px;
+      height: 24px;
+      background-color: var(--primary);
+      color: white;
+      border-radius: 50%;
+      text-align: center;
+      line-height: 24px;
+      margin-right: 0.75rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .step-name {
+      flex: 1;
+    }
+
+    .drag-handle {
+      cursor: move;
+      color: var(--text-light);
+      margin-left: 0.5rem;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      body {
+        padding: 1rem;
+      }
+      
+      form {
+        padding: 1.5rem;
+      }
+    }
+  </style>
 </head>
 <body>
   <h1>Add New Process</h1>
-  <form action="/postProcess" method="POST">
-    <div>
-      <label for="ProcessName">Process Name:</label>
-      <input type="text" name="ProcessName" id="ProcessName" required>
+  <form id="processForm" action="/postProcess" method="POST">
+    <div class="form-group">
+      <label for="ProcessName">Process Name</label>
+      <input type="text" name="ProcessName" id="ProcessName" required placeholder="Enter process name">
     </div>
 
-    <div>
-      <label for="Departments">Assign to Departments:</label>
+    <div class="form-group">
+      <label for="Departments">Assign to Departments (selection order determines workflow steps)</label>
       <select name="Departments" id="Departments" multiple required>
         <% departments.forEach(dept => { %>
           <option value="<%= dept.DepartmentID %>"><%= dept.DeptName %></option>
         <% }); %>
       </select>
+      <span class="help-text">Hold Ctrl/Cmd to select multiple departments. First selected = first step in workflow.</span>
     </div>
+
+    <div id="steps-list">No departments selected yet.</div>
+    <div id="hiddenInputs"></div>
 
     <button type="submit">Save Process</button>
   </form>
 
 <script>
-  document.addEventListener('DOMContentLoaded', function() {
-    const deptSelect = document.getElementById('Departments');
+document.addEventListener('DOMContentLoaded', function() {
+  const deptSelect = document.getElementById('Departments');
+  const stepsList = document.getElementById('steps-list');
+  const hiddenInputs = document.getElementById('hiddenInputs');
+  const selectedOrder = [];
+
+  // Update styles and display on change
+  deptSelect.addEventListener('change', (event) => {
+    Array.from(deptSelect.options).forEach(opt => {
+      if (opt.selected && !selectedOrder.includes(opt.value)) {
+        selectedOrder.push(opt.value);
+      }
+      if (!opt.selected && selectedOrder.includes(opt.value)) {
+        selectedOrder.splice(selectedOrder.indexOf(opt.value), 1);
+      }
+    });
+    updateDisplay();
+  });
+
+  function updateDisplay() {
+    if (selectedOrder.length === 0) {
+      stepsList.innerHTML = 'No departments selected yet.';
+      hiddenInputs.innerHTML = '';
+      return;
+    }
     
-    // Style options on page load (for pre-selected values if any)
-    styleSelectedOptions();
+    let html = '<strong>Workflow Steps:</strong>';
+    hiddenInputs.innerHTML = '';
     
-    // Update styles when selection changes
-    deptSelect.addEventListener('change', styleSelectedOptions);
+    selectedOrder.forEach((id, idx) => {
+      const option = deptSelect.querySelector(`option[value="${id}"]`);
+      
+      html += `
+        <div class="step-item">
+          <span class="step-number">${idx + 1}</span>
+          <span class="step-name">${option.textContent}</span>
+          <span class="drag-handle">☰</span>
+        </div>
+      `;
+      
+      // Create hidden inputs like Steps[0], Steps[1], etc.
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = `Steps[${idx}]`;
+      input.value = id;
+      hiddenInputs.appendChild(input);
+    });
     
-    function styleSelectedOptions() {
-      Array.from(deptSelect.options).forEach(opt => {
-        if (opt.selected) {
-          opt.style.backgroundColor = '#2b6cb0';
-          opt.style.color = 'white';
-          opt.style.fontWeight = '500';
-        } else {
-          opt.style.backgroundColor = '';
-          opt.style.color = '';
-          opt.style.fontWeight = '';
-        }
+    stepsList.innerHTML = html;
+    
+    // Initialize drag and drop functionality
+    initDragAndDrop();
+  }
+
+  function initDragAndDrop() {
+    const stepItems = stepsList.querySelectorAll('.step-item');
+    
+    stepItems.forEach(item => {
+      item.setAttribute('draggable', true);
+      
+      item.addEventListener('dragstart', (e) => {
+        e.dataTransfer.setData('text/plain', item.dataset.id);
+        setTimeout(() => item.classList.add('dragging'), 0);
       });
       
-      // Update selected count display
-      updateSelectedCount();
-    }
+      item.addEventListener('dragend', () => {
+        item.classList.remove('dragging');
+      });
+    });
     
-    // Create and display selected count
-    const countDisplay = document.createElement('div');
-    countDisplay.style.marginTop = '5px';
-    countDisplay.style.fontSize = '0.8rem';
-    countDisplay.style.color = '#4a5568';
-    deptSelect.parentNode.insertBefore(countDisplay, deptSelect.nextSibling);
-    
-    function updateSelectedCount() {
-      const selectedCount = Array.from(deptSelect.selectedOptions).length;
-      countDisplay.textContent = `${selectedCount} department${selectedCount !== 1 ? 's' : ''} selected`;
+    stepsList.addEventListener('dragover', e => {
+      e.preventDefault();
+      const draggingItem = document.querySelector('.dragging');
+      const afterElement = getDragAfterElement(stepsList, e.clientY);
       
-      // Visual pulse effect when changing selection
-      if (selectedCount > 0) {
-        countDisplay.style.fontWeight = '600';
-        setTimeout(() => {
-          countDisplay.style.fontWeight = '400';
-        }, 200);
+      if (afterElement) {
+        stepsList.insertBefore(draggingItem, afterElement);
+      } else {
+        stepsList.appendChild(draggingItem);
       }
-    }
+    });
+  }
+  
+  function getDragAfterElement(container, y) {
+    const draggableElements = [...container.querySelectorAll('.step-item:not(.dragging)')];
     
-    const helpText = document.createElement('small');
-    helpText.textContent = 'Hold Ctrl/Cmd to select multiple, Shift for range selection';
-    helpText.style.display = 'block';
-    helpText.style.marginTop = '5px';
-    helpText.style.color = '#718096';
-    deptSelect.parentNode.appendChild(helpText);
+    return draggableElements.reduce((closest, child) => {
+      const box = child.getBoundingClientRect();
+      const offset = y - box.top - box.height / 2;
+      
+      if (offset < 0 && offset > closest.offset) {
+        return { offset: offset, element: child };
+      } else {
+        return closest;
+      }
+    }, { offset: Number.NEGATIVE_INFINITY }).element;
+  }
+
+  // Style selected options on load
+  styleSelectedOptions();
+  deptSelect.addEventListener('change', styleSelectedOptions);
+
+  function styleSelectedOptions() {
+    Array.from(deptSelect.options).forEach(opt => {
+      if (opt.selected) {
+        opt.style.backgroundColor = 'var(--primary)';
+        opt.style.color = 'var(--white)';
+        opt.style.fontWeight = '500';
+      } else {
+        opt.style.backgroundColor = '';
+        opt.style.color = '';
+        opt.style.fontWeight = '';
+      }
+    });
+  }
+
+  // Form submission validation
+  document.getElementById('processForm').addEventListener('submit', function(e) {
+    if (selectedOrder.length === 0) {
+      e.preventDefault();
+      alert('Please select at least one department for the process workflow.');
+      deptSelect.focus();
+    }
   });
+});
 </script>
 </body>
 </html>

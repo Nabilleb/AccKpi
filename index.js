@@ -1073,33 +1073,49 @@ app.post('/update-task/:id', async (req, res) => {
 
 
 app.post("/postProcess", async (req, res) => {
-  const { ProcessName, Departments } = req.body;
+  const { ProcessName, Steps } = req.body;
 
-  const departmentIDs = Array.isArray(Departments) ? Departments : [Departments];
+  if (!Steps || Steps.length === 0) {
+    return res.status(400).send({ error: "No departments selected." });
+  }
+
+  // Ensure Steps is an array
+  const departmentIDs = Array.isArray(Steps) ? Steps.map(id => parseInt(id)) : [parseInt(Steps)];
 
   try {
+    // Insert Process
     const processResult = await pool.request()
       .input("ProcessName", sql.VarChar(100), ProcessName)
-      .query("INSERT INTO tblProcess (ProcessName) OUTPUT INSERTED.NumberOfProccessID AS ProcessID VALUES (@ProcessName)");
+      .query(`
+        INSERT INTO tblProcess (ProcessName)
+        OUTPUT INSERTED.NumberOfProccessID AS ProcessID
+        VALUES (@ProcessName)
+      `);
 
     const ProcessID = processResult.recordset[0].ProcessID;
 
+    // Insert Departments with Steps
+    let stepNumber = 1;
     for (const deptID of departmentIDs) {
       await pool.request()
         .input("ProcessID", sql.Int, ProcessID)
         .input("DepartmentID", sql.Int, deptID)
+        .input("StepNumber", sql.Int, stepNumber)
         .query(`
-          INSERT INTO tblProcessDepartment (ProcessID, DepartmentID)
-          VALUES (@ProcessID, @DepartmentID)
+          INSERT INTO tblProcessDepartment (ProcessID, DepartmentID, StepOrder)
+          VALUES (@ProcessID, @DepartmentID, @StepNumber)
         `);
+      stepNumber++;
     }
 
-    res.status(201).send({ message: "Process and departments assigned successfully" });
+    res.status(201).send({ message: "Process and departments with steps assigned successfully." });
   } catch (err) {
     console.error("Error assigning process:", err);
     res.status(500).send({ error: "Failed to assign process" });
   }
 });
+
+
 
 app.post("/postWorkflow", async (req, res) => {
   const { WorkflowName, usrID, TaskID, PkgeID, TimeStarted, TimeFinished } = req.body;
