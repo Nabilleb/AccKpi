@@ -1485,215 +1485,197 @@
     }
 
     // Render tasks with sorting
-      async function renderTasks(tasks) {
-      container.innerHTML = '';
-      
-      // First, sort tasks by department and then by task ID
-      const sortedTasks = [...tasks].sort((a, b) => {
-        if (a.DepId !== b.DepId) return a.DepId - b.DepId;
-        return a.TaskID - b.TaskID;
-      });
+    // Render tasks with department-based sequencing
+async function renderTasks(tasks) {
+  container.innerHTML = '';
+  
+  // First, sort tasks by department and then by task ID
+  const sortedTasks = [...tasks].sort((a, b) => {
+    if (a.DepId !== b.DepId) return a.DepId - b.DepId;
+    return a.TaskID - b.TaskID;
+  });
 
-      // Find the active task to determine current position in workflow
-      const activeIndex = sortedTasks.findIndex(t => t.IsTaskSelected);
-      let nextDepId = null;
-      let lastFinishedTask = null;
+  // Find the active task and last finished task
+  const activeIndex = sortedTasks.findIndex(t => t.IsTaskSelected);
+  let lastFinishedTask = null;
+  
+  if (activeIndex !== -1) {
+    // Find the most recently finished task before the active one
+    for (let i = activeIndex - 1; i >= 0; i--) {
+      if (sortedTasks[i].TimeFinished) {
+        lastFinishedTask = sortedTasks[i];
+        break;
+      }
+    }
+  }
+
+  // Load users for the next department (department of the active task)
+  if (activeIndex !== -1) {
+    const activeTask = sortedTasks[activeIndex];
+    await loadUsers(activeTask.DepId);
+  }
+
+  if (tasks.length === 0) {
+    container.innerHTML = `
+      <div class="empty-message">
+        <i class="fas fa-tasks"></i>
+        <p>No tasks found for this process.</p>
+      </div>
+    `;
+    return;
+  }
+
+  // Group tasks by department
+  const grouped = {};
+  sortedTasks.forEach(task => {
+    if (!grouped[task.DepId]) {
+      grouped[task.DepId] = {
+        deptName: task.DeptName || `Department ${task.DepId}`,
+        tasks: []
+      };
+    }
+    grouped[task.DepId].tasks.push(task);
+  });
+
+  // Create department sections
+  Object.values(grouped).forEach(group => {
+    const section = document.createElement('div');
+    section.className = 'department-section';
+    
+    // Department label with toggle
+    const deptLabel = document.createElement('div');
+    deptLabel.className = 'department-label';
+    deptLabel.innerHTML = `
+      <i class="fas fa-building"></i> 
+      ${group.deptName}
+      <span class="badge">${group.tasks.length} tasks</span>
+      <i class="fas fa-chevron-down toggle-icon"></i>
+    `;
+    
+    section.appendChild(deptLabel);
+    
+    // Table container
+    const tableContainer = document.createElement('div');
+    tableContainer.className = 'table-container';
+    
+    // Create table
+    const table = document.createElement('table');
+    table.className = 'department-table';
+    
+    // Table header
+    const thead = document.createElement('thead');
+    thead.innerHTML = `
+      <tr>
+        <th>Task Name</th>
+        <th>Description</th>
+        <th>Planned Date</th>
+        <th>Days Required</th>
+        <th>Date Finished</th>
+        <th>Status</th>
+        <th>Days Delay</th>
+        <th>Delay Reason</th>
+        <th>Assign Next Task</th>
+        <th>Actions</th>
+      </tr>
+    `;
+    table.appendChild(thead);
+    
+    // Table body
+    const tbody = document.createElement('tbody');
+    
+    group.tasks.forEach(task => {
+      const tr = document.createElement('tr');
+      const isOwnDepartment = task.DepId == deptId;
+
+      // Highlight active task
+      if (task.IsTaskSelected) {
+        tr.classList.add('active-task-row');
+      }
+
+      // Determine status
+      let status = '';
+      if (task.TimeStarted && !task.TimeFinished) {
+        status = '<span class="status-badge status-inprogress"><i class="fas fa-spinner"></i> In Progress</span>';
+      } else if (!task.TimeFinished && task.IsTaskSelected) {
+        status = '<span class="status-badge status-pending"><i class="fas fa-clock"></i> Pending</span>';
+      } else if (task.TimeFinished && task.Delay > 0) {
+        status = '<span class="status-badge status-overdue"><i class="fas fa-exclamation-triangle"></i> Overdue</span>';
+      } else if (task.TimeFinished) {
+        status = '<span class="status-badge status-completed"><i class="fas fa-check-circle"></i> Completed</span>';
+      }
+
+      // Format dates
+      const plannedDate = task.PlannedDate ? new Date(task.PlannedDate).toLocaleDateString() : '';
+      const finishDate = task.TimeFinished ? new Date(task.TimeFinished).toLocaleDateString() : '';
+      const delayReason = task.DelayReason || '';
       
-      if (activeIndex !== -1) {
-        // Get the current department
-        const currentDepId = sortedTasks[activeIndex].DepId;
+      // Input fields
+      const delayInputDisabled = !isOwnDepartment || !(task.TimeFinished && task.Delay > 0) ? 'disabled' : '';
+      const delayInput = `
+        <input type="text" value="${delayReason}" class="delay-reason-input" data-task-id="${task.TaskID}" 
+          ${delayInputDisabled} placeholder="${delayInputDisabled ? '' : 'Enter delay reason...'}">
+      `;
+
+      // Days required cell (editable if conditions met)
+      const taskPlannedCell = task.IsDateFixed && isOwnDepartment
+        ? `<td><input type="number" min="1" value="${task.DaysRequired}" class="editable-days" data-task-id="${task.TaskID}"></td>`
+        : `<td>${task.DaysRequired}</td>`;
         
-        // Find next department with tasks
-        for (let i = activeIndex + 1; i < sortedTasks.length; i++) {
-          if (sortedTasks[i].DepId !== currentDepId) {
-            nextDepId = sortedTasks[i].DepId;
-            break;
-          }
-        }
-        
-        // Find last finished task in current department before active task
-        for (let i = activeIndex - 1; i >= 0; i--) {
-          if (sortedTasks[i].DepId === currentDepId && sortedTasks[i].TimeFinished) {
-            lastFinishedTask = sortedTasks[i];
-            break;
-          }
-        }
-        
-        // If no finished task found in current department, look in previous departments
-        if (!lastFinishedTask) {
-          for (let i = activeIndex - 1; i >= 0; i--) {
-            if (sortedTasks[i].TimeFinished) {
-              lastFinishedTask = sortedTasks[i];
-              break;
-            }
-          }
+      // Action buttons
+      let actionButton = '';
+      if (isOwnDepartment && task.IsTaskSelected) {
+        if (!task.TimeStarted) {
+          actionButton = `<button class="task-start-btn" data-task-id="${task.TaskID}"><i class="fas fa-play"></i> Start</button>`;
+        } else if (!task.TimeFinished) {
+          actionButton = `<button class="task-finish-btn" data-task-id="${task.TaskID}"><i class="fas fa-flag-checkered"></i> Finish</button>`;
         }
       }
-      
-      // Load users for the next department
-      await loadUsers(nextDepId);
 
-      if (tasks.length === 0) {
-        container.innerHTML = `
-          <div class="empty-message">
-            <i class="fas fa-tasks"></i>
-            <p>No tasks found for this process.</p>
+      // Save button for editable fields
+      let extraButtons = '';
+      if (isOwnDepartment && (task.IsDateFixed || (task.TimeFinished && task.Delay > 0))) {
+        extraButtons = `<button class="row-save-btn" data-task-id="${task.TaskID}"><i class="fas fa-save"></i> Save</button>`;
+      }
+
+      // User assignment dropdown - only show for the last finished task
+      let nextTaskSelect = '';
+      if (lastFinishedTask && task.TaskID === lastFinishedTask.TaskID && isOwnDepartment && users.length > 0) {
+        nextTaskSelect = `
+          <div class="assign-user-container">
+            <select class="assign-user-select" data-task-id="${task.TaskID}">
+              <option value="">Select user</option>
+              ${users.map(u => `<option value="${u.usrID}">${u.usrDesc}</option>`).join('')}
+            </select>
+            <button class="assign-user-btn" data-task-id="${task.TaskID}">
+              <i class="fas fa-paper-plane"></i> Assign
+            </button>
           </div>
         `;
-        return;
       }
 
-      // Group tasks by department
-      const grouped = {};
-      sortedTasks.forEach(task => {
-        if (!grouped[task.DepId]) {
-          grouped[task.DepId] = {
-            deptName: task.DeptName || `Department ${task.DepId}`,
-            tasks: []
-          };
-        }
-        grouped[task.DepId].tasks.push(task);
-      });
+      // Build the row
+      tr.innerHTML = `
+        <td>${task.TaskName || ''}</td>
+        <td>${task.TaskPlanned || ''}</td>
+        <td>${plannedDate}</td>
+        ${taskPlannedCell}
+        <td>${finishDate}</td>
+        <td>${status}</td>
+        <td>${task.Delay !== null ? task.Delay : 0}</td>
+        <td>${delayInput}</td>
+        <td>${nextTaskSelect}</td>
+        <td><div class="button-container">${actionButton}${extraButtons}</div></td>
+      `;
 
-      // Create department sections
-      Object.values(grouped).forEach(group => {
-        const section = document.createElement('div');
-        section.className = 'department-section';
-        
-        // Department label with toggle
-        const deptLabel = document.createElement('div');
-        deptLabel.className = 'department-label';
-        deptLabel.innerHTML = `
-          <i class="fas fa-building"></i> 
-          ${group.deptName}
-          <span class="badge">${group.tasks.length} tasks</span>
-          <i class="fas fa-chevron-down toggle-icon"></i>
-        `;
-        
-        section.appendChild(deptLabel);
-        
-        // Table container
-        const tableContainer = document.createElement('div');
-        tableContainer.className = 'table-container';
-        
-        // Create table
-        const table = document.createElement('table');
-        table.className = 'department-table';
-        
-        // Table header
-        const thead = document.createElement('thead');
-        thead.innerHTML = `
-          <tr>
-            <th>Task Name</th>
-            <th>Description</th>
-            <th>Planned Date</th>
-            <th>Days Required</th>
-            <th>Date Finished</th>
-            <th>Status</th>
-            <th>Days Delay</th>
-            <th>Delay Reason</th>
-            <th>Assign Next Task</th>
-            <th>Actions</th>
-          </tr>
-        `;
-        table.appendChild(thead);
-        
-        // Table body
-        const tbody = document.createElement('tbody');
-        
-        group.tasks.forEach(task => {
-          const tr = document.createElement('tr');
-          const isOwnDepartment = task.DepId == deptId;
-
-          // Highlight active task
-          if (task.IsTaskSelected) {
-            tr.classList.add('active-task-row');
-          }
-
-          // Determine status
-          let status = '';
-          if (task.TimeStarted && !task.TimeFinished) {
-            status = '<span class="status-badge status-inprogress"><i class="fas fa-spinner"></i> In Progress</span>';
-          } else if (!task.TimeFinished && task.IsTaskSelected) {
-            status = '<span class="status-badge status-pending"><i class="fas fa-clock"></i> Pending</span>';
-          } else if (task.TimeFinished && task.Delay > 0) {
-            status = '<span class="status-badge status-overdue"><i class="fas fa-exclamation-triangle"></i> Overdue</span>';
-          } else if (task.TimeFinished) {
-            status = '<span class="status-badge status-completed"><i class="fas fa-check-circle"></i> Completed</span>';
-          }
-
-          // Format dates
-          const plannedDate = task.PlannedDate ? new Date(task.PlannedDate).toLocaleDateString() : '';
-          const finishDate = task.TimeFinished ? new Date(task.TimeFinished).toLocaleDateString() : '';
-          const delayReason = task.DelayReason || '';
-          
-          // Input fields
-          const delayInputDisabled = !isOwnDepartment || !(task.TimeFinished && task.Delay > 0) ? 'disabled' : '';
-          const delayInput = `
-            <input type="text" value="${delayReason}" class="delay-reason-input" data-task-id="${task.TaskID}" 
-              ${delayInputDisabled} placeholder="${delayInputDisabled ? '' : 'Enter delay reason...'}">
-          `;
-
-          // Days required cell (editable if conditions met)
-          const taskPlannedCell = task.IsDateFixed && isOwnDepartment
-            ? `<td><input type="number" min="1" value="${task.DaysRequired}" class="editable-days" data-task-id="${task.TaskID}"></td>`
-            : `<td>${task.DaysRequired}</td>`;
-            
-          // Action buttons
-          let actionButton = '';
-          if (isOwnDepartment && task.IsTaskSelected) {
-            if (!task.TimeStarted) {
-              actionButton = `<button class="task-start-btn" data-task-id="${task.TaskID}"><i class="fas fa-play"></i> Start</button>`;
-            } else if (!task.TimeFinished) {
-              actionButton = `<button class="task-finish-btn" data-task-id="${task.TaskID}"><i class="fas fa-flag-checkered"></i> Finish</button>`;
-            }
-          }
-
-          // Save button for editable fields
-          let extraButtons = '';
-          if (isOwnDepartment && (task.IsDateFixed || (task.TimeFinished && task.Delay > 0))) {
-            extraButtons = `<button class="row-save-btn" data-task-id="${task.TaskID}"><i class="fas fa-save"></i> Save</button>`;
-          }
-
-          // User assignment dropdown - only show for the last finished task before department change
-          let nextTaskSelect = '';
-          if (lastFinishedTask && task.TaskID === lastFinishedTask.TaskID && isOwnDepartment && users.length > 0) {
-            nextTaskSelect = `
-              <div class="assign-user-container">
-                <select class="assign-user-select" data-task-id="${task.TaskID}">
-                  <option value="">Select user</option>
-                  ${users.map(u => `<option value="${u.usrID}">${u.usrDesc}</option>`).join('')}
-                </select>
-                <button class="assign-user-btn" data-task-id="${task.TaskID}">
-                  <i class="fas fa-paper-plane"></i> Assign
-                </button>
-              </div>
-            `;
-          }
-
-          // Build the row
-          tr.innerHTML = `
-            <td>${task.TaskName || ''}</td>
-            <td>${task.TaskPlanned || ''}</td>
-            <td>${plannedDate}</td>
-            ${taskPlannedCell}
-            <td>${finishDate}</td>
-            <td>${status}</td>
-            <td>${task.Delay !== null ? task.Delay : 0}</td>
-            <td>${delayInput}</td>
-            <td>${nextTaskSelect}</td>
-            <td><div class="button-container">${actionButton}${extraButtons}</div></td>
-          `;
-
-          tbody.appendChild(tr);
-        });
-        
-        table.appendChild(tbody);
-        tableContainer.appendChild(table);
-        section.appendChild(tableContainer);
-        container.appendChild(section);
-      });
-    }
+      tbody.appendChild(tr);
+    });
+    
+    table.appendChild(tbody);
+    tableContainer.appendChild(table);
+    section.appendChild(tableContainer);
+    container.appendChild(section);
+  });
+}
 
     // Save task updates
     async function saveTaskUpdates(taskId, updates) {
