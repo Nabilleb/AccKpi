@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Add New Workflow</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <style>
+ <style>
     :root {
       --primary: #005bab;
       --primary-dark: #003f7f;
@@ -185,8 +185,7 @@
         justify-content: center;
       }
     }
-  </style>
-</head>
+  </style></head>
 <body>
   <div class="container">
     <h1>
@@ -200,45 +199,36 @@
     </div>
     
     <form id="workflow-form">
-      
       <div class="form-group">
         <label for="process-id">Process</label>
         <select id="process-id" class="form-control" required>
           <option value="">Select Process</option>
-          <option value="1">Process 1</option>
-          <option value="2">Process 2</option>
-          <option value="3">Process 3</option>
-          <option value="4">Process 4</option>
-          <option value="5">Process 5</option>
-          <option value="6">Process 6</option>
-          <option value="7">Process 7</option>
-          <option value="8">Process 8</option>
+          <% processes.forEach(process => { %>
+            <option value="<%= process.ProcessID %>"><%= process.ProcessName %></option>
+          <% }) %>
         </select>
       </div>
-      
+
       <div class="form-group">
         <label for="project-id">Project</label>
         <select id="project-id" class="form-control" required>
           <option value="">Select Project</option>
-          <option value="1">Project 1</option>
-          <option value="2">Project 2</option>
-          <option value="3">Project 3</option>
-          <option value="4">Project 4</option>
-          <option value="5">Project 5</option>
+          <% projects.forEach(project => { %>
+            <option value="<%= project.ProjectID %>"><%= project.ProjectName %></option>
+          <% }) %>
         </select>
       </div>
-      
+
       <div class="form-group">
         <label for="package-id">Package</label>
         <select id="package-id" class="form-control" required>
           <option value="">Select Package</option>
-          <option value="1">Package 1</option>
-          <option value="2">Package 2</option>
-          <option value="3">Package 3</option>
-          <option value="4">Package 4</option>
+          <% packages.forEach(pkg => { %>
+            <option value="<%= pkg.PkgeID %>"><%= pkg.PkgeName %></option>
+          <% }) %>
         </select>
       </div>
-      
+
       <div class="form-group">
         <label>Status</label>
         <div class="status-badge">
@@ -247,13 +237,13 @@
         </div>
         <input type="hidden" id="status" value="Pending">
       </div>
-      
+
       <div class="button-group">
         <button type="submit" class="btn btn-primary">
           <i class="fas fa-save"></i>
           Save Workflow
         </button>
-        <button type="button" class="btn btn-secondary" onclick="window.location.href='workflow-list.html'">
+        <button type="button" class="btn btn-secondary" onclick="window.location.href='/workflow'">
           <i class="fas fa-times"></i>
           Cancel
         </button>
@@ -269,56 +259,40 @@
       
       form.addEventListener('submit', async function(e) {
         e.preventDefault();
-        
-        const workflowId = document.getElementById('workflow-id').value;
+
         const processId = document.getElementById('process-id').value;
         const projectId = document.getElementById('project-id').value;
         const packageId = document.getElementById('package-id').value;
         const status = document.getElementById('status').value;
-        
+
         try {
-          // Simulate API call
-          // In a real application, you would use fetch() to send data to your backend
-          console.log('Submitting workflow:', {
-            workFlowID: workflowId,
-            processID: processId,
-            projectID: projectId,
-            packageID: packageId,
-            status: status
+          const res = await fetch('/api/workflows', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              processID: processId,
+              projectID: projectId,
+              packageID: packageId,
+              status
+            })
           });
-          
-          // Show success message
+
+          if (!res.ok) throw new Error('Server error');
+
           alertMessage.className = 'alert alert-success';
           alertText.textContent = 'Workflow added successfully!';
           alertMessage.style.display = 'flex';
-          
-          // Reset form after 2 seconds
+
           setTimeout(() => {
             form.reset();
             alertMessage.style.display = 'none';
           }, 3000);
-          
         } catch (error) {
           alertMessage.className = 'alert alert-danger';
           alertText.textContent = 'Error adding workflow: ' + error.message;
           alertMessage.style.display = 'flex';
         }
       });
-      
-      // You could add dynamic loading of processes/projects/packages here
-      // For example:
-      // async function loadProcesses() {
-      //   const response = await fetch('/api/processes');
-      //   const processes = await response.json();
-      //   const select = document.getElementById('process-id');
-      //   processes.forEach(process => {
-      //     const option = document.createElement('option');
-      //     option.value = process.id;
-      //     option.textContent = process.name;
-      //     select.appendChild(option);
-      //   });
-      // }
-      // loadProcesses();
     });
   </script>
 </body>

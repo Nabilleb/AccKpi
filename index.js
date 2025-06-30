@@ -1071,6 +1071,48 @@ app.post('/update-task/:id', async (req, res) => {
   }
 });
 
+app.get("/workflow/new", async (req, res) => {
+  try {
+    const [processes, projects, packages] = await Promise.all([
+      pool.request().query("SELECT NumberOfProccessID AS ProcessID, ProcessName FROM tblProcess"),
+      pool.request().query("SELECT ProjectID, ProjectName FROM tblProject"),
+      pool.request().query("SELECT PkgeID, PkgeName FROM tblPackages")
+    ]);
+
+    res.render("addworkflow.ejs", {
+      processes: processes.recordset,
+      projects: projects.recordset,
+      packages: packages.recordset
+    });
+    console.log(packages)
+  } catch (err) {
+    console.error("Error loading form data:", err);
+    res.status(500).send("Failed to load workflow form.");
+  }
+});
+
+app.post('/api/workflows', async (req, res) => {
+  const { processID, projectID, packageID, status } = req.body;
+
+  try {
+    await pool.request()
+      .input('processID', sql.Int, processID)
+      .input('projectID', sql.Int, projectID)
+      .input('packageID', sql.Int, packageID)
+      .input('status', sql.NVarChar, status)
+      .query(`
+        INSERT INTO tblWorkflowHdr (processID, projectID, packageID, status)
+        VALUES (@processID, @projectID, @packageID, @status)
+      `);
+
+    res.status(201).json({ message: 'Workflow created' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+
 
 app.post("/postProcess", async (req, res) => {
   const { ProcessName, Steps } = req.body;
