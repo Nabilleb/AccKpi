@@ -1833,6 +1833,7 @@ async function renderTasks(tasks) {
 
       // Assign user button clicked
       if (e.target.classList.contains('assign-user-btn')) {
+        console.log("clicked assigned btn")
         const select = row.querySelector('.assign-user-select');
         const selectedUserId = select.value;
 

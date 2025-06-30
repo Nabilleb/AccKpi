@@ -703,15 +703,16 @@ app.get("/logout", (req, res) => {
 
 app.post('/assign-user-to-task/:taskId', async (req, res) => {
   const { taskId } = req.params;
+  const { userId } = req.body; // read userId from body
 
   try {
+    // Get user email by userId (not by task)
     const userEmailResult = await pool.request()
-      .input('taskId', taskId)
+      .input('userId', userId)
       .query(`
-        SELECT u.usrEmail, u.usrDesc
-        FROM tblWorkflowDtl w
-        JOIN tblUsers u ON w.usrID = u.usrID
-        WHERE w.TaskID = @taskId
+        SELECT usrEmail, usrDesc
+        FROM tblUsers
+        WHERE usrID = @userId
       `);
 
     if (userEmailResult.recordset.length > 0) {
@@ -720,8 +721,8 @@ app.post('/assign-user-to-task/:taskId', async (req, res) => {
       const transporter = nodemailer.createTransport({
         service: 'gmail',
         auth: {
-        user: 'Nabilgreen500@gmail.com',
-        pass: 'ruoh nygp ewxd slad'
+          user: 'Nabilgreen500@gmail.com',
+          pass: 'ruoh nygp ewxd slad'
         }
       });
 
@@ -742,20 +743,21 @@ Engineering Project Dashboard`
       transporter.sendMail(mailOptions, (err, info) => {
         if (err) {
           console.error('Error sending email to assigned user:', err);
-          res.status(500).json({ error: 'Failed to send email' });
+          return res.status(500).json({ error: 'Failed to send email' });
         } else {
           console.log('Notification email sent to assigned user:', info.response);
-          res.status(200).json({ message: 'Email sent successfully' });
+          return res.status(200).json({ message: 'Email sent successfully' });
         }
       });
     } else {
-      res.status(404).json({ error: 'No assigned user found for this task' });
+      return res.status(404).json({ error: 'User not found' });
     }
   } catch (error) {
     console.error('Error assigning user to task:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    return res.status(500).json({ error: 'Internal server error' });
   }
 });
+
 
 
 
