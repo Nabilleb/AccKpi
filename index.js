@@ -186,18 +186,24 @@ app.get("/api/workFlowDashData", async (req, res) => {
 
   try {
 
-        await pool.request().query(`
-      UPDATE hdr
-      SET hdr.completionDate = GETDATE(), hdr.status = 'Completed'
-      FROM tblWorkflowHdr hdr
-      WHERE NOT EXISTS (
-        SELECT 1
-        FROM tblWorkflowDtl dtl
-        WHERE dtl.workFlowHdrId = hdr.workFlowID
-          AND dtl.TimeFinished IS NULL
-      )
-      AND hdr.status != 'Completed'
-    `);
+      await pool.request().query(`
+  UPDATE hdr
+  SET hdr.completionDate = GETDATE(), hdr.status = 'Completed'
+  FROM tblWorkflowHdr hdr
+  WHERE EXISTS (
+      SELECT 1
+      FROM tblWorkflowDtl dtl
+      WHERE dtl.workFlowHdrId = hdr.workFlowID
+  )
+  AND NOT EXISTS (
+      SELECT 1
+      FROM tblWorkflowDtl dtl
+      WHERE dtl.workFlowHdrId = hdr.workFlowID
+        AND dtl.TimeFinished IS NULL
+  )
+  AND hdr.status != 'Completed'
+`);
+
 
     const request = pool.request();
     let query = `
