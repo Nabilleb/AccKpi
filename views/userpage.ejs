@@ -1756,10 +1756,10 @@
       // Find the active task and last finished task
       const activeIndex = sortedTasks.findIndex(t => t.IsTaskSelected);
       let lastFinishedTask = null;
-      
+      console.log(activeIndex)
       if (activeIndex !== -1) {
-        // Find the most recently finished task before the active one
         for (let i = activeIndex - 1; i >= 0; i--) {
+          console.log("sorted",sortedTasks[i])
           if (sortedTasks[i].TimeFinished) {
             lastFinishedTask = sortedTasks[i];
             break;
@@ -1974,12 +1974,26 @@
     // Finish a task
     async function finishTask(taskId) {
       try {
+       const task = taskList.find(t => t.TaskID === Number(taskId));
+
+  if (!task) {
+    alert('Task not found');
+    return;
+  }
+  const workflowHdrId = task.WorkFlowHdrID;
+  const NumberOfProccessID = task.NumberOfProccessID
         const now = new Date().toISOString();
         const res = await fetch(`/finish-task/${taskId}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ finishTime: now })
-        });
+           body: JSON.stringify({
+        finishTime: now,
+        workFlowHdrId: workflowHdrId,
+        processID:NumberOfProccessID
+
+      })
+    });
+
 
         if (!res.ok) throw new Error("Failed to finish task");
         showSuccess('Task marked as finished');
@@ -2081,6 +2095,7 @@
           try {
             e.target.innerHTML = '<i class="fas fa-spinner spinner"></i> Finishing...';
             e.target.disabled = true;
+            console.log("going to function")
             await finishTask(taskId);
           } catch (err) {
             e.target.innerHTML = originalHTML;

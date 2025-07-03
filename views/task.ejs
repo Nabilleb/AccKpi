@@ -5,7 +5,214 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Add New Task</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="/styles/task.css">
+  <style>
+    :root {
+      --primary: #3b82f6;
+      --primary-light: #dbeafe;
+      --primary-dark: #2563eb;
+      --secondary: #64748b;
+      --success: #10b981;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --text: #1e293b;
+      --text-light: #64748b;
+      --border: #e2e8f0;
+      --background: #f8fafc;
+      --white: #ffffff;
+      --radius-sm: 4px;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      --transition: all 0.2s ease;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background-color: var(--background);
+      color: var(--text);
+      line-height: 1.5;
+      padding: 2rem;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .form-container {
+      max-width: 800px;
+      margin: 0 auto;
+      background-color: var(--white);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-md);
+      overflow: hidden;
+    }
+
+    .form-header {
+      padding: 1.5rem 2rem;
+      background-color: var(--primary);
+      color: var(--white);
+    }
+
+    .form-header h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .form-header i {
+      font-size: 1.25rem;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1.5rem;
+      padding: 2rem;
+    }
+
+    @media (max-width: 768px) {
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    label {
+      font-weight: 500;
+      font-size: 0.95rem;
+      color: var(--text);
+    }
+
+    .required-field::after {
+      content: ' *';
+      color: var(--danger);
+    }
+
+    input[type="text"],
+    input[type="number"],
+    input[type="datetime-local"],
+    select {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 1rem;
+      transition: var(--transition);
+      background-color: var(--white);
+    }
+
+    input[type="text"]:focus,
+    input[type="number"]:focus,
+    input[type="datetime-local"]:focus,
+    select:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    }
+
+    input::placeholder {
+      color: var(--text-light);
+      opacity: 0.6;
+    }
+
+    .form-actions {
+      grid-column: 1 / -1;
+      display: flex;
+      justify-content: flex-end;
+      gap: 1rem;
+      margin-top: 1rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.5rem;
+      border-radius: var(--radius-sm);
+      font-weight: 500;
+      cursor: pointer;
+      transition: var(--transition);
+      font-size: 1rem;
+      border: none;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .btn-primary {
+      background-color: var(--primary);
+      color: var(--white);
+    }
+
+    .btn-primary:hover {
+      background-color: var(--primary-dark);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .btn-secondary {
+      background-color: var(--white);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      background-color: var(--background);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .btn i {
+      font-size: 0.9rem;
+    }
+
+    /* Error states */
+    input:invalid,
+    select:invalid {
+      border-color: var(--danger);
+    }
+
+    input:invalid:focus,
+    select:invalid:focus {
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 480px) {
+      body {
+        padding: 1rem;
+      }
+      
+      .form-header {
+        padding: 1rem 1.5rem;
+      }
+      
+      .form-grid {
+        padding: 1.5rem;
+      }
+      
+      .form-actions {
+        flex-direction: column;
+      }
+      
+      .btn {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+  </style>
 </head>
 <body>
   <div class="form-container">
@@ -15,7 +222,12 @@
         Add New Task
       </h1>
     </div>
-    
+    <% if (typeof success !== 'undefined') { %>
+  <div class="alert alert-success">
+    <i class="fas fa-check-circle"></i> <%= success %>
+  </div>
+<% } %>
+
     <form action="/add-task" method="POST" class="form-grid">
       <div class="form-group">
         <label for="TaskName" class="required-field">Task Name</label>
@@ -27,10 +239,6 @@
         <input type="text" id="TaskPlanned" name="TaskPlanned" required placeholder="Describe the task">
       </div>
       
-
-      
-      
-      
       <div class="form-group">
         <label for="IsDateFixed">Fixed Deadline</label>
         <select id="IsDateFixed" name="IsDateFixed">
@@ -39,28 +247,38 @@
         </select>
       </div>
 
-<div class="form-group">
-  <label for="DaysRequired" class="required-field">Days Required</label>
-  <input type="number" id="DaysRequired" name="DaysRequired" required placeholder="Enter number of days" min="1">
-</div>
+      <div class="form-group">
+        <label for="DaysRequired" class="required-field">Days Required</label>
+        <input type="number" id="DaysRequired" name="DaysRequired" required placeholder="Enter number of days" min="1">
+      </div>
       
-     <% if (isAdmin) { %>
-  <div class="form-group">
-    <label for="DepId" class="required-field">Department</label>
-    <select name="DepId" id="DepId" required>
-      <option value="">Select a department</option>
-      <% departments.forEach(dept => { %>
-        <option value="<%= dept.DepartmentID %>" <%= dept.DepartmentID === departmentId ? 'selected' : '' %>>
-          <%= dept.DeptName %>
-        </option>
-      <% }); %>
-    </select>
-  </div>
-<% } else { %>
-  <input type="hidden" name="DepId" value="<%= departmentId %>">
-<% } %>
+      <% if (isAdmin) { %>
+        <div class="form-group">
+          <label for="DepId" class="required-field">Department</label>
+          <select name="DepId" id="DepId" required>
+            <option value="">Select a department</option>
+            <% departments.forEach(dept => { %>
+              <option value="<%= dept.DepartmentID %>" <%= dept.DepartmentID === departmentId ? 'selected' : '' %>>
+                <%= dept.DeptName %>
+              </option>
+            <% }); %>
+          </select>
+        </div>
+      <% } else { %>
+        <input type="hidden" name="DepId" value="<%= departmentId %>">
+      <% } %>
 
-      
+      <div class="form-group">
+  <label for="WorkFlowHdrID" class="required-field">Workflow Header</label>
+  <select name="WorkFlowHdrID" id="WorkFlowHdrID" required>
+    <option value="">Select a workflow</option>
+    <% workflow.forEach(wf => { %>
+      <option value="<%= wf.workFlowID %>"><%= wf.workFlowID %></option>
+    <% }) %>
+  </select>
+</div>
+
+
       <div class="form-actions">
         <button type="button" class="btn btn-secondary" onclick="window.history.back()">
           <i class="fas fa-arrow-left"></i> Cancel
