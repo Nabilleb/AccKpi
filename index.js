@@ -257,40 +257,44 @@ app.get("/userpage/:hdrId", async (req, res) => {
     request1.input('DepId', sql.Int, DepId);
 const tasksResult = await request1.query(`
   SELECT 
-    t.TaskID,
-    t.TaskName,
-    t.TaskPlanned,
-    t.IsTaskSelected,
-    t.IsDateFixed,
-    t.PlannedDate,
-    t.DepId,
-    t.Priority,
-    t.PredecessorID,
-    t.DaysRequired,
-    t.WorkFlowHdrID,
-    t.linkTasks,
-    d.WorkflowDtlId,
-    d.WorkflowName,
-    d.TimeStarted,
-    d.TimeFinished,
-    d.DelayReason,
-    d.Delay,
-    pr.NumberOfProccessID,
-    pr.ProcessName,
-    pj.ProjectID,
-    pj.ProjectName,
-    pk.PkgeName,
-    dp.DeptName
-  FROM tblWorkflowDtl d
-  INNER JOIN tblTasks t ON d.TaskID = t.TaskID
-  INNER JOIN tblWorkflowHdr hdr ON d.workFLowHdrId = hdr.WorkFlowID
-  INNER JOIN tblProcess pr ON hdr.ProcessID = pr.NumberOfProccessID
-  INNER JOIN tblProject pj ON hdr.ProjectID = pj.ProjectID
-  INNER JOIN tblPackages pk ON pk.PkgeId = hdr.packageID
-  INNER JOIN tblDepartments dp ON dp.DepartmentID = t.DepId
-  WHERE d.workFLowHdrId = @HdrID
-  ORDER BY t.Priority ASC
+  t.TaskID,
+  t.TaskName,
+  t.TaskPlanned,
+  t.IsTaskSelected,
+  t.IsDateFixed,
+  t.PlannedDate,
+  t.DepId,
+  t.Priority,
+  t.PredecessorID,
+  t.DaysRequired,
+  t.WorkFlowHdrID,
+  t.linkTasks,
+  d.WorkflowDtlId,
+  d.WorkflowName,
+  d.TimeStarted,
+  d.TimeFinished,
+  d.DelayReason,
+  d.Delay,
+  pr.NumberOfProccessID,
+  pr.ProcessName,
+  pj.ProjectID,
+  pj.ProjectName,
+  pk.PkgeName,
+  dp.DeptName,
+  pd.StepOrder 
+FROM tblWorkflowDtl d
+INNER JOIN tblTasks t ON d.TaskID = t.TaskID
+INNER JOIN tblWorkflowHdr hdr ON d.workFLowHdrId = hdr.WorkFlowID
+INNER JOIN tblProcess pr ON hdr.ProcessID = pr.NumberOfProccessID
+INNER JOIN tblProject pj ON hdr.ProjectID = pj.ProjectID
+INNER JOIN tblPackages pk ON pk.PkgeId = hdr.packageID
+INNER JOIN tblDepartments dp ON dp.DepartmentID = t.DepId
+INNER JOIN tblProcessDepartment pd ON pd.DepartmentID = t.DepId AND pd.ProcessID = pr.NumberOfProccessID 
+WHERE d.workFLowHdrId = @HdrID
+ORDER BY pd.StepOrder ASC, t.Priority ASC
+
 `);
+console.log(tasksResult.recordset)
 
     const request2 = pool.request();
     request2.input('DepartmentID', sql.Int, DepId);

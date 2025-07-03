@@ -1748,11 +1748,15 @@
       container.innerHTML = '';
       
       // First, sort tasks by department and then by task ID
-      const sortedTasks = [...tasks].sort((a, b) => {
-        if (a.DepId !== b.DepId) return a.DepId - b.DepId;
-        return a.TaskID - b.TaskID;
-      });
+   const sortedTasks = [...tasks].sort((a, b) => {
+  if (a.StepOrder !== b.StepOrder) return a.StepOrder - b.StepOrder;
 
+  if (a.Priority !== b.Priority) return a.Priority - b.Priority;
+
+  return a.TaskID - b.TaskID;
+});
+
+console.log(sortedTasks)
       // Find the active task and last finished task
       const activeIndex = sortedTasks.findIndex(t => t.IsTaskSelected);
       let lastFinishedTask = null;
