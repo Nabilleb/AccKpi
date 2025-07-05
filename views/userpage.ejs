@@ -1570,7 +1570,15 @@
     let currentAction = null;
     let currentTaskId = null;
 
-    // Load users for the next department
+       const sortFunctions = {
+      name: (a, b) => a.TaskName.localeCompare(b.TaskName),
+      description: (a, b) => (a.TaskPlanned || '').localeCompare(b.TaskPlanned || ''),
+      department: (a, b) => a.DeptName.localeCompare(b.DeptName),
+      duedate: (a, b) => new Date(a.PlannedDate) - new Date(b.PlannedDate),
+      priority: (a, b) => a.Priority - b.Priority,
+      sequence: (a, b) => a.StepOrder - b.StepOrder || a.TaskID - b.TaskID
+    };
+console.log("tasks: ", taskList)
     async function loadUsers(nextDepId) {
       try {
         if (!nextDepId) return;

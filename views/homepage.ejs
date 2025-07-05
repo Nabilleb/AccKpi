@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Engineering Project Dashboard</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="/styles/homepage.css">
   <style>
     :root {
       --primary: #005bab;
@@ -49,6 +48,9 @@
       padding: 1rem 2rem;
       border-bottom: 3px solid var(--primary);
       box-shadow: var(--shadow);
+      position: sticky;
+      top: 0;
+      z-index: 100;
     }
 
     .logo {
@@ -61,6 +63,11 @@
       gap: 1.5rem;
     }
 
+    .user-info {
+      font-weight: 500;
+      color: var(--primary-dark);
+    }
+
     .logout-btn {
       background-color: var(--primary);
       color: var(--white);
@@ -71,10 +78,12 @@
       display: inline-flex;
       align-items: center;
       gap: 0.5rem;
+      transition: var(--transition);
     }
 
     .logout-btn:hover {
       background-color: var(--primary-dark);
+      transform: translateY(-1px);
     }
 
     .main-content {
@@ -86,7 +95,8 @@
     }
 
     .quick-actions, 
-    .activity-table {
+    .activity-table,
+    .process-table-container {
       background-color: var(--white);
       margin-bottom: 1.5rem;
       padding: 1.5rem;
@@ -127,10 +137,13 @@
       align-items: center;
       justify-content: center;
       gap: 0.5rem;
+      transition: var(--transition);
     }
 
     .action-btn:hover {
       background-color: var(--accent-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
     }
 
     .package-info {
@@ -168,10 +181,6 @@
     /* Process Table */
     .process-table-container {
       margin-bottom: 1.5rem;
-      background-color: var(--white);
-      padding: 1.5rem;
-      border-radius: 12px;
-      box-shadow: var(--shadow);
     }
 
     .process-table {
@@ -187,6 +196,22 @@
       padding: 0.75rem 1rem;
       text-align: left;
       border-bottom: 2px solid var(--primary);
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .process-table th:hover {
+      background-color: rgba(0, 91, 171, 0.15);
+    }
+
+    .process-table th.sort-asc::after {
+      content: " ↑";
+      font-size: 0.8em;
+    }
+
+    .process-table th.sort-desc::after {
+      content: " ↓";
+      font-size: 0.8em;
     }
 
     .process-table td {
@@ -223,10 +248,12 @@
       display: inline-flex;
       align-items: center;
       gap: 0.5rem;
+      transition: var(--transition);
     }
 
     .view-process-btn:hover {
       background-color: var(--primary-dark);
+      transform: translateY(-1px);
     }
 
     /* Activity Table */
@@ -243,6 +270,11 @@
       padding: 0.75rem 1rem;
       text-align: left;
       border-bottom: 2px solid var(--primary);
+      cursor: pointer;
+    }
+
+    .activity-table th:hover {
+      background-color: rgba(0, 91, 171, 0.15);
     }
 
     .activity-table td {
@@ -282,156 +314,219 @@
       gap: 0.5rem;
     }
 
-    .edit-btn {
-      background-color: var(--primary);
-      color: white;
+    .edit-btn, .delete-btn {
       border: none;
       padding: 0.5rem 1rem;
       border-radius: 4px;
       cursor: pointer;
       font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: var(--transition);
+    }
+
+    .edit-btn {
+      background-color: var(--primary);
+      color: white;
     }
 
     .edit-btn:hover {
       background-color: var(--primary-dark);
+      transform: translateY(-1px);
     }
 
     .delete-btn {
       background-color: var(--danger);
       color: white;
-      border: none;
-      padding: 0.5rem 1rem;
-      border-radius: 4px;
-      cursor: pointer;
-      font-weight: 500;
     }
 
     .delete-btn:hover {
       background-color: #c82333;
+      transform: translateY(-1px);
     }
 
-    /* Process Flow Modal */
-    .modal {
-      display: none;
-      position: fixed;
+    /* Process Flow Visualization */
+    .department-flow-grid {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 1rem;
+      margin-top: 1.5rem;
+      padding: 1rem;
+      background-color: var(--primary-light);
+      border-radius: 8px;
+    }
+
+    .dept-card {
+      background-color: var(--white);
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem;
+      text-align: center;
+      min-width: 120px;
+      cursor: pointer;
+      transition: var(--transition);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .dept-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .dept-card.active {
+      border-color: var(--accent);
+      background-color: var(--primary-light);
+    }
+
+    .dept-card.active::before {
+      content: "";
+      position: absolute;
       top: 0;
       left: 0;
-      width: 100%;
+      width: 4px;
       height: 100%;
-      background-color: rgba(0, 0, 0, 0.5);
-      z-index: 1000;
-      justify-content: center;
-      align-items: center;
-    }
-
-    .modal-content {
-      background-color: var(--white);
-      border-radius: 12px;
-      width: 90%;
-      max-width: 800px;
-      max-height: 80vh;
-      overflow-y: auto;
-      padding: 2rem;
-      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
-      position: relative;
-    }
-
-    .close {
-      position: absolute;
-      top: 1rem;
-      right: 1rem;
-      font-size: 1.5rem;
-      cursor: pointer;
-      color: var(--text-light);
-    }
-
-    .close:hover {
-      color: var(--text);
-    }
-
-    .process-flow-title {
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: var(--primary-dark);
-      margin-bottom: 1.5rem;
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-    }
-
-    .process-flow-title i {
-      color: var(--accent);
-    }
-
-    .process-steps {
-      list-style: none;
-      margin-top: 1.5rem;
-    }
-
-    .process-step {
-      display: flex;
-      align-items: center;
-      padding: 1rem 0;
-      position: relative;
-    }
-
-    .process-step:not(:last-child)::after {
-      content: '';
-      position: absolute;
-      left: 24px;
-      top: 48px;
-      height: calc(100% - 48px);
-      width: 2px;
-      background-color: var(--border);
-    }
-
-    .step-number {
-      width: 48px;
-      height: 48px;
-      border-radius: 50%;
-      background-color: var(--primary-light);
-      color: var(--primary);
-      font-weight: 700;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-right: 1.5rem;
-      flex-shrink: 0;
-      position: relative;
-      z-index: 1;
-    }
-
-    .step-active .step-number {
       background-color: var(--accent);
-      color: white;
     }
 
-    .step-details {
-      flex: 1;
+    .dept-card strong {
+      display: block;
+      margin-bottom: 0.5rem;
+      color: var(--primary-dark);
     }
 
-    .step-department {
-      font-weight: 600;
-      margin-bottom: 0.25rem;
+    .dept-card small {
+      display: block;
+      margin-top: 0.5rem;
+      font-size: 0.8rem;
     }
 
-    .step-status {
-      font-size: 0.875rem;
-      color: var(--text-light);
-    }
-
-    .step-active .step-status {
+    .dept-card.active small {
       color: var(--accent);
       font-weight: 600;
     }
 
-    .step-arrow {
-      margin: 0 1rem;
+    .flow-arrow {
+      color: var(--text-light);
+      font-size: 1.2rem;
+      display: flex;
+      align-items: center;
+    }
+
+    /* Filters and Search */
+    .filters-container {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .filter-group {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .filter-label {
+      font-size: 0.9rem;
+      color: var(--text-light);
+      font-weight: 500;
+    }
+
+    .filter-select, #taskSearchInput {
+      padding: 0.5rem;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      background-color: var(--white);
+      font-size: 0.9rem;
+      min-width: 150px;
+    }
+
+    #taskSearchInput {
+      flex: 1;
+      max-width: 300px;
+    }
+
+    /* Loading States */
+    .loading-spinner {
+      border: 4px solid rgba(0, 0, 0, 0.1);
+      border-radius: 50%;
+      border-top: 4px solid var(--accent);
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 20px auto;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .loading-row td {
+      text-align: center;
+      padding: 20px;
+    }
+
+    .no-tasks td {
+      text-align: center;
+      padding: 20px;
       color: var(--text-light);
     }
 
+    /* Toast Notifications */
+    .toast-notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 12px 20px;
+      border-radius: 4px;
+      color: white;
+      opacity: 0;
+      transform: translateY(-50px);
+      transition: all 0.3s ease;
+      z-index: 1000;
+      max-width: 300px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .toast-success {
+      background-color: var(--success);
+    }
+
+    .toast-error {
+      background-color: var(--danger);
+    }
+
+    .toast-warning {
+      background-color: var(--warning);
+      color: #212529;
+    }
+
+    .toast-info {
+      background-color: var(--accent);
+    }
+
+    /* Animations */
+    @keyframes highlight {
+      0% { background-color: rgba(255, 255, 0, 0.3); }
+      100% { background-color: transparent; }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Responsive Design */
     @media (max-width: 1024px) {
       .package-info {
+        grid-template-columns: repeat(3, 1fr);
+      }
+      
+      .actions-grid {
         grid-template-columns: repeat(3, 1fr);
       }
     }
@@ -452,6 +547,14 @@
       .package-info {
         grid-template-columns: 1fr 1fr;
       }
+      
+      .actions-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+      
+      .dept-card {
+        min-width: calc(50% - 0.5rem);
+      }
     }
 
     @media (max-width: 576px) {
@@ -467,10 +570,26 @@
         grid-template-columns: 1fr;
       }
       
+      .filters-container {
+        flex-direction: column;
+      }
+      
+      #taskSearchInput {
+        max-width: 100%;
+      }
+      
       .activity-table table,
       .process-table {
         display: block;
         overflow-x: auto;
+      }
+      
+      .dept-card {
+        min-width: 100%;
+      }
+      
+      .flow-arrow {
+        display: none;
       }
     }
   </style>
@@ -479,12 +598,12 @@
   <header class="dashboard-header">
     <img src="/images/accNewLog.webp" alt="Company Logo" class="logo" />
     <div class="header-right">
+      <p class="user-info">Welcome: Rashid Khreiss (Project Manager)</p>
       <div> 
         <a href="/logout" class="logout-btn">
           <i class="fas fa-sign-out-alt"></i> Log out
         </a>
       </div>
-      <p>Welcome: Rashid Khreiss (Project Manager)</p>
     </div>
   </header>
 
@@ -538,8 +657,8 @@
       <table class="process-table">
         <thead>
           <tr>
-            <th>ID</th>
-            <th>Process Name</th>
+            <th data-sort="id">ID</th>
+            <th data-sort="name">Process Name</th>
             <th>Description</th>
             <th>Actions</th>
           </tr>
@@ -560,22 +679,42 @@
         </tbody>
       </table>
       <div class="departmentFlow">
-            <h3 id="selectedProcessTitle" style="margin-top: 2rem;"></h3>
-<div id="departmentFlowGrid" class="department-flow-grid" data-department-id=""></div>
-</div>
+        <h3 id="selectedProcessTitle" style="margin-top: 2rem;"></h3>
+        <div id="departmentFlowGrid" class="department-flow-grid" data-department-id=""></div>
+      </div>
     </section>
 
     <section class="activity-table">
       <h3 id="activityTitle" class="section-title"><i class="fas fa-clipboard-list"></i> Procurement Activities</h3>
-      <input type="text" id="taskSearchInput" placeholder="Search tasks..." style="margin: 10px 0; padding: 6px; width: 100%; max-width: 300px;">
+      <div class="filters-container">
+        <input type="text" id="taskSearchInput" placeholder="Search tasks...">
+        <div class="filter-group">
+          <label class="filter-label">Status:</label>
+          <select class="filter-select" id="statusFilter">
+            <option value="all">All Statuses</option>
+            <option value="pending">Pending</option>
+            <option value="on-time">On Time</option>
+            <option value="delayed">Delayed</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label class="filter-label">Sort By:</label>
+          <select class="filter-select" id="sortFilter">
+            <option value="name">Task Name</option>
+            <option value="planned-date">Planned Date</option>
+            <option value="finished-date">Finished Date</option>
+            <option value="delay">Delay Days</option>
+          </select>
+        </div>
+      </div>
       <table>
         <thead>
           <tr>
-            <th>Task Name</th>
-            <th>Planned Date</th>
-            <th>Days Required</th>
-            <th>Finished Date</th>
-            <th>Status</th>
+            <th data-sort="task">Task Name</th>
+            <th data-sort="planned">Planned Date</th>
+            <th data-sort="days">Days Required</th>
+            <th data-sort="finished">Finished Date</th>
+            <th data-sort="status">Status</th>
             <th>Reason</th>
             <th>Actions</th>
           </tr>
@@ -586,364 +725,367 @@
     </section>
   </main>
 
-  <div id="process-flow-modal" class="modal">
-    <div class="modal-content">
-      <span class="close">&times;</span>
-      <h3 class="process-flow-title"><i class="fas fa-project-diagram"></i> Process Flow: <span id="processTitle"></span></h3>
-      <ul class="process-steps" id="processSteps">
-      </ul>
-    </div>
-  </div>
-
-
-
-
-<script>
-  document.addEventListener('DOMContentLoaded', () => {
-    function showToast(message, type = 'success') {
-      const toast = document.createElement('div');
-      toast.className = `toast-notification toast-${type}`;
-      toast.textContent = message;
-      document.body.appendChild(toast);
-      
-      setTimeout(() => {
-        toast.style.opacity = '1';
-        toast.style.transform = 'translateY(0)';
-      }, 10);
-      
-      setTimeout(() => {
-        toast.style.opacity = '0';
-        toast.style.transform = 'translateY(-20px)';
-        setTimeout(() => toast.remove(), 300);
-      }, 3000);
-    }
-
-    
-    const searchInput = document.getElementById('taskSearchInput');
-    searchInput.addEventListener('input', (e) => {
-      const searchTerm = e.target.value.toLowerCase();
-      const rows = document.querySelectorAll('tbody tr');
-      
-      rows.forEach(row => {
-        const taskName = row.querySelector('td:first-child').textContent.toLowerCase();
-        const delayReason = row.querySelector('td:nth-child(6)').textContent.toLowerCase();
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Toast notification function
+      function showToast(message, type = 'success') {
+        const toast = document.createElement('div');
+        toast.className = `toast-notification toast-${type}`;
+        toast.textContent = message;
+        document.body.appendChild(toast);
         
-        if (taskName.includes(searchTerm) || delayReason.includes(searchTerm)) {
-          row.style.display = '';
-          row.style.animation = 'highlight 0.5s';
-          setTimeout(() => row.style.animation = '', 500);
-        } else {
-          row.style.display = 'none';
-        }
-      });
-    });
+        setTimeout(() => {
+          toast.style.opacity = '1';
+          toast.style.transform = 'translateY(0)';
+        }, 10);
+        
+        setTimeout(() => {
+          toast.style.opacity = '0';
+          toast.style.transform = 'translateY(-20px)';
+          setTimeout(() => toast.remove(), 300);
+        }, 3000);
+      }
 
-    const modal = document.getElementById('process-flow-modal');
-    const closeBtn = document.querySelector('.close');
-
-   window.viewProcessFlow = function(processId, processName) {
-  fetch(`/process/${processId}/departments`)
-    .then(res => res.json())
-    .then(steps => {
-      const grid = document.getElementById("departmentFlowGrid");
-      const title = document.getElementById("selectedProcessTitle");
-
-      title.textContent = `Flow for: ${processName}`;
-      grid.innerHTML = '';
-
-      steps.forEach((step, index) => {
-        const card = document.createElement("div");
-        card.className = `dept-card ${step.IsActive ? 'active' : ''}`;
-        card.setAttribute('data-process-id', processId);
-        card.setAttribute('data-department-id', step.DepartmentID);
-        card.innerHTML = `
-          <strong>Step ${step.StepOrder || index + 1}</strong><br>
-          ${step.DeptName}<br>
-          <small>${step.IsActive ? 'Active' : 'Inactive'}</small>
-        `;
-
-        card.addEventListener('click', () => {
-  const pid = card.getAttribute('data-process-id');
-  const did = card.getAttribute('data-department-id');
-    fetchTasksForDepartment(pid, did);
-});
-        grid.appendChild(card);
-
-        if (index < steps.length - 1) {
-          const arrow = document.createElement("div");
-          arrow.className = 'flow-arrow';
-          arrow.innerHTML = '<i class="fas fa-arrow-right"></i>';
-          grid.appendChild(arrow);
-        }
-      });
-    })
-    .catch(err => {
-      console.error("Error loading process flow:", err);
-      alert("Failed to load process flow");
-    });
-};
-
-
-function refreshTasks() {
-    const activeDeptCard = document.querySelector('.dept-card.active');
-    
-    if (!activeDeptCard) {
-        showToast('No department selected', 'warning');
-        return;
-    }
-
-    const processId = activeDeptCard.getAttribute('data-process-id');
-    const departmentId = activeDeptCard.getAttribute('data-department-id');
-    
-    if (!processId || !departmentId) {
-        showToast('Error: Missing process or department ID', 'error');
-        return;
-    }
-
-    const tbody = document.querySelector(".taskgrid");
-    tbody.innerHTML = '<tr class="loading-row"><td colspan="7"><div class="loading-spinner"></div> Loading tasks...</td></tr>';
-
-    fetchTasksForDepartment(processId, departmentId);
-}
-
- function fetchTasksForDepartment(pid, did) {
-      fetch(`/api/tasks/by-department/${did}`)
-        .then(res => res.json())
-        .then(data => {
-          const tbody = document.querySelector(".taskgrid");
-          tbody.innerHTML = "";
-
-          if (data.length === 0) {
-            tbody.innerHTML = '<tr class="no-tasks"><td colspan="7">No tasks found for this department</td></tr>';
-            return;
-          }
-
-          data.forEach((task, index) => {
-            const row = document.createElement("tr");
-            row.style.opacity = '0';
-            row.style.transform = 'translateY(20px)';
-            row.style.transition = `opacity 0.3s ease, transform 0.3s ease ${index * 0.05}s`;
-
-            const plannedDate = task.PlannedDate
-              ? new Date(task.PlannedDate).toISOString().split("T")[0]
-              : "-";
-            const finishedDate = task.DateFinished
-              ? new Date(task.DateFinished).toISOString().split("T")[0]
-              : "-";
-
-            const status = task.Delay === null
-              ? `<span class="status-badge status-pending">Pending</span>`
-              : task.Delay > 0
-                ? `<span class="status-badge status-delayed">Delayed ${task.Delay} day(s)</span>`
-                : `<span class="status-badge status-on-time">On time</span>`;
-
-            row.innerHTML = `
-              <td>${task.TaskName}</td>
-              <td>${plannedDate}</td>
-              <td>${task.DaysRequired}</td>
-              <td>${finishedDate}</td>
-              <td>${status}</td>
-              <td>${task.DelayReason || ""}</td>
-              <td class="action-buttons">
-                ${!task.DateFinished ? 
-                  `<button class="edit-btn" data-task-id="${task.TaskID}">
-                    <i class="fas fa-edit"></i> Edit
-                  </button>` : ''}
-                
-                ${task.DateFinished ? 
-                  `<button class="delete-btn" data-task-id="${task.TaskID}">
-                    <i class="fas fa-trash-alt"></i> Delete
-                  </button>` : ''}
-              </td>
-            `;
-            row.setAttribute("data-finished", task.DateFinished ? "true" : "false");
-            row.setAttribute("data-delay", task.Delay || 0);
-            row.setAttribute("data-task-id", task.TaskID);
-            row.setAttribute("data-task-name", task.TaskName);
-
-            if (task.DateFinished || (task.Delay && task.Delay > 0)) {
-              row.style.opacity = "0.6";
-              row.style.cursor = "not-allowed";
-            }
-
-            if (task.IsTaskSelected) {
-              row.classList.add("active-task");
-            }
-         
-      
-            tbody.appendChild(row);
-
-            setTimeout(() => {
-              row.style.opacity = '1';
-              row.style.transform = 'translateY(0)';
-            }, index * 100);
+      // Table sorting functionality
+      function setupTableSorting() {
+        document.querySelectorAll('[data-sort]').forEach(header => {
+          header.addEventListener('click', () => {
+            const table = header.closest('table');
+            const columnIndex = Array.from(header.parentNode.children).indexOf(header);
+            const sortKey = header.getAttribute('data-sort');
+            const isAscending = header.classList.contains('sort-asc');
+            
+            // Reset all headers
+            table.querySelectorAll('[data-sort]').forEach(h => {
+              h.classList.remove('sort-asc', 'sort-desc');
+            });
+            
+            // Set new sort direction
+            header.classList.toggle('sort-asc', !isAscending);
+            header.classList.toggle('sort-desc', isAscending);
+            
+            // Sort the table
+            sortTable(table, columnIndex, sortKey, isAscending);
           });
-        })
-        .catch(err => {
-          console.error("❌ Error fetching tasks:", err);
-          showToast('Failed to load tasks', 'error');
         });
-    }
+      }
+      
+      function sortTable(table, columnIndex, sortKey, isAscending) {
+        const tbody = table.querySelector('tbody');
+        const rows = Array.from(tbody.querySelectorAll('tr'));
+        
+        rows.sort((a, b) => {
+          const aValue = getSortValue(a, columnIndex, sortKey);
+          const bValue = getSortValue(b, columnIndex, sortKey);
+          
+          if (aValue < bValue) return isAscending ? 1 : -1;
+          if (aValue > bValue) return isAscending ? -1 : 1;
+          return 0;
+        });
+        
+        // Reattach sorted rows
+        rows.forEach(row => tbody.appendChild(row));
+      }
+      
+      function getSortValue(row, columnIndex, sortKey) {
+        const cell = row.children[columnIndex];
+        
+        switch(sortKey) {
+          case 'id':
+            return parseInt(cell.textContent.replace('#', ''));
+          case 'planned':
+          case 'finished':
+            const dateText = cell.textContent;
+            return dateText === '-' ? 0 : new Date(dateText).getTime();
+          case 'days':
+          case 'delay':
+            return parseInt(cell.textContent) || 0;
+          case 'status':
+            return cell.textContent.includes('Delayed') ? 2 : 
+                   cell.textContent.includes('Pending') ? 0 : 1;
+          default:
+            return cell.textContent.toLowerCase();
+        }
+      }
+      
+      setupTableSorting();
 
+      // Search and filter functionality
+      const searchInput = document.getElementById('taskSearchInput');
+      const statusFilter = document.getElementById('statusFilter');
+      const sortFilter = document.getElementById('sortFilter');
+      
+      function applyFilters() {
+        const searchTerm = searchInput.value.toLowerCase();
+        const statusValue = statusFilter.value;
+        const rows = document.querySelectorAll('.taskgrid tr');
+        
+        rows.forEach(row => {
+          if (row.classList.contains('loading-row') || row.classList.contains('no-tasks')) return;
+          
+          const taskName = row.querySelector('td:first-child').textContent.toLowerCase();
+          const delayReason = row.querySelector('td:nth-child(6)').textContent.toLowerCase();
+          const status = row.querySelector('td:nth-child(5)').textContent.toLowerCase();
+          
+          const matchesSearch = taskName.includes(searchTerm) || delayReason.includes(searchTerm);
+          const matchesStatus = statusValue === 'all' || 
+                              (statusValue === 'pending' && status.includes('pending')) ||
+                              (statusValue === 'on-time' && status.includes('on time')) ||
+                              (statusValue === 'delayed' && status.includes('delayed'));
+          
+          if (matchesSearch && matchesStatus) {
+            row.style.display = '';
+            row.style.animation = 'fadeIn 0.3s forwards';
+          } else {
+            row.style.display = 'none';
+          }
+        });
+      }
+      
+      searchInput.addEventListener('input', applyFilters);
+      statusFilter.addEventListener('change', applyFilters);
+      sortFilter.addEventListener('change', () => {
+        // Implement sorting based on the selected option
+        const table = document.querySelector('.activity-table table');
+        const sortValue = sortFilter.value;
+        let columnIndex, sortKey;
+        
+        switch(sortValue) {
+          case 'planned-date':
+            columnIndex = 1;
+            sortKey = 'planned';
+            break;
+          case 'finished-date':
+            columnIndex = 3;
+            sortKey = 'finished';
+            break;
+          case 'delay':
+            columnIndex = 4;
+            sortKey = 'status'; // Status column contains delay info
+            break;
+          default:
+            columnIndex = 0;
+            sortKey = 'task';
+        }
+        
+        sortTable(table, columnIndex, sortKey, true);
+      });
 
-    
-  document.addEventListener('click', async (e) => {
-      if (e.target.closest('.delete-btn')) {
-        const taskId = e.target.closest('.delete-btn').dataset.taskId;
-        console.log(taskId)
-        if (!confirm('Are you sure you want to delete this finished task?')) {
+      // Process flow visualization
+      window.viewProcessFlow = function(processId, processName) {
+        const grid = document.getElementById("departmentFlowGrid");
+        const title = document.getElementById("selectedProcessTitle");
+        
+        // Show loading state
+        grid.innerHTML = '<div class="loading-spinner"></div>';
+        title.textContent = `Loading flow for: ${processName}`;
+        
+        fetch(`/process/${processId}/departments`)
+          .then(res => {
+            if (!res.ok) throw new Error('Network response was not ok');
+            return res.json();
+          })
+          .then(steps => {
+            title.textContent = `Flow for: ${processName}`;
+            grid.innerHTML = '';
+            
+            if (steps.length === 0) {
+              grid.innerHTML = '<div class="no-steps">No departments found for this process</div>';
+              return;
+            }
+            
+            steps.forEach((step, index) => {
+              const card = document.createElement("div");
+              card.className = `dept-card ${step.IsActive ? 'active' : ''}`;
+              card.setAttribute('data-process-id', processId);
+              card.setAttribute('data-department-id', step.DepartmentID);
+              card.innerHTML = `
+                <strong>Step ${step.StepOrder || index + 1}</strong>
+                ${step.DeptName}
+                <small>${step.IsActive ? 'Active' : 'Inactive'}</small>
+              `;
+              
+              card.addEventListener('click', () => {
+                // Highlight selected department
+                document.querySelectorAll('.dept-card').forEach(c => c.classList.remove('active'));
+                card.classList.add('active');
+                
+                // Load tasks for this department
+                const pid = card.getAttribute('data-process-id');
+                const did = card.getAttribute('data-department-id');
+                fetchTasksForDepartment(pid, did);
+              });
+              
+              grid.appendChild(card);
+              
+              // Add arrow between steps except after last one
+              if (index < steps.length - 1) {
+                const arrow = document.createElement("div");
+                arrow.className = 'flow-arrow';
+                arrow.innerHTML = '<i class="fas fa-arrow-right"></i>';
+                grid.appendChild(arrow);
+              }
+            });
+            
+            // Auto-select first department if none is active
+            if (!steps.some(step => step.IsActive) && steps.length > 0) {
+              const firstCard = grid.querySelector('.dept-card');
+              firstCard.click();
+            } else {
+              // Find and click the active department
+              const activeCard = grid.querySelector('.dept-card.active');
+              if (activeCard) {
+                activeCard.click();
+              }
+            }
+          })
+          .catch(err => {
+            console.error("Error loading process flow:", err);
+            grid.innerHTML = '<div class="error-message">Failed to load process flow</div>';
+            showToast('Failed to load process flow', 'error');
+          });
+      };
+
+      // Task management
+      function fetchTasksForDepartment(pid, did) {
+        const tbody = document.querySelector(".taskgrid");
+        tbody.innerHTML = '<tr class="loading-row"><td colspan="7"><div class="loading-spinner"></div> Loading tasks...</td></tr>';
+        
+        fetch(`/api/tasks/by-department/${did}`)
+          .then(res => {
+            if (!res.ok) throw new Error('Network response was not ok');
+            return res.json();
+          })
+          .then(data => {
+            tbody.innerHTML = "";
+            
+            if (data.length === 0) {
+              tbody.innerHTML = '<tr class="no-tasks"><td colspan="7">No tasks found for this department</td></tr>';
+              return;
+            }
+            
+            data.forEach((task, index) => {
+              const row = document.createElement("tr");
+              row.style.opacity = '0';
+              row.style.transform = 'translateY(10px)';
+              row.style.animation = `fadeIn 0.3s forwards ${index * 0.05}s`;
+              
+              const plannedDate = task.PlannedDate
+                ? new Date(task.PlannedDate).toISOString().split("T")[0]
+                : "-";
+              const finishedDate = task.DateFinished
+                ? new Date(task.DateFinished).toISOString().split("T")[0]
+                : "-";
+              
+              const status = task.Delay === null
+                ? `<span class="status-badge status-pending">Pending</span>`
+                : task.Delay > 0
+                  ? `<span class="status-badge status-delayed">Delayed ${task.Delay} day(s)</span>`
+                  : `<span class="status-badge status-on-time">On time</span>`;
+              
+              row.innerHTML = `
+                <td>${task.TaskName}</td>
+                <td>${plannedDate}</td>
+                <td>${task.DaysRequired}</td>
+                <td>${finishedDate}</td>
+                <td>${status}</td>
+                <td>${task.DelayReason || ""}</td>
+                <td class="action-buttons">
+                  ${!task.DateFinished ? 
+                    `<button class="edit-btn" data-task-id="${task.TaskID}">
+                      <i class="fas fa-edit"></i> Edit
+                    </button>` : ''}
+                  
+                  ${task.DateFinished ? 
+                    `<button class="delete-btn" data-task-id="${task.TaskID}">
+                      <i class="fas fa-trash-alt"></i> Delete
+                    </button>` : ''}
+                </td>
+              `;
+              
+              row.setAttribute("data-finished", task.DateFinished ? "true" : "false");
+              row.setAttribute("data-delay", task.Delay || 0);
+              row.setAttribute("data-task-id", task.TaskID);
+              row.setAttribute("data-task-name", task.TaskName);
+              
+              if (task.DateFinished || (task.Delay && task.Delay > 0)) {
+                row.style.opacity = "0.8";
+              }
+              
+              tbody.appendChild(row);
+            });
+            
+            // Apply any existing filters
+            applyFilters();
+          })
+          .catch(err => {
+            console.error("Error fetching tasks:", err);
+            tbody.innerHTML = '<tr class="error-row"><td colspan="7">Failed to load tasks. Please try again.</td></tr>';
+            showToast('Failed to load tasks', 'error');
+          });
+      }
+      
+      function refreshTasks() {
+        const activeDeptCard = document.querySelector('.dept-card.active');
+        
+        if (!activeDeptCard) {
+          showToast('No department selected', 'warning');
           return;
         }
-
-        try {
-          const response = await fetch(`/delete-task/${taskId}`, {
-            method: 'DELETE'
-          });
+        
+        const processId = activeDeptCard.getAttribute('data-process-id');
+        const departmentId = activeDeptCard.getAttribute('data-department-id');
+        fetchTasksForDepartment(processId, departmentId);
+      }
+      
+      // Event delegation for edit/delete buttons
+      document.addEventListener('click', async (e) => {
+        if (e.target.closest('.delete-btn')) {
+          const taskId = e.target.closest('.delete-btn').dataset.taskId;
+          const taskName = e.target.closest('tr').dataset.taskName;
           
-          if (response.ok) {
-            showToast('Task deleted successfully');
-            refreshTasks();
-          } else {
-            const error = await response.json();
-            showToast(error.error || 'Failed to delete task', 'error');
+          if (!confirm(`Are you sure you want to delete the task "${taskName}"?`)) {
+            return;
           }
-        } catch (err) {
-          console.error('Delete error:', err);
-          showToast('Network error - please try again', 'error');
+          
+          try {
+            const response = await fetch(`/delete-task/${taskId}`, {
+              method: 'DELETE'
+            });
+            
+            if (response.ok) {
+              showToast('Task deleted successfully');
+              refreshTasks();
+            } else {
+              const error = await response.json();
+              showToast(error.error || 'Failed to delete task', 'error');
+            }
+          } catch (err) {
+            console.error('Delete error:', err);
+            showToast('Network error - please try again', 'error');
+          }
         }
-      }
-    });
-
-       document.addEventListener('click', (e) => {
-      if (e.target.closest('.edit-btn')) {
-        const taskId = e.target.closest('.edit-btn').dataset.taskId;
-        document.body.style.opacity = '0.7';
+        
+        if (e.target.closest('.edit-btn')) {
+          const taskId = e.target.closest('.edit-btn').dataset.taskId;
+          document.body.style.opacity = '0.7';
+          document.body.style.pointerEvents = 'none';
+          document.body.style.transition = 'opacity 0.3s ease';
+          
+          setTimeout(() => {
+            window.location.href = `/edit-task/${taskId}`;
+          }, 300);
+        }
+      });
+      
+      // Initialize the page by showing the first process flow if available
+      const firstProcessBtn = document.querySelector('.view-process-btn');
+      if (firstProcessBtn) {
         setTimeout(() => {
-          window.location.href = `/edit-task/${taskId}`;
-        }, 300);
+          firstProcessBtn.click();
+        }, 500);
       }
     });
-
-
-    const style = document.createElement('style');
-    style.textContent = `
-      @keyframes highlight {
-        0% { background-color: rgba(255, 255, 0, 0.3); }
-        100% { background-color: transparent; }
-      }
-      
-      .toast-notification {
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        padding: 12px 20px;
-        border-radius: 4px;
-        color: white;
-        opacity: 0;
-        transform: translateY(-50px);
-        transition: all 0.3s ease;
-        z-index: 1000;
-        max-width: 300px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-      }
-      
-      .toast-success {
-        background-color: #28a745;
-      }
-      
-      .toast-error {
-        background-color: #dc3545;
-      }
-      
-      .toast-warning {
-        background-color: #ffc107;
-        color: #202124;
-      }
-      
-      .toast-info {
-        background-color: #17a2b8;
-      }
-    `;
-    document.head.appendChild(style);
-  });
-</script>
-
-<style>
-  /* Add these styles to your existing CSS */
-  .toast-notification {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    padding: 12px 20px;
-    border-radius: 4px;
-    color: white;
-    opacity: 0;
-    transform: translateY(-50px);
-    transition: all 0.3s ease;
-    z-index: 1000;
-    max-width: 300px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-  }
-  
-  .toast-success {
-    background-color: #28a745;
-  }
-  
-  .toast-error {
-    background-color: #dc3545;
-  }
-  
-  .toast-warning {
-    background-color: #ffc107;
-    color: #212529;
-  }
-  
-  .toast-info {
-    background-color: #17a2b8;
-  }
-  
-  @keyframes highlight {
-    0% { background-color: rgba(255, 255, 0, 0.3); }
-    100% { background-color: transparent; }
-  }
-  
-  .loading-spinner {
-    border: 4px solid rgba(0, 0, 0, 0.1);
-    border-radius: 50%;
-    border-top: 4px solid #3498db;
-    width: 40px;
-    height: 40px;
-    animation: spin 1s linear infinite;
-    margin: 20px auto;
-  }
-  
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
-  
-  .loading-row td {
-    text-align: center;
-    padding: 20px;
-  }
-  
-  .no-tasks td {
-    text-align: center;
-    padding: 20px;
-    color: #6c757d;
-  }
-  
-  .mobile-nav {
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.3s ease;
-  }
-  
-  .mobile-nav.active {
-    max-height: 500px;
-  }
-</style>
-
-
+  </script>
 </body>
 </html>
