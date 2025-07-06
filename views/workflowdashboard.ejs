@@ -381,11 +381,22 @@ function sortWorkflows() {
 function updateTable() {
     sortWorkflows();
 
+    // Filter based on activate and usrAdmin
+    const activeWorkflows = filteredWorkflows.filter(wf => {
+        if (usrAdmin) {
+            // Admin sees everything
+            return true;
+        } else {
+            // Non-admin sees only activate = true
+            return wf.activate === true;
+        }
+    });
+
     const startIndex = (currentPage - 1) * rowsPerPage;
     const endIndex = startIndex + rowsPerPage;
-    const paginatedWorkflows = filteredWorkflows.slice(startIndex, endIndex);
- 
-    if (filteredWorkflows.length === 0) {
+    const paginatedWorkflows = activeWorkflows.slice(startIndex, endIndex);
+
+    if (activeWorkflows.length === 0) {
         noResultsMessage.style.display = 'block';
         workflowTableBody.innerHTML = '';
     } else {
@@ -415,21 +426,13 @@ function updateTable() {
                 if (usrAdmin) {
                     window.location.href = `/add-task?workflowId=${encodeURIComponent(hdrId)}&process=${encodeURIComponent(process)}&package=${encodeURIComponent(packageName)}`;
                 } else {
-                    console.log("userpage")
+                    console.log("userpage");
                     window.location.href = `/userpage/${hdrId}`;
                 }
             });
         });
     }
 }
-
-document.getElementById("projectFilter").addEventListener("change", async function () {
-  const selectedProjectID = this.value;
-
-  const res = await fetch(`/api/workFlowDashData?projectID=${selectedProjectID}`);
-  const workflows = await res.json();
-  updateTable(workflows); 
-});
 
 
 // Update pagination controls
