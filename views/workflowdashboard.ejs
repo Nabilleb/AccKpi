@@ -254,6 +254,8 @@ const noResultsMessage = document.getElementById('noResultsMessage');
 const loadingIndicator = document.getElementById('loadingIndicator');
 const pageInfo = document.getElementById('pageInfo');
 const paginationControls = document.getElementById('paginationControls');
+const usrAdmin = <%= usrAdmin ? 'true' : 'false' %>;
+
 
 document.addEventListener("DOMContentLoaded", async () => {
     await loadWorkflowData();
@@ -378,39 +380,47 @@ function sortWorkflows() {
 // Update the table with filtered and sorted data
 function updateTable() {
     sortWorkflows();
-    
+
     const startIndex = (currentPage - 1) * rowsPerPage;
     const endIndex = startIndex + rowsPerPage;
     const paginatedWorkflows = filteredWorkflows.slice(startIndex, endIndex);
-    
-    // Update table body
+ 
     if (filteredWorkflows.length === 0) {
         noResultsMessage.style.display = 'block';
         workflowTableBody.innerHTML = '';
     } else {
         noResultsMessage.style.display = 'none';
         workflowTableBody.innerHTML = paginatedWorkflows.map(workflow => `
-            <tr class="clickable" data-hdrid="${workflow.HdrID}">
+            <tr class="clickable"
+                data-hdrid="${workflow.HdrID}"
+                data-process="${workflow.ProcessName || ''}"
+                data-package="${workflow.PackageName || ''}">
                 <td>${workflow.HdrID}</td>
                 <td>${workflow.ProcessName || ''}</td>
                 <td>${workflow.PackageName || ''}</td>
                 <td>${workflow.ProjectName || ''}</td>
-                <td><span class="status-badge status-${workflow.Status ? workflow.Status.toLowerCase().replace(' ', '-') : ''}">${workflow.Status || ''}</span></td>
-<td>${workflow.completionDate ? workflow.completionDate.split('T')[0] : ''}</td>
+                <td><span class="status-badge status-${workflow.Status ? workflow.Status.toLowerCase().replace(' ', '-') : ''}">
+                    ${workflow.Status || ''}
+                </span></td>
+                <td>${workflow.completionDate ? workflow.completionDate.split('T')[0] : ''}</td>
             </tr>
         `).join('');
-        
+
         // Add click handlers to rows
         document.querySelectorAll('tr.clickable').forEach(row => {
             row.addEventListener('click', () => {
                 const hdrId = row.getAttribute('data-hdrid');
-                window.location.href = `/userpage/${hdrId}`;
+                const process = row.getAttribute('data-process');
+                const packageName = row.getAttribute('data-package');
+                if (usrAdmin) {
+                    window.location.href = `/add-task?workflowId=${encodeURIComponent(hdrId)}&process=${encodeURIComponent(process)}&package=${encodeURIComponent(packageName)}`;
+                } else {
+                    console.log("userpage")
+                    window.location.href = `/userpage/${hdrId}`;
+                }
             });
         });
     }
-    
-    // Update pagination info
-    updatePagination();
 }
 
 document.getElementById("projectFilter").addEventListener("change", async function () {

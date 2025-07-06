@@ -143,10 +143,12 @@ res.render("packagefrom.ejs");
 });
 
 
-app.get("/workFlowDash", async (req, res) => {
+app.get("/workFlowDash",ensureAuthenticated ,async (req, res) => {
   try {
     const projects = await pool.request().query("SELECT projectID, projectName FROM tblProject");
-    res.render("workflowdashboard.ejs", { projects: projects.recordset });
+    const isAdmin = req.session.user.usrAdmin
+    console.log(isAdmin)
+    res.render("workflowdashboard.ejs", { projects: projects.recordset, usrAdmin:isAdmin });
   } catch (err) {
     console.error("Error loading projects:", err);
     res.status(500).send("Error loading dashboard");
@@ -223,8 +225,9 @@ app.get("/api/workFlowDashData", async (req, res) => {
       request.input('ProjectID', sql.Int, projectID);
       query += ` WHERE hdr.ProjectID = @ProjectID`;
     }
-
+  console.log()
     const result = await request.query(query);
+    console.log(result.recordset)
     res.json(result.recordset);
   } catch (err) {
     console.error("Error fetching workflow dashboard data:", err);
@@ -543,13 +546,108 @@ if (!isActive) {
   }
 });
 
-app.get('/add-task', ensureAuthenticated, async (req, res) => {
+app.get('/add-task',ensureAuthenticated ,async (req, res) => {
+  const workflowId = parseInt(req.query.workflowId);
+  const processName = req.query.process;
+  const packageName = req.query.package;
+
+  let workflowDetails = null;
+  let processSteps = [];
+  let departments = [];
+
+  if (workflowId) {
+    // Get processID from tblWorkflowHdr
+    const hdrResult = await pool.request()
+      .input('workflowId', sql.Int, workflowId)
+      .query(`
+        SELECT ProcessID
+        FROM tblWorkflowHdr
+        WHERE workFlowID = @workflowId
+      `);
+
+    if (hdrResult.recordset.length > 0) {
+      const processId = hdrResult.recordset[0].ProcessID;
+
+      // Get the steps for this process
+      const stepsResult = await pool.request()
+        .input('processId', sql.Int, processId)
+        .query(`
+          SELECT d.StepOrder, dp.DeptName, dp.DepartmentID
+          FROM tblProcessDepartment d
+          JOIN tblDepartments dp ON d.DepartmentID = dp.DepartmentID
+          WHERE d.ProcessID = @processId
+          ORDER BY d.StepOrder
+        `);
+
+      processSteps = stepsResult.recordset;
+
+      // Only departments for this process
+      departments = processSteps.map(step => ({
+        DepartmentID: step.DepartmentID,
+        DeptName: step.DeptName
+      }));
+
+      workflowDetails = {
+        workFlowID: workflowId,
+        ProcessName: processName,
+        PackageName: packageName,
+        ProcessID: processId
+      };
+    }
+  }
+
+  // If no workflow selected, fallback to all departments
+  if (departments.length === 0) {
+    const departmentsResult = await pool.request().query(`SELECT * FROM tblDepartments`);
+    departments = departmentsResult.recordset;
+  }
+
+  const workflowHdrResult = await pool.request().query(`SELECT * FROM tblWorkflowHdr`);
+
+  res.render('task', {
+    workflowDetails,
+    workflow: workflowHdrResult.recordset,
+    departments,
+    processSteps,
+    isAdmin: req.session.user.usrAdmin,
+    departmentId: req.session.user.DepartmentID,
+    success: null
+  });
+});
+
+
+app.get('/api/tasks', ensureAuthenticated, async (req, res) => {
   try {
-    const projects = await pool.request().query("SELECT projectID, projectName FROM tblProject");
-    res.render("workflowdashboard.ejs", { projects: projects.recordset });
-  } catch (err) {
-    console.error("Error loading projects:", err);
-    res.status(500).send("Error loading dashboard");
+    const workflowId = parseInt(req.query.workflowId);
+    if (!workflowId) return res.status(400).json({ error: 'workflowId is required' });
+
+    const result = await pool.request()
+      .input('workflowId', sql.Int, workflowId)
+      .query(`
+        SELECT 
+          t.TaskID,
+          t.TaskName,
+          t.TaskPlanned,
+          t.PlannedDate,
+          t.DaysRequired,
+          t.DepId,
+          d.DeptName,
+          wd.TimeStarted,
+          wd.TimeFinished,
+          wd.DelayReason,
+          wd.Delay
+        FROM tblTasks t
+        LEFT JOIN tblWorkflowDtl wd 
+          ON t.TaskID = wd.TaskID AND t.WorkFlowHdrID = wd.workFlowHdrId
+        JOIN tblDepartments d ON t.DepId = d.DepartmentID
+        WHERE t.WorkFlowHdrID = @workflowId
+        ORDER BY t.DepId, t.Priority, t.TaskID
+      `);
+
+    res.json(result.recordset);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
