@@ -915,9 +915,10 @@ app.post("/addPackage", async (req, res) => {
   }
 });
 
-app.post('/add-task',ensureAuthenticated ,async (req, res) => {
+app.post('/add-task', ensureAuthenticated, async (req, res) => {
   const { TaskName, TaskPlanned, PlannedDate, DepId, DaysRequired, WorkFlowHdrID } = req.body;
   const IsDateFixed = req.body.IsDateFixed == '1' ? 1 : 0;
+console.log('REQ.BODY:', req.body);
 
   try {
     // 1. Duplicate check
@@ -950,7 +951,7 @@ app.post('/add-task',ensureAuthenticated ,async (req, res) => {
     const hdrResult = await pool.request()
       .input('WorkFlowHdrID', sql.Int, WorkFlowHdrID)
       .query(`
-        SELECT ProcessID, pk.PkgeName AS PackageName, p.ProcessName
+        SELECT ProcessID, pk.PkgeName AS PackageName, p.ProcessName, h.workFlowID
         FROM tblWorkflowHdr h
         JOIN tblPackages pk ON h.packageID = pk.PkgeID
         JOIN tblProcess p ON h.processID = p.NumberOfProccessID
@@ -960,7 +961,7 @@ app.post('/add-task',ensureAuthenticated ,async (req, res) => {
     const workflowDetails = hdrResult.recordset[0];
     const ProcessID = workflowDetails?.ProcessID ?? null;
 
-    // 4. Get step order
+    // 4. Get step order for this department
     const stepOrderResult = await pool.request()
       .input('DepId', sql.Int, DepId)
       .input('ProcessID', sql.Int, ProcessID)
@@ -1054,14 +1055,13 @@ app.post('/add-task',ensureAuthenticated ,async (req, res) => {
         )
       `);
 
-    // 🔟 Fetch departments and workflow list
-    const [departmentsResult, workflowHdrResult, processStepsResult] = await Promise.all([
-      pool.request().query(`SELECT * FROM tblDepartments`),
+    // 🔟 Fetch workflow header and process steps (same logic as GET)
+    const [workflowHdrResult, processStepsResult] = await Promise.all([
       pool.request().query(`SELECT * FROM tblWorkflowHdr`),
       pool.request()
         .input('ProcessID', sql.Int, ProcessID)
         .query(`
-          SELECT pd.StepOrder, d.DeptName
+          SELECT pd.StepOrder, d.DeptName, d.DepartmentID
           FROM tblProcessDepartment pd
           JOIN tblDepartments d ON pd.DepartmentID = d.DepartmentID
           WHERE pd.ProcessID = @ProcessID
@@ -1069,21 +1069,27 @@ app.post('/add-task',ensureAuthenticated ,async (req, res) => {
         `)
     ]);
 
-    const departments = departmentsResult.recordset;
-    const workflow = workflowHdrResult.recordset;
     const processSteps = processStepsResult.recordset;
+
+    // ✅ Departments only those linked to the process
+    const departments = processSteps.map(step => ({
+      DepartmentID: step.DepartmentID,
+      DeptName: step.DeptName
+    }));
+
     const isAdmin = req.session.user.usrAdmin;
     const departmentId = req.session.user.DepartmentID;
 
-    // ✅ Render the page with updated values
+    // ✅ Render the page with consistent department list
     res.render('task.ejs', {
       success: 'Task added successfully!',
       departments,
-      workflow,
+      workflow: workflowHdrResult.recordset,
       departmentId,
       isAdmin,
       workflowDetails,
-      processSteps
+      processSteps,
+      WorkFlowHdrID
     });
 
   } catch (err) {

@@ -598,9 +598,9 @@
 </div>
 
 <script>
-  const workflowId = <%= workflowDetails ? workflowDetails.workFlowID : 'null' %>;
   let isLoading = false;
-
+const workflowId = <%= JSON.stringify(workflowDetails?.workFlowID ?? null) %>;
+console.log(workflowId)
   document.addEventListener('DOMContentLoaded', function() {
     if (workflowId) {
       loadTasks();
@@ -634,7 +634,15 @@
         return response.json();
       })
       .then(data => {
-        renderTasks(data);
+        try {
+          renderTasks(data);
+        } catch (err) {
+          console.error("Error rendering tasks:", err);
+          loadingEl.innerHTML = `<p>Error displaying tasks.</p>`;
+        }
+        // Always show content and hide loader
+        loadingEl.style.display = 'none';
+        contentEl.style.display = 'block';
       })
       .catch(error => {
         console.error('Error loading tasks:', error);
@@ -686,7 +694,6 @@
     })
     .then(data => {
       showToast(`Workflow ${activate ? 'activated' : 'deactivated'} successfully!`);
-      // Update badge and buttons dynamically without reload
       const statusContainer = document.querySelector('.workflow-info div:nth-child(4)');
       if (activate) {
         statusContainer.innerHTML = `
@@ -744,8 +751,6 @@
           <i class="fas fa-inbox"></i>
           <p>No tasks found for this workflow.</p>
         </div>`;
-      loadingEl.style.display = 'none';
-      contentEl.style.display = 'block';
       return;
     }
 
@@ -780,8 +785,7 @@
                   <th>Delay</th>
                 </tr>
               </thead>
-              <tbody>
-      `;
+              <tbody>`;
       group.Tasks.forEach(task => {
         const status = getTaskStatus(task);
         const statusBadge = getStatusBadge(status);
@@ -795,19 +799,12 @@
             <td>${task.TimeStarted ? formatDateTime(task.TimeStarted) : '-'}</td>
             <td>${task.TimeFinished ? formatDateTime(task.TimeFinished) : '-'}</td>
             <td>${task.Delay != null ? `${task.Delay} days` : '-'}</td>
-          </tr>
-        `;
+          </tr>`;
       });
-      html += `
-              </tbody>
-            </table>
-          </div>
-        </div>`;
+      html += `</tbody></table></div></div>`;
     }
 
     contentEl.innerHTML = html;
-    loadingEl.style.display = 'none';
-    contentEl.style.display = 'block';
   }
 
   function getTaskStatus(task) {
@@ -840,5 +837,6 @@
     });
   }
 </script>
+
 
 </html> 
