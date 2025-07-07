@@ -296,6 +296,7 @@ const tasksResult = await request1.query(`
   d.TimeFinished,
   d.DelayReason,
   d.Delay,
+  d.assignUser,
   pr.NumberOfProccessID,
   pr.ProcessName,
   pj.ProjectID,
@@ -796,7 +797,7 @@ app.get("/logout", (req, res) => {
 
 app.post('/assign-user-to-task/:taskId', async (req, res) => {
   const { taskId } = req.params;
-  const { userId } = req.body; // read userId from body
+  const { userId } = req.body;
 
   try {
     // Get user email by userId (not by task)
@@ -808,9 +809,16 @@ app.post('/assign-user-to-task/:taskId', async (req, res) => {
         WHERE usrID = @userId
       `);
 
+
     if (userEmailResult.recordset.length > 0) {
       const assignedUser = userEmailResult.recordset[0];
-
+             await pool.request()
+                .input("taskID", sql.Int, taskId)
+                .input("userDesc",assignedUser.usrDesc)
+                .query(`UPDATE tblWorkflowDtl
+                        SET assignUser = @userDesc
+                        WHERE TaskID = @taskID `)
+                        
       const transporter = nodemailer.createTransport({
         service: 'gmail',
         auth: {

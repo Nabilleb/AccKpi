@@ -1569,6 +1569,8 @@
     let users = [];
     let currentAction = null;
     let currentTaskId = null;
+    let nextTask = null;
+
 
        const sortFunctions = {
       name: (a, b) => a.TaskName.localeCompare(b.TaskName),
@@ -1727,8 +1729,7 @@ console.log("tasks: ", taskList)
 
     // Sort tasks
     function sortTasks(sortBy) {
-      // This would be more efficient with a proper sorting algorithm on the data
-      // For now, we'll just reload the tasks with the new sort order
+      
       renderTasks(taskList, sortBy);
     }
 
@@ -1764,26 +1765,32 @@ console.log("tasks: ", taskList)
   return a.TaskID - b.TaskID;
 });
 
-console.log(sortedTasks)
       // Find the active task and last finished task
       const activeIndex = sortedTasks.findIndex(t => t.IsTaskSelected);
-      let lastFinishedTask = null;
-      console.log(activeIndex)
-      if (activeIndex !== -1) {
-        for (let i = activeIndex - 1; i >= 0; i--) {
-          console.log("sorted",sortedTasks[i])
-          if (sortedTasks[i].TimeFinished) {
-            lastFinishedTask = sortedTasks[i];
-            break;
-          }
-        }
-      }
+if (activeIndex !== -1) {
+  for (let i = activeIndex + 1; i < sortedTasks.length; i++) {
+    const candidate = sortedTasks[i];
+    if (!candidate.IsTaskSelected && !candidate.TimeFinished) {
+      nextTask = candidate;
+      break;
+    }
+  }
+}
+console.log(activeIndex)
+console.log(sortedTasks.length)
+if (!nextTask) {
+  nextTask = sortedTasks.find(t => !t.IsTaskSelected && !t.TimeFinished);
+}
+console.log("next task", nextTask)
 
       // Load users for the next department (department of the active task)
-      if (activeIndex !== -1) {
-        const activeTask = sortedTasks[activeIndex];
-        await loadUsers(activeTask.DepId);
-      }
+     if (
+  activeIndex !== -1 &&
+  activeIndex !== sortedTasks.length - 1
+) {
+  await loadUsers(nextTask.DepId);
+  console.log(nextTask.DepId);
+}
 
       if (tasks.length === 0) {
         container.innerHTML = `
@@ -1909,19 +1916,24 @@ console.log(sortedTasks)
 
           // User assignment dropdown - only show for the last finished task
           let nextTaskSelect = '';
-          if (lastFinishedTask && task.TaskID === lastFinishedTask.TaskID && isOwnDepartment && users.length > 0) {
-            nextTaskSelect = `
-              <div class="assign-user-container">
-                <select class="assign-user-select" data-task-id="${task.TaskID}">
-                  <option value="">Select user</option>
-                  ${users.map(u => `<option value="${u.usrID}">${u.usrDesc}</option>`).join('')}
-                </select>
-                <button class="assign-user-btn" data-task-id="${task.TaskID}">
-                  <i class="fas fa-paper-plane"></i> Assign
-                </button>
-              </div>
-            `;
-          }
+ if (
+  task.IsTaskSelected &&
+  task.TimeStarted && 
+  !task.TimeFinished && 
+  isOwnDepartment &&
+  users.length > 0
+) {
+  nextTaskSelect = `
+    <div class="assign-user-container">
+ <select class="assign-user-select" data-task-id="${task.TaskID}">
+  <option value="">Select user to assign on finish</option>
+  ${users.map(u => `<option value="${u.usrID}">${u.usrDesc}</option>`).join('')}
+</select>
+
+    </div>
+  `;
+}
+
 
           // Build the row
           tr.innerHTML = `
@@ -2100,50 +2112,44 @@ console.log(sortedTasks)
         });
       }
 
-      // Finish task button clicked
-      if (e.target.classList.contains('task-finish-btn')) {
-        showConfirmation('Are you sure you want to mark this task as finished?', async () => {
-          const originalHTML = e.target.innerHTML;
-          try {
-            e.target.innerHTML = '<i class="fas fa-spinner spinner"></i> Finishing...';
-            e.target.disabled = true;
-            console.log("going to function")
-            await finishTask(taskId);
-          } catch (err) {
-            e.target.innerHTML = originalHTML;
-            e.target.disabled = false;
-          }
-        });
+   if (e.target.classList.contains('task-finish-btn')) {
+  const select = row.querySelector('.assign-user-select');
+  let selectedUserId = null;
+
+  if (select) {
+    selectedUserId = select.value;
+    console.log("user selected", selectedUserId)
+    if (!selectedUserId) {
+      showError("Please select a user to assign before finishing.");
+      return;
+    }
+  }
+
+  showConfirmation('Are you sure you want to mark this task as finished and assign the selected user?', async () => {
+    const originalHTML = e.target.innerHTML;
+    try {
+      e.target.innerHTML = '<i class="fas fa-spinner spinner"></i> Finishing...';
+      e.target.disabled = true;
+
+      // First assign the user
+      if (selectedUserId) {
+        await assignUserToTask(taskId, selectedUserId);
       }
 
-      // Assign user button clicked
-      if (e.target.classList.contains('assign-user-btn')) {
-        const select = row.querySelector('.assign-user-select');
-        const selectedUserId = select.value;
+      // Then finish the task
+      await finishTask(taskId);
 
-        if (!selectedUserId) {
-          showError("Please select a user before assigning.");
-          return;
-        }
+      // Reload
+      window.location.reload();
+    } catch (err) {
+      e.target.innerHTML = originalHTML;
+      e.target.disabled = false;
+    }
+  });
+}
 
-        showConfirmation(`Assign this task to ${select.options[select.selectedIndex].text}?`, async () => {
-          const originalHTML = e.target.innerHTML;
-          try {
-            e.target.innerHTML = '<i class="fas fa-spinner spinner"></i> Assigning...';
-            e.target.disabled = true;
-            const success = await assignUserToTask(taskId, selectedUserId);
-            if (success) {
-              window.location.reload();
-            } else {
-              e.target.innerHTML = originalHTML;
-              e.target.disabled = false;
-            }
-          } catch (err) {
-            e.target.innerHTML = originalHTML;
-            e.target.disabled = false;
-          }
-        });
-      }
+
+   
     });
 
     // Status quick view click handler
