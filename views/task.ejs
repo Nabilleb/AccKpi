@@ -489,18 +489,19 @@
   <div><i class="fas fa-project-diagram"></i> <strong>Workflow ID:</strong> <%= workflowDetails.workFlowID %></div>
   <div><i class="fas fa-sitemap"></i> <strong>Process:</strong> <%= workflowDetails.ProcessName %></div>
   <div><i class="fas fa-box-open"></i> <strong>Package:</strong> <%= workflowDetails.PackageName %></div>
-  <div>
-    <strong>Status:</strong>
-    <% if (workflowDetails.activate) { %>
-      <span class="status-badge status-completed"><i class="fas fa-check"></i> Active</span>
-    <% } else { %>
-      <span class="status-badge status-pending"><i class="fas fa-times"></i> Inactive</span>
-    <% } %>
-  </div>
+ <div>
+  <strong>Status:</strong>
+  <% if (workflowDetails.activate === '1' || workflowDetails.activate === 'true') { %>
+    <span class="status-badge status-completed"><i class="fas fa-check"></i> Active</span>
+  <% } else { %>
+    <span class="status-badge status-pending"><i class="fas fa-times"></i> Inactive</span>
+  <% } %>
+</div>
+
 </div>
 
 <div class="form-actions" style="margin-top: 1rem;">
-  <% if (workflowDetails.activate) { %>
+  <% if (workflowDetails.activate === '1' || workflowDetails.activate === 'true') { %>
     <button type="button" class="btn btn-danger" id="deactivate-btn">
       <i class="fas fa-ban"></i> Deactivate Workflow
     </button>
@@ -598,245 +599,272 @@
 </div>
 
 <script>
-  let isLoading = false;
+let isLoading = false;
 const workflowId = <%= JSON.stringify(workflowDetails?.workFlowID ?? null) %>;
-console.log(workflowId)
-  document.addEventListener('DOMContentLoaded', function() {
-    if (workflowId) {
-      loadTasks();
-      setupWorkflowActivation();
-    } else {
-      document.getElementById('tasks-loading').innerHTML = '<p>Select a workflow to view tasks.</p>';
-    }
-  });
 
-  document.getElementById('refresh-tasks').addEventListener('click', function() {
-    if (workflowId) {
-      loadTasks();
-    }
-  });
-
-  function loadTasks() {
-    isLoading = true;
-    const loadingEl = document.getElementById('tasks-loading');
-    const contentEl = document.getElementById('tasks-content');
-
-    loadingEl.style.display = 'block';
-    contentEl.style.display = 'none';
-    loadingEl.innerHTML = `
-      <div class="spinner" style="width:2rem;height:2rem;border-width:3px;margin:0 auto;"></div>
-      <p>Loading tasks...</p>
-    `;
-
-    fetch(`/api/tasks?workflowId=${workflowId}`)
-      .then(response => {
-        if (!response.ok) throw new Error('Network response was not ok');
-        return response.json();
-      })
-      .then(data => {
-        try {
-          renderTasks(data);
-        } catch (err) {
-          console.error("Error rendering tasks:", err);
-          loadingEl.innerHTML = `<p>Error displaying tasks.</p>`;
-        }
-        // Always show content and hide loader
-        loadingEl.style.display = 'none';
-        contentEl.style.display = 'block';
-      })
-      .catch(error => {
-        console.error('Error loading tasks:', error);
-        loadingEl.innerHTML = `
-          <p style="color:var(--danger);">
-            <i class="fas fa-exclamation-circle"></i>
-            Error loading tasks. Please try again.
-          </p>`;
-      })
-      .finally(() => {
-        isLoading = false;
-      });
+document.addEventListener('DOMContentLoaded', function() {
+  if (workflowId) {
+    loadTasks();
+    setupWorkflowActivation();
+  } else {
+    document.getElementById('tasks-loading').innerHTML = '<p>Select a workflow to view tasks.</p>';
   }
+});
 
-  function setupWorkflowActivation() {
-    const activateBtn = document.getElementById('activate-btn');
-    const deactivateBtn = document.getElementById('deactivate-btn');
-
-    if (activateBtn) {
-      activateBtn.addEventListener('click', () => {
-        if (confirm('Are you sure you want to activate this workflow?')) {
-          toggleWorkflowActivation(true, activateBtn);
-        }
-      });
-    }
-
-    if (deactivateBtn) {
-      deactivateBtn.addEventListener('click', () => {
-        if (confirm('Are you sure you want to deactivate this workflow?')) {
-          toggleWorkflowActivation(false, deactivateBtn);
-        }
-      });
-    }
+document.getElementById('refresh-tasks').addEventListener('click', function() {
+  if (workflowId) {
+    loadTasks();
   }
+});
 
-  function toggleWorkflowActivation(activate, button) {
-    button.disabled = true;
-    const originalText = button.innerHTML;
-    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+function loadTasks() {
+  isLoading = true;
+  const loadingEl = document.getElementById('tasks-loading');
+  const contentEl = document.getElementById('tasks-content');
 
-    fetch(`/workflow/${workflowId}/activation`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ activate })
-    })
+  loadingEl.style.display = 'block';
+  contentEl.style.display = 'none';
+  loadingEl.innerHTML = `
+    <div class="spinner" style="width:2rem;height:2rem;border-width:3px;margin:0 auto;"></div>
+    <p>Loading tasks...</p>
+  `;
+
+  fetch(`/api/tasks?workflowId=${workflowId}`)
     .then(response => {
-      if (!response.ok) throw new Error('Failed to update workflow status.');
+      if (!response.ok) throw new Error('Network response was not ok');
       return response.json();
     })
     .then(data => {
-      showToast(`Workflow ${activate ? 'activated' : 'deactivated'} successfully!`);
-      const statusContainer = document.querySelector('.workflow-info div:nth-child(4)');
-      if (activate) {
-        statusContainer.innerHTML = `
-          <strong>Status:</strong>
-          <span class="status-badge status-completed"><i class="fas fa-check"></i> Active</span>
-        `;
-        button.style.display = 'none';
-        document.getElementById('deactivate-btn').style.display = 'inline-flex';
-      } else {
-        statusContainer.innerHTML = `
-          <strong>Status:</strong>
-          <span class="status-badge status-pending"><i class="fas fa-times"></i> Inactive</span>
-        `;
-        button.style.display = 'none';
-        document.getElementById('activate-btn').style.display = 'inline-flex';
+      try {
+        renderTasks(data);
+      } catch (err) {
+        console.error("Error rendering tasks:", err);
+        loadingEl.innerHTML = `<p>Error displaying tasks.</p>`;
       }
+      loadingEl.style.display = 'none';
+      contentEl.style.display = 'block';
     })
-    .catch(err => {
-      console.error(err);
-      showToast('Error updating workflow status.', true);
+    .catch(error => {
+      console.error('Error loading tasks:', error);
+      loadingEl.innerHTML = `
+        <p style="color:var(--danger);">
+          <i class="fas fa-exclamation-circle"></i>
+          Error loading tasks. Please try again.
+        </p>`;
     })
     .finally(() => {
-      button.disabled = false;
-      button.innerHTML = originalText;
+      isLoading = false;
     });
-  }
+}
 
-  function showToast(message, isError = false) {
-    const toast = document.createElement('div');
-    toast.style.position = 'fixed';
-    toast.style.bottom = '1rem';
-    toast.style.right = '1rem';
-    toast.style.padding = '1rem 1.5rem';
-    toast.style.background = isError ? 'var(--danger)' : 'var(--success)';
-    toast.style.color = 'white';
-    toast.style.borderRadius = '6px';
-    toast.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
-    toast.style.fontSize = '0.95rem';
-    toast.style.zIndex = '9999';
-    toast.innerHTML = `
-      <i class="fas ${isError ? 'fa-exclamation-triangle' : 'fa-check-circle'}"></i>
-      ${message}
-    `;
-    document.body.appendChild(toast);
-    setTimeout(() => { toast.remove(); }, 3000);
-  }
+function setupWorkflowActivation() {
+  const activateBtn = document.getElementById('activate-btn');
+  const deactivateBtn = document.getElementById('deactivate-btn');
 
-  function renderTasks(tasks) {
-    const contentEl = document.getElementById('tasks-content');
-    const loadingEl = document.getElementById('tasks-loading');
-
-    if (!tasks || tasks.length === 0) {
-      contentEl.innerHTML = `
-        <div class="no-tasks">
-          <i class="fas fa-inbox"></i>
-          <p>No tasks found for this workflow.</p>
-        </div>`;
-      return;
-    }
-
-    const grouped = {};
-    tasks.forEach(task => {
-      if (!grouped[task.DepId]) {
-        grouped[task.DepId] = { DeptName: task.DeptName, Tasks: [] };
+  if (activateBtn) {
+    activateBtn.addEventListener('click', () => {
+      if (confirm('Are you sure you want to activate this workflow?')) {
+        toggleWorkflowActivation(true, activateBtn);
       }
-      grouped[task.DepId].Tasks.push(task);
     });
+  }
 
-    let html = '';
-    for (const depId in grouped) {
-      const group = grouped[depId];
+  if (deactivateBtn) {
+    deactivateBtn.addEventListener('click', () => {
+      if (confirm('Are you sure you want to deactivate this workflow?')) {
+        toggleWorkflowActivation(false, deactivateBtn);
+      }
+    });
+  }
+}
+
+function toggleWorkflowActivation(activate, button) {
+  button.disabled = true;
+  const originalText = button.innerHTML;
+  button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+
+  fetch(`/workflow/${workflowId}/activation`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ activate })
+  })
+  .then(response => {
+    if (!response.ok) throw new Error('Failed to update workflow status.');
+    return response.json();
+  })
+  .then(data => {
+    showToast(`Workflow ${activate ? 'activated' : 'deactivated'} successfully!`);
+
+    const statusContainer = document.querySelector('.workflow-info div:nth-child(4)');
+    if (activate) {
+      statusContainer.innerHTML = `
+        <strong>Status:</strong>
+        <span class="status-badge status-completed"><i class="fas fa-check"></i> Active</span>
+      `;
+      button.style.display = 'none';
+      let deactivateBtn = document.getElementById('deactivate-btn');
+      if (deactivateBtn) {
+        deactivateBtn.style.display = 'inline-flex';
+      } else {
+        createActivateDeactivateButton(false);
+      }
+    } else {
+      statusContainer.innerHTML = `
+        <strong>Status:</strong>
+        <span class="status-badge status-pending"><i class="fas fa-times"></i> Inactive</span>
+      `;
+      button.style.display = 'none';
+      let activateBtn = document.getElementById('activate-btn');
+      if (activateBtn) {
+        activateBtn.style.display = 'inline-flex';
+      } else {
+        createActivateDeactivateButton(true);
+      }
+    }
+  })
+  .catch(err => {
+    console.error(err);
+    showToast('Error updating workflow status.', true);
+  })
+  .finally(() => {
+    button.disabled = false;
+    button.innerHTML = originalText;
+  });
+}
+
+function createActivateDeactivateButton(activate) {
+  const container = document.querySelector('.form-actions');
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = `btn ${activate ? 'btn-success' : 'btn-danger'}`;
+  btn.id = activate ? 'activate-btn' : 'deactivate-btn';
+  btn.innerHTML = activate
+    ? `<i class="fas fa-check"></i> Activate Workflow`
+    : `<i class="fas fa-ban"></i> Deactivate Workflow`;
+  btn.addEventListener('click', () => {
+    if (confirm(`Are you sure you want to ${activate ? 'activate' : 'deactivate'} this workflow?`)) {
+      toggleWorkflowActivation(activate, btn);
+    }
+  });
+  container.prepend(btn);
+}
+
+function showToast(message, isError = false) {
+  const toast = document.createElement('div');
+  toast.style.position = 'fixed';
+  toast.style.bottom = '1rem';
+  toast.style.right = '1rem';
+  toast.style.padding = '1rem 1.5rem';
+  toast.style.background = isError ? 'var(--danger)' : 'var(--success)';
+  toast.style.color = 'white';
+  toast.style.borderRadius = '6px';
+  toast.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+  toast.style.fontSize = '0.95rem';
+  toast.style.zIndex = '9999';
+  toast.innerHTML = `
+    <i class="fas ${isError ? 'fa-exclamation-triangle' : 'fa-check-circle'}"></i>
+    ${message}
+  `;
+  document.body.appendChild(toast);
+  setTimeout(() => { toast.remove(); }, 3000);
+}
+
+function renderTasks(tasks) {
+  const contentEl = document.getElementById('tasks-content');
+
+  if (!tasks || tasks.length === 0) {
+    contentEl.innerHTML = `
+      <div class="no-tasks">
+        <i class="fas fa-inbox"></i>
+        <p>No tasks found for this workflow.</p>
+      </div>`;
+    return;
+  }
+
+  const grouped = {};
+  tasks.forEach(task => {
+    if (!grouped[task.DepId]) {
+      grouped[task.DepId] = { DeptName: task.DeptName, Tasks: [] };
+    }
+    grouped[task.DepId].Tasks.push(task);
+  });
+
+  let html = '';
+  for (const depId in grouped) {
+    const group = grouped[depId];
+    html += `
+      <div class="department-group">
+        <div class="department-header">
+          <i class="fas fa-building"></i>
+          <h3>${group.DeptName}</h3>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="tasks-table">
+            <thead>
+              <tr>
+                <th>Task Name</th>
+                <th>Description</th>
+                <th>Planned Date</th>
+                <th>Days</th>
+                <th>Status</th>
+                <th>Started</th>
+                <th>Finished</th>
+                <th>Delay</th>
+              </tr>
+            </thead>
+            <tbody>`;
+    group.Tasks.forEach(task => {
+      const status = getTaskStatus(task);
+      const statusBadge = getStatusBadge(status);
       html += `
-        <div class="department-group">
-          <div class="department-header">
-            <i class="fas fa-building"></i>
-            <h3>${group.DeptName}</h3>
-          </div>
-          <div style="overflow-x:auto;">
-            <table class="tasks-table">
-              <thead>
-                <tr>
-                  <th>Task Name</th>
-                  <th>Description</th>
-                  <th>Planned Date</th>
-                  <th>Days</th>
-                  <th>Status</th>
-                  <th>Started</th>
-                  <th>Finished</th>
-                  <th>Delay</th>
-                </tr>
-              </thead>
-              <tbody>`;
-      group.Tasks.forEach(task => {
-        const status = getTaskStatus(task);
-        const statusBadge = getStatusBadge(status);
-        html += `
-          <tr>
-            <td>${task.TaskName || '-'}</td>
-            <td>${task.TaskPlanned || '-'}</td>
-            <td>${task.PlannedDate ? formatDate(task.PlannedDate) : '-'}</td>
-            <td>${task.DaysRequired || '-'}</td>
-            <td>${statusBadge}</td>
-            <td>${task.TimeStarted ? formatDateTime(task.TimeStarted) : '-'}</td>
-            <td>${task.TimeFinished ? formatDateTime(task.TimeFinished) : '-'}</td>
-            <td>${task.Delay != null ? `${task.Delay} days` : '-'}</td>
-          </tr>`;
-      });
-      html += `</tbody></table></div></div>`;
-    }
-
-    contentEl.innerHTML = html;
-  }
-
-  function getTaskStatus(task) {
-    if (task.TimeFinished) return 'completed';
-    if (task.TimeStarted) return 'in-progress';
-    if (task.Delay > 0) return 'delayed';
-    return 'pending';
-  }
-
-  function getStatusBadge(status) {
-    switch (status) {
-      case 'completed':
-        return `<span class="status-badge status-completed"><i class="fas fa-check-circle"></i> Completed</span>`;
-      case 'in-progress':
-        return `<span class="status-badge status-pending"><i class="fas fa-spinner"></i> In Progress</span>`;
-      case 'delayed':
-        return `<span class="status-badge status-delayed"><i class="fas fa-exclamation-triangle"></i> Delayed</span>`;
-      default:
-        return `<span class="status-badge status-pending"><i class="far fa-clock"></i> Pending</span>`;
-    }
-  }
-
-  function formatDate(dateString) {
-    return new Date(dateString).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
-  }
-
-  function formatDateTime(dateString) {
-    return new Date(dateString).toLocaleString(undefined, {
-      year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+        <tr>
+          <td>${task.TaskName || '-'}</td>
+          <td>${task.TaskPlanned || '-'}</td>
+          <td>${task.PlannedDate ? formatDate(task.PlannedDate) : '-'}</td>
+          <td>${task.DaysRequired || '-'}</td>
+          <td>${statusBadge}</td>
+          <td>${task.TimeStarted ? formatDateTime(task.TimeStarted) : '-'}</td>
+          <td>${task.TimeFinished ? formatDateTime(task.TimeFinished) : '-'}</td>
+          <td>${task.Delay != null ? `${task.Delay} days` : '-'}</td>
+        </tr>`;
     });
+    html += `</tbody></table></div></div>`;
   }
+
+  contentEl.innerHTML = html;
+}
+
+function getTaskStatus(task) {
+  if (task.TimeFinished) return 'completed';
+  if (task.TimeStarted) return 'in-progress';
+  if (task.Delay > 0) return 'delayed';
+  return 'pending';
+}
+
+function getStatusBadge(status) {
+  switch (status) {
+    case 'completed':
+      return `<span class="status-badge status-completed"><i class="fas fa-check-circle"></i> Completed</span>`;
+    case 'in-progress':
+      return `<span class="status-badge status-pending"><i class="fas fa-spinner"></i> In Progress</span>`;
+    case 'delayed':
+      return `<span class="status-badge status-delayed"><i class="fas fa-exclamation-triangle"></i> Delayed</span>`;
+    default:
+      return `<span class="status-badge status-pending"><i class="far fa-clock"></i> Pending</span>`;
+  }
+}
+
+function formatDate(dateString) {
+  return new Date(dateString).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+function formatDateTime(dateString) {
+  return new Date(dateString).toLocaleString(undefined, {
+    year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+  });
+}
 </script>
+
 
 
 </html> 

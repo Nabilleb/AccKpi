@@ -158,6 +158,7 @@ app.get("/workFlowDash",ensureAuthenticated ,async (req, res) => {
 app.post('/workflow/:id/activation', async (req, res) => {
   const workflowId = parseInt(req.params.id);
   const { activate } = req.body;
+  console.log("active backend",activate)
 
   try {
     await pool.request()
@@ -572,7 +573,8 @@ app.get('/add-task',ensureAuthenticated ,async (req, res) => {
   const workflowId = parseInt(req.query.workflowId);
   const processName = req.query.process;
   const packageName = req.query.package;
-
+  const isActive = req.query.active
+  console.log("isactive", isActive)
   let workflowDetails = null;
   let processSteps = [];
   let departments = [];
@@ -613,7 +615,8 @@ app.get('/add-task',ensureAuthenticated ,async (req, res) => {
         workFlowID: workflowId,
         ProcessName: processName,
         PackageName: packageName,
-        ProcessID: processId
+        ProcessID: processId,
+        activate: isActive
       };
     }
   }
@@ -625,7 +628,7 @@ app.get('/add-task',ensureAuthenticated ,async (req, res) => {
   }
 
   const workflowHdrResult = await pool.request().query(`SELECT * FROM tblWorkflowHdr`);
-
+console.log(workflowDetails)
   res.render('task', {
     workflowDetails,
     workflow: workflowHdrResult.recordset,
@@ -818,7 +821,7 @@ app.post('/assign-user-to-task/:taskId', async (req, res) => {
                 .query(`UPDATE tblWorkflowDtl
                         SET assignUser = @userDesc
                         WHERE TaskID = @taskID `)
-                        
+
       const transporter = nodemailer.createTransport({
         service: 'gmail',
         auth: {
@@ -959,7 +962,7 @@ console.log('REQ.BODY:', req.body);
     const hdrResult = await pool.request()
       .input('WorkFlowHdrID', sql.Int, WorkFlowHdrID)
       .query(`
-        SELECT ProcessID, pk.PkgeName AS PackageName, p.ProcessName, h.workFlowID
+        SELECT ProcessID, pk.PkgeName AS PackageName, p.ProcessName, h.workFlowID,h.activate
         FROM tblWorkflowHdr h
         JOIN tblPackages pk ON h.packageID = pk.PkgeID
         JOIN tblProcess p ON h.processID = p.NumberOfProccessID
@@ -1087,7 +1090,7 @@ console.log('REQ.BODY:', req.body);
 
     const isAdmin = req.session.user.usrAdmin;
     const departmentId = req.session.user.DepartmentID;
-
+console.log(workflowDetails)
     // ✅ Render the page with consistent department list
     res.render('task.ejs', {
       success: 'Task added successfully!',
@@ -1099,7 +1102,7 @@ console.log('REQ.BODY:', req.body);
       processSteps,
       WorkFlowHdrID
     });
-
+console.log("post method",workflowDetails)
   } catch (err) {
     console.error('Error adding task:', err);
     res.status(500).send('Failed to add task');

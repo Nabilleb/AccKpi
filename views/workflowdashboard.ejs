@@ -402,19 +402,20 @@ function updateTable() {
     } else {
         noResultsMessage.style.display = 'none';
         workflowTableBody.innerHTML = paginatedWorkflows.map(workflow => `
-            <tr class="clickable"
-                data-hdrid="${workflow.HdrID}"
-                data-process="${workflow.ProcessName || ''}"
-                data-package="${workflow.PackageName || ''}">
-                <td>${workflow.HdrID}</td>
-                <td>${workflow.ProcessName || ''}</td>
-                <td>${workflow.PackageName || ''}</td>
-                <td>${workflow.ProjectName || ''}</td>
-                <td><span class="status-badge status-${workflow.Status ? workflow.Status.toLowerCase().replace(' ', '-') : ''}">
-                    ${workflow.Status || ''}
-                </span></td>
-                <td>${workflow.completionDate ? workflow.completionDate.split('T')[0] : ''}</td>
-            </tr>
+             <tr class="clickable"
+        data-hdrid="${workflow.HdrID}"
+        data-process="${workflow.ProcessName || ''}"
+        data-package="${workflow.PackageName || ''}"
+        data-active="${workflow.activate}">
+        <td>${workflow.HdrID}</td>
+        <td>${workflow.ProcessName || ''}</td>
+        <td>${workflow.PackageName || ''}</td>
+        <td>${workflow.ProjectName || ''}</td>
+        <td><span class="status-badge status-${workflow.Status ? workflow.Status.toLowerCase().replace(' ', '-') : ''}">
+            ${workflow.Status || ''}
+        </span></td>
+        <td>${workflow.completionDate ? workflow.completionDate.split('T')[0] : ''}</td>
+    </tr>
         `).join('');
 
         // Add click handlers to rows
@@ -423,8 +424,9 @@ function updateTable() {
                 const hdrId = row.getAttribute('data-hdrid');
                 const process = row.getAttribute('data-process');
                 const packageName = row.getAttribute('data-package');
+        const isActive = row.getAttribute('data-active');
                 if (usrAdmin) {
-                    window.location.href = `/add-task?workflowId=${encodeURIComponent(hdrId)}&process=${encodeURIComponent(process)}&package=${encodeURIComponent(packageName)}`;
+            window.location.href = `/add-task?workflowId=${encodeURIComponent(hdrId)}&process=${encodeURIComponent(process)}&package=${encodeURIComponent(packageName)}&active=${isActive}`;
                 } else {
                     console.log("userpage");
                     window.location.href = `/userpage/${hdrId}`;
