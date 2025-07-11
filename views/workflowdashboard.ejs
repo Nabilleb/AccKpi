@@ -6,12 +6,16 @@
     <link rel="stylesheet" href="/styles/workflowDash.css">
     <title>System Engineering Workflow Dashboard</title>
     <style>
+        /* Enhanced status badges with icons */
         .status-badge {
             padding: 4px 8px;
             border-radius: 12px;
             font-size: 12px;
             font-weight: 500;
             text-transform: capitalize;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
         }
         .status-draft {
             background-color: #e0e0e0;
@@ -53,6 +57,7 @@
         }
         .clickable {
             cursor: pointer;
+            transition: background-color 0.2s ease;
         }
         .clickable:hover {
             background-color: #f5f5f5;
@@ -60,6 +65,195 @@
         .filter-active {
             background-color: #e3f2fd;
             border-color: #2196f3;
+        }
+        
+        /* Enhanced filter controls */
+        .filters {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            padding: 12px 0;
+            align-items: center;
+        }
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .filter-label {
+            font-size: 12px;
+            color: #616161;
+            font-weight: 500;
+        }
+        .filter-group select {
+            padding: 8px 12px;
+            border-radius: 4px;
+            border: 1px solid #e0e0e0;
+            min-width: 160px;
+        }
+        
+        /* Enhanced pagination */
+        .pagination {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 16px;
+            padding: 12px 0;
+        }
+        .page-info {
+            font-size: 14px;
+            color: #616161;
+        }
+        .page-controls {
+            display: flex;
+            gap: 8px;
+        }
+        .page-btn {
+            padding: 6px 10px;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            background: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 32px;
+            height: 32px;
+        }
+        .page-btn:hover:not(:disabled) {
+            background: #f5f5f5;
+        }
+        .page-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .page-btn.active {
+            background: #2196f3;
+            color: white;
+            border-color: #2196f3;
+        }
+        
+        /* Enhanced search box */
+        .search-box {
+            position: relative;
+            min-width: 240px;
+        }
+        .search-icon {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+        }
+        .search-box input {
+            padding: 8px 12px 8px 36px;
+            border-radius: 4px;
+            border: 1px solid #e0e0e0;
+            width: 100%;
+        }
+        
+        /* Enhanced buttons */
+        .btn {
+            padding: 8px 16px;
+            border-radius: 4px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        .btn-primary {
+            background: #2196f3;
+            color: white;
+            border: 1px solid #2196f3;
+        }
+        .btn-primary:hover {
+            background: #1976d2;
+            border-color: #1976d2;
+        }
+        .btn-outline {
+            background: white;
+            color: #2196f3;
+            border: 1px solid #2196f3;
+        }
+        .btn-outline:hover {
+            background: #e3f2fd;
+        }
+        
+        /* Enhanced table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th {
+            text-align: left;
+            padding: 12px;
+            background: #f5f5f5;
+            position: relative;
+        }
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .th-inner {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .sort-icon {
+            cursor: pointer;
+            opacity: 0.5;
+            transition: opacity 0.2s ease;
+        }
+        .sort-icon:hover {
+            opacity: 1;
+        }
+        .sort-icon.active {
+            opacity: 1;
+        }
+        .sort-icon.asc svg {
+            transform: rotate(180deg);
+        }
+        
+        /* Responsive improvements */
+        @media (max-width: 768px) {
+            .toolbar {
+                flex-direction: column;
+                gap: 12px;
+            }
+            .search-box {
+                width: 100%;
+            }
+            .filters {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .filter-group {
+                width: 100%;
+            }
+            .filter-group select {
+                width: 100%;
+            }
+            .pagination {
+                flex-direction: column;
+                gap: 12px;
+            }
+        }
+        
+        /* Animation for loading */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        table {
+            animation: fadeIn 0.3s ease;
+        }
+        
+        /* Badge icons */
+        .badge-icon {
+            width: 14px;
+            height: 14px;
         }
     </style>
 </head>
@@ -103,15 +297,15 @@
         </div>
 
         <div class="filters">
-         <div class="filter-group">
-    <label class="filter-label">Project</label>
-    <select id="projectFilter">
-        <option value="">All Projects</option>
-        <% projects.forEach(project => { %>
-            <option value="<%= project.projectID %>"><%= project.projectName %></option>
-        <% }) %>
-    </select>
-</div>
+            <div class="filter-group">
+                <label class="filter-label">Project</label>
+                <select id="projectFilter">
+                    <option value="">All Projects</option>
+                    <% projects.forEach(project => { %>
+                        <option value="<%= project.projectID %>"><%= project.projectName %></option>
+                    <% }) %>
+                </select>
+            </div>
 
             <div class="filter-group">
                 <label class="filter-label">Process</label>
@@ -135,7 +329,6 @@
                     <option value="Blocked">Blocked</option>
                 </select>
             </div>
-          
         </div>
 
         <div class="table-container">
@@ -158,7 +351,6 @@
                                         <path d="M7 10L12 15L17 10H7Z" fill="currentColor"/>
                                     </svg>
                                 </span>
-                                <div class="resize-handle"></div>
                             </div>
                         </th>
                         <th>
@@ -169,7 +361,6 @@
                                         <path d="M7 10L12 15L17 10H7Z" fill="currentColor"/>
                                     </svg>
                                 </span>
-                                <div class="resize-handle"></div>
                             </div>
                         </th>
                         <th>
@@ -180,7 +371,6 @@
                                         <path d="M7 10L12 15L17 10H7Z" fill="currentColor"/>
                                     </svg>
                                 </span>
-                                <div class="resize-handle"></div>
                             </div>
                         </th>
                         <th>
@@ -191,7 +381,6 @@
                                         <path d="M7 10L12 15L17 10H7Z" fill="currentColor"/>
                                     </svg>
                                 </span>
-                                <div class="resize-handle"></div>
                             </div>
                         </th>
                         <th>
@@ -202,7 +391,6 @@
                                         <path d="M7 10L12 15L17 10H7Z" fill="currentColor"/>
                                     </svg>
                                 </span>
-                                <div class="resize-handle"></div>
                             </div>
                         </th>
                         <th>
@@ -213,9 +401,9 @@
                                         <path d="M7 10L12 15L17 10H7Z" fill="currentColor"/>
                                     </svg>
                                 </span>
-                                <div class="resize-handle"></div>
                             </div>
                         </th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody id="workflowTableBody">
@@ -223,7 +411,11 @@
             </table>
 
             <div class="no-results" id="noResultsMessage" style="display: none;">
-                No workflows match your search criteria.
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-bottom: 12px;">
+                    <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 20C7.59 20 4 16.41 4 12C4 7.59 7.59 4 12 4C16.41 4 20 7.59 20 12C20 16.41 16.41 20 12 20ZM13 17H11V15H13V17ZM13 13H11V7H13V13Z" fill="#757575"/>
+                </svg>
+                <p>No workflows match your search criteria.</p>
+                <button class="btn btn-outline" onclick="resetFilters()">Reset Filters</button>
             </div>
 
             <div class="pagination">
@@ -241,6 +433,7 @@ let currentPage = 1;
 const rowsPerPage = 10;
 let sortColumn = 'HdrID';
 let sortDirection = 'asc';
+let debounceTimer;
 
 const searchInput = document.getElementById('searchInput');
 const projectFilter = document.getElementById('projectFilter');
@@ -256,18 +449,15 @@ const pageInfo = document.getElementById('pageInfo');
 const paginationControls = document.getElementById('paginationControls');
 const usrAdmin = <%= usrAdmin ? 'true' : 'false' %>;
 
-
 document.addEventListener("DOMContentLoaded", async () => {
-      if (!usrAdmin) {
-    const btn = document.getElementById('newItemBtn');
-    if (btn) {
-      btn.style.display = 'none';
+    if (!usrAdmin) {
+        newItemBtn.style.display = 'none';
     }
-  }
+    
     await loadWorkflowData();
     setupEventListeners();
     updateTable();
-
+    updatePagination();
 });
 
 async function loadWorkflowData() {
@@ -278,17 +468,43 @@ async function loadWorkflowData() {
         const response = await fetch("/api/workFlowDashData");
         allWorkflows = await response.json();
         
+        // Add activate status if not present
+        allWorkflows = allWorkflows.map(wf => ({
+            ...wf,
+            activate: wf.activate !== undefined ? wf.activate : true
+        }));
+        
         filteredWorkflows = [...allWorkflows];
         loadingIndicator.style.display = 'none';
     } catch (err) {
         console.error("Failed to load workflow dashboard data", err);
         loadingIndicator.style.display = 'none';
-        workflowTableBody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #c62828;">Failed to load data. Please try again.</td></tr>';
+        workflowTableBody.innerHTML = `
+            <tr>
+                <td colspan="7" style="text-align: center; color: #c62828; padding: 24px;">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-bottom: 8px;">
+                        <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM13 17H11V15H13V17ZM13 13H11V7H13V13Z" fill="#c62828"/>
+                    </svg>
+                    <p>Failed to load data. Please try again.</p>
+                    <button class="btn btn-outline" onclick="loadWorkflowData()" style="margin-top: 8px;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4C7.58 4 4 7.58 4 12C4 16.42 7.58 20 12 20C15.73 20 18.84 17.45 19.73 14H17.65C16.83 16.33 14.61 18 12 18C8.69 18 6 15.31 6 12C6 8.69 8.69 6 12 6C13.66 6 15.14 6.69 16.22 7.78L13 11H20V4L17.65 6.35Z" fill="currentColor"/>
+                        </svg>
+                        Retry
+                    </button>
+                </td>
+            </tr>
+        `;
     }
 }
 
 function setupEventListeners() {
-    searchInput.addEventListener('input', applyFilters);
+    // Debounced search input
+    searchInput.addEventListener('input', () => {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(applyFilters, 300);
+    });
+    
     projectFilter.addEventListener('change', applyFilters);
     processFilter.addEventListener('change', applyFilters);
     statusFilter.addEventListener('change', applyFilters);
@@ -301,16 +517,31 @@ function setupEventListeners() {
     
     exportBtn.addEventListener('click', exportData);
     
+    // Enhanced sort icons with visual feedback
     document.querySelectorAll('.sort-icon').forEach(icon => {
         icon.addEventListener('click', (e) => {
             const column = e.currentTarget.getAttribute('data-sort');
+            
+            // Update all sort icons
+            document.querySelectorAll('.sort-icon').forEach(i => {
+                i.classList.remove('active', 'asc');
+            });
+            
             if (sortColumn === column) {
                 sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
             } else {
                 sortColumn = column;
                 sortDirection = 'asc';
             }
+            
+            // Update current sort icon
+            e.currentTarget.classList.add('active');
+            if (sortDirection === 'desc') {
+                e.currentTarget.classList.add('asc');
+            }
+            
             updateTable();
+            updatePagination();
         });
     });
 }
@@ -325,13 +556,13 @@ function applyFilters() {
     
     filteredWorkflows = allWorkflows.filter(workflow => {
         const matchesSearch = !searchTerm || 
-            (workflow.HdrID && workflow.HdrID.toString().includes(searchTerm)) ||
+            (workflow.HdrID && workflow.HdrID.toString().toLowerCase().includes(searchTerm)) ||
             (workflow.ProcessName && workflow.ProcessName.toLowerCase().includes(searchTerm)) ||
             (workflow.PackageName && workflow.PackageName.toLowerCase().includes(searchTerm)) ||
             (workflow.ProjectName && workflow.ProjectName.toLowerCase().includes(searchTerm)) ||
             (workflow.Status && workflow.Status.toLowerCase().includes(searchTerm));
         
-        const matchesProject = !projectValue || (workflow.ProjectName === projectValue);
+        const matchesProject = !projectValue || (workflow.ProjectID && workflow.ProjectID.toString() === projectValue);
         const matchesProcess = !processValue || (workflow.ProcessName === processValue);
         const matchesStatus = !statusValue || (workflow.Status === statusValue);
         
@@ -339,21 +570,18 @@ function applyFilters() {
     });
     
     updateTable();
+    updatePagination();
 }
 
-// Reset all filters
 function resetFilters() {
     searchInput.value = '';
     projectFilter.value = '';
     processFilter.value = '';
     statusFilter.value = '';
-    startDateFilter.value = '';
-    endDateFilter.value = '';
     
     applyFilters();
 }
 
-// Sort workflows
 function sortWorkflows() {
     filteredWorkflows.sort((a, b) => {
         let valueA = a[sortColumn];
@@ -369,7 +597,7 @@ function sortWorkflows() {
         }
         
         // Handle date sorting
-        if (sortColumn === 'DueDate') {
+        if (sortColumn === 'DueDate' || sortColumn === 'completionDate') {
             const dateA = valueA ? new Date(valueA) : new Date(0);
             const dateB = valueB ? new Date(valueB) : new Date(0);
             return sortDirection === 'asc' ? dateA - dateB : dateB - dateA;
@@ -384,7 +612,6 @@ function sortWorkflows() {
     });
 }
 
-// Update the table with filtered and sorted data
 function updateTable() {
     sortWorkflows();
 
@@ -409,42 +636,100 @@ function updateTable() {
     } else {
         noResultsMessage.style.display = 'none';
         workflowTableBody.innerHTML = paginatedWorkflows.map(workflow => `
-             <tr class="clickable"
-        data-hdrid="${workflow.HdrID}"
-        data-process="${workflow.ProcessName || ''}"
-        data-package="${workflow.PackageName || ''}"
-        data-active="${workflow.activate}">
-        <td>${workflow.HdrID}</td>
-        <td>${workflow.ProcessName || ''}</td>
-        <td>${workflow.PackageName || ''}</td>
-        <td>${workflow.ProjectName || ''}</td>
-        <td><span class="status-badge status-${workflow.Status ? workflow.Status.toLowerCase().replace(' ', '-') : ''}">
-            ${workflow.Status || ''}
-        </span></td>
-        <td>${workflow.completionDate ? workflow.completionDate.split('T')[0] : ''}</td>
-    </tr>
+            <tr class="clickable" 
+                data-hdrid="${workflow.HdrID}"
+                data-process="${workflow.ProcessName || ''}"
+                data-package="${workflow.PackageName || ''}"
+                data-active="${workflow.activate}">
+                <td>${workflow.HdrID}</td>
+                <td>${workflow.ProcessName || '-'}</td>
+                <td>${workflow.PackageName || '-'}</td>
+                <td>${workflow.ProjectName || '-'}</td>
+                <td>
+                    <span class="status-badge status-${workflow.Status ? workflow.Status.toLowerCase().replace(' ', '-') : ''}">
+                        ${getStatusIcon(workflow.Status)}
+                        ${workflow.Status || '-'}
+                    </span>
+                </td>
+                <td>${workflow.completionDate ? formatDate(workflow.completionDate) : '-'}</td>
+                <td>
+                    <button class="btn btn-outline btn-sm action-btn" data-action="view" style="padding: 4px 8px;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 4.5C7 4.5 2.73 7.61 1 12C2.73 16.39 7 19.5 12 19.5C17 19.5 21.27 16.39 23 12C21.27 7.61 17 4.5 12 4.5ZM12 17C9.24 17 7 14.76 7 12C7 9.24 9.24 7 12 7C14.76 7 17 9.24 17 12C17 14.76 14.76 17 12 17ZM12 9C10.34 9 9 10.34 9 12C9 13.66 10.34 15 12 15C13.66 15 15 13.66 15 12C15 10.34 13.66 9 12 9Z" fill="currentColor"/>
+                        </svg>
+                    </button>
+                    ${usrAdmin ? `
+                    <button class="btn btn-outline btn-sm action-btn" data-action="edit" style="padding: 4px 8px;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M3 17.25V21H6.75L17.81 9.94L14.06 6.19L3 17.25ZM20.71 7.04C21.1 6.65 21.1 6.02 20.71 5.63L18.37 3.29C17.98 2.9 17.35 2.9 16.96 3.29L15.13 5.12L18.88 8.87L20.71 7.04Z" fill="currentColor"/>
+                        </svg>
+                    </button>
+                    ` : ''}
+                </td>
+            </tr>
         `).join('');
 
-        // Add click handlers to rows
+        // Add click handlers to rows and action buttons
         document.querySelectorAll('tr.clickable').forEach(row => {
-            row.addEventListener('click', () => {
+            // Row click handler
+            row.addEventListener('click', (e) => {
+                // Don't navigate if clicking on an action button
+                if (e.target.closest('.action-btn')) return;
+                
                 const hdrId = row.getAttribute('data-hdrid');
                 const process = row.getAttribute('data-process');
                 const packageName = row.getAttribute('data-package');
-        const isActive = row.getAttribute('data-active');
+                const isActive = row.getAttribute('data-active');
+                
                 if (usrAdmin) {
-            window.location.href = `/add-task?workflowId=${encodeURIComponent(hdrId)}&process=${encodeURIComponent(process)}&package=${encodeURIComponent(packageName)}&active=${isActive}`;
+                    window.location.href = `/add-task?workflowId=${encodeURIComponent(hdrId)}&process=${encodeURIComponent(process)}&package=${encodeURIComponent(packageName)}&active=${isActive}`;
                 } else {
-                    console.log("userpage");
                     window.location.href = `/userpage/${hdrId}`;
                 }
+            });
+            
+            // Action button handlers
+            row.querySelectorAll('.action-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const action = btn.getAttribute('data-action');
+                    const hdrId = row.getAttribute('data-hdrid');
+                    
+                    if (action === 'view') {
+                        if (usrAdmin) {
+                            window.location.href = `/add-task?workflowId=${encodeURIComponent(hdrId)}`;
+                        } else {
+                            window.location.href = `/userpage/${hdrId}`;
+                        }
+                    } else if (action === 'edit') {
+                        window.location.href = `/workflow/edit/${hdrId}`;
+                    }
+                });
             });
         });
     }
 }
 
+function getStatusIcon(status) {
+    if (!status) return '';
+    
+    const icons = {
+        'Draft': '<svg class="badge-icon" viewBox="0 0 24 24"><path d="M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.89 22 5.99 22H18C19.1 22 20 21.1 20 20V8L14 2ZM6 20V4H13V9H18V20H6Z" fill="currentColor"/></svg>',
+        'In Progress': '<svg class="badge-icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 20C7.58 20 4 16.42 4 12C4 7.58 7.58 4 12 4C16.42 4 20 7.58 20 12C20 16.42 16.42 20 12 20Z" fill="currentColor"/><path d="M13 7H11V12.414L15.293 16.707L16.707 15.293L13 11.586V7Z" fill="currentColor"/></svg>',
+        'Review': '<svg class="badge-icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 20C7.58 20 4 16.42 4 12C4 7.58 7.58 4 12 4C16.42 4 20 7.58 20 12C20 16.42 16.42 20 12 20ZM7 13H17V11H7V13Z" fill="currentColor"/></svg>',
+        'Completed': '<svg class="badge-icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM10 17L5 12L6.41 10.59L10 14.17L17.59 6.58L19 8L10 17Z" fill="currentColor"/></svg>',
+        'Blocked': '<svg class="badge-icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 20C7.58 20 4 16.42 4 12C4 7.58 7.58 4 12 4C16.42 4 20 7.58 20 12C20 16.42 16.42 20 12 20ZM16 15.59L15.59 16L12 12.41L8.41 16L8 15.59L11.59 12L8 8.41L8.41 8L12 11.59L15.59 8L16 8.41L12.41 12L16 15.59Z" fill="currentColor"/></svg>'
+    };
+    
+    return icons[status] || '';
+}
 
-// Update pagination controls
+function formatDate(dateString) {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
 function updatePagination() {
     const totalPages = Math.ceil(filteredWorkflows.length / rowsPerPage);
     
@@ -469,6 +754,7 @@ function updatePagination() {
         if (currentPage > 1) {
             currentPage--;
             updateTable();
+            updatePagination();
         }
     });
     paginationControls.appendChild(prevButton);
@@ -489,6 +775,7 @@ function updatePagination() {
         firstPageButton.addEventListener('click', () => {
             currentPage = 1;
             updateTable();
+            updatePagination();
         });
         paginationControls.appendChild(firstPageButton);
         
@@ -507,6 +794,7 @@ function updatePagination() {
         pageButton.addEventListener('click', () => {
             currentPage = i;
             updateTable();
+            updatePagination();
         });
         paginationControls.appendChild(pageButton);
     }
@@ -525,6 +813,7 @@ function updatePagination() {
         lastPageButton.addEventListener('click', () => {
             currentPage = totalPages;
             updateTable();
+            updatePagination();
         });
         paginationControls.appendChild(lastPageButton);
     }
@@ -542,6 +831,7 @@ function updatePagination() {
         if (currentPage < totalPages) {
             currentPage++;
             updateTable();
+            updatePagination();
         }
     });
     paginationControls.appendChild(nextButton);
@@ -560,7 +850,7 @@ function exportData() {
         workflow.PackageName || '',
         workflow.ProjectName || '',
         workflow.Status || '',
-        workflow.DueDate ? new Date(workflow.DueDate).toLocaleDateString() : ''
+        workflow.completionDate ? formatDate(workflow.completionDate) : ''
     ]);
     
     let csvContent = headers.join(',') + '\n';
