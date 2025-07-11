@@ -1109,6 +1109,48 @@ console.log("post method",workflowDetails)
   }
 });
 
+// Assuming you have SQL Server connection `pool`
+app.get('/api/check-department-step', async (req, res) => {
+  const { workflowId, depId, processId } = req.query;
+
+  if (!workflowId || !depId || !processId) {
+    return res.status(400).json({ error: 'Missing parameters' });
+  }
+
+  try {
+    const request = pool.request();
+    request.input('ProcessID', processId);
+    request.input('DepID', depId);
+    request.input('WorkflowID', workflowId);
+
+    // Check if this department is first step in the process
+    const processResult = await request.query(`
+      SELECT TOP 1 StepOrder
+      FROM tblProcessDepartment
+      WHERE ProcessID = @ProcessID AND DepartmentID = @DepID
+    `);
+
+    const isFirstStep = processResult.recordset.length > 0 && processResult.recordset[0].StepOrder === 1;
+
+    // Check if there are tasks for this workflow and department
+    const taskResult = await request.query(`
+      SELECT TOP 1 TaskID
+      FROM tblTasks
+      WHERE WorkFlowHdrID = @WorkflowID AND DepId = @DepID
+    `);
+
+    const hasTasks = taskResult.recordset.length > 0;
+
+    return res.json({
+      isFirstStep,
+      hasTasks
+    });
+
+  } catch (err) {
+    console.error('Error in /api/check-department-step:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
 
 
 app.get('/task-selected', async (req, res) => {

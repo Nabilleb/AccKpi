@@ -116,6 +116,7 @@
       display: flex;
       flex-direction: column;
       gap: 0.5rem;
+      position: relative;
     }
 
     label {
@@ -136,6 +137,7 @@
       font-size: 1rem;
       transition: all 0.2s ease;
       background: var(--white);
+      width: 100%;
     }
 
     input:focus, select:focus {
@@ -193,6 +195,16 @@
     .btn-secondary:hover {
       background: var(--background);
       border-color: var(--text-light);
+    }
+
+    .btn-success {
+      background: var(--success);
+      color: white;
+    }
+
+    .btn-danger {
+      background: var(--danger);
+      color: white;
     }
 
     .workflow-info {
@@ -356,6 +368,8 @@
       padding: 0.75rem 1rem;
       border-bottom: 2px solid var(--primary);
       color: var(--primary);
+      cursor: pointer;
+      user-select: none;
     }
 
     .tasks-table td {
@@ -395,11 +409,101 @@
       color: #991b1b;
     }
 
+    .status-in-progress {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+
     .no-tasks {
       padding: 2rem;
       text-align: center;
       color: var(--text-light);
       font-size: 1rem;
+    }
+
+    /* New styles for enhanced UX */
+    .overdue-task {
+      background-color: rgba(239, 68, 68, 0.05) !important;
+    }
+    
+    .overdue-task:hover td {
+      background-color: rgba(239, 68, 68, 0.1) !important;
+    }
+    
+    .delay-warning {
+      color: var(--danger);
+      font-weight: 600;
+    }
+    
+    .task-count {
+      margin-left: auto;
+      font-size: 0.9rem;
+      color: var(--text-light);
+    }
+    
+    .char-counter {
+      font-size: 0.8rem;
+      color: var(--text-light);
+      margin-top: 0.25rem;
+    }
+    
+    [aria-invalid="true"] {
+      border-color: var(--danger) !important;
+    }
+    
+    .validation-error {
+      color: var(--danger);
+      font-size: 0.8rem;
+      margin-top: 0.25rem;
+      display: none;
+    }
+    
+    .search-container {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+    
+    .search-input {
+      flex: 1;
+      padding: 0.5rem 1rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+    }
+    
+    .pagination {
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+    
+    .page-btn {
+      padding: 0.5rem 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      background: white;
+    }
+    
+    .page-btn.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+    
+    .skeleton-row {
+      height: 50px;
+      background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      margin-bottom: 0.5rem;
+      border-radius: var(--radius-sm);
+    }
+    
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
     }
 
     @media (max-width: 768px) {
@@ -434,6 +538,10 @@
       .tasks-table {
         display: block;
         overflow-x: auto;
+      }
+      
+      .search-container {
+        flex-direction: column;
       }
     }
 
@@ -486,31 +594,30 @@
   <form action="/add-task" method="POST" class="form-grid">
     <% if (workflowDetails) { %>
     <div class="workflow-info">
-  <div><i class="fas fa-project-diagram"></i> <strong>Workflow ID:</strong> <%= workflowDetails.workFlowID %></div>
-  <div><i class="fas fa-sitemap"></i> <strong>Process:</strong> <%= workflowDetails.ProcessName %></div>
-  <div><i class="fas fa-box-open"></i> <strong>Package:</strong> <%= workflowDetails.PackageName %></div>
- <div>
-  <strong>Status:</strong>
-  <% if (workflowDetails.activate === '1' || workflowDetails.activate === 'true') { %>
-    <span class="status-badge status-completed"><i class="fas fa-check"></i> Active</span>
-  <% } else { %>
-    <span class="status-badge status-pending"><i class="fas fa-times"></i> Inactive</span>
-  <% } %>
-</div>
+      <div><i class="fas fa-project-diagram"></i> <strong>Workflow ID:</strong> <%= workflowDetails.workFlowID %></div>
+      <div><i class="fas fa-sitemap"></i> <strong>Process:</strong> <%= workflowDetails.ProcessName %></div>
+      <div><i class="fas fa-box-open"></i> <strong>Package:</strong> <%= workflowDetails.PackageName %></div>
+      <div>
+        <strong>Status:</strong>
+        <% if (workflowDetails.activate === '1' || workflowDetails.activate === 'true') { %>
+          <span class="status-badge status-completed"><i class="fas fa-check"></i> Active</span>
+        <% } else { %>
+          <span class="status-badge status-pending"><i class="fas fa-times"></i> Inactive</span>
+        <% } %>
+      </div>
+    </div>
 
-</div>
-
-<div class="form-actions" style="margin-top: 1rem;">
-  <% if (workflowDetails.activate === '1' || workflowDetails.activate === 'true') { %>
-    <button type="button" class="btn btn-danger" id="deactivate-btn">
-      <i class="fas fa-ban"></i> Deactivate Workflow
-    </button>
-  <% } else { %>
-    <button type="button" class="btn btn-success" id="activate-btn">
-      <i class="fas fa-check"></i> Activate Workflow
-    </button>
-  <% } %>
-</div>
+    <div class="form-actions" style="margin-top: 1rem;">
+      <% if (workflowDetails.activate === '1' || workflowDetails.activate === 'true') { %>
+        <button type="button" class="btn btn-danger" id="deactivate-btn">
+          <i class="fas fa-ban"></i> Deactivate Workflow
+        </button>
+      <% } else { %>
+        <button type="button" class="btn btn-success" id="activate-btn">
+          <i class="fas fa-check"></i> Activate Workflow
+        </button>
+      <% } %>
+    </div>
 
       <input type="hidden" name="WorkFlowHdrID" value="<%= workflowDetails.workFlowID %>"/>
     <% } else { %>
@@ -522,6 +629,7 @@
             <option value="<%= wf.workFlowID %>"><%= wf.workFlowID %></option>
           <% }) %>
         </select>
+        <div class="validation-error" id="WorkFlowHdrID-error">Please select a workflow</div>
       </div>
     <% } %>
 
@@ -538,12 +646,16 @@
 
     <div class="form-group">
       <label for="TaskName" class="required-field">Task Name</label>
-      <input type="text" name="TaskName" id="TaskName" required placeholder="e.g., Review Design Mockups"/>
+      <input type="text" name="TaskName" id="TaskName" required placeholder="e.g., Review Design Mockups" maxlength="100"/>
+      <div class="char-counter" id="TaskName-counter">0/100</div>
+      <div class="validation-error" id="TaskName-error">Task name is required</div>
     </div>
 
     <div class="form-group">
       <label for="TaskPlanned" class="required-field">Task Description</label>
-      <input type="text" name="TaskPlanned" id="TaskPlanned" required placeholder="Describe what needs to be done"/>
+      <input type="text" name="TaskPlanned" id="TaskPlanned" required placeholder="Describe what needs to be done" maxlength="255"/>
+      <div class="char-counter" id="TaskPlanned-counter">0/255</div>
+      <div class="validation-error" id="TaskPlanned-error">Description is required</div>
     </div>
 
     <div class="form-group">
@@ -557,6 +669,7 @@
     <div class="form-group">
       <label for="DaysRequired" class="required-field">Estimated Days</label>
       <input type="number" name="DaysRequired" id="DaysRequired" min="1" required placeholder="3"/>
+      <div class="validation-error" id="DaysRequired-error">Please enter a valid number of days</div>
     </div>
 
     <% if (isAdmin) { %>
@@ -568,6 +681,7 @@
             <option value="<%= d.DepartmentID %>" <%= d.DepartmentID === departmentId ? "selected" : "" %>><%= d.DeptName %></option>
           <% }) %>
         </select>
+        <div class="validation-error" id="DepId-error">Please select a department</div>
       </div>
     <% } else { %>
       <input type="hidden" name="DepId" value="<%= departmentId %>"/>
@@ -577,7 +691,7 @@
       <button type="button" class="btn btn-secondary" onclick="history.back()">
         <i class="fas fa-arrow-left"></i> Cancel
       </button>
-      <button type="submit" class="btn btn-primary">
+      <button type="submit" class="btn btn-primary" id="submit-btn">
         <i class="fas fa-plus-circle"></i> Create Task
       </button>
     </div>
@@ -586,47 +700,239 @@
   <div id="tasks-container">
     <div class="tasks-header">
       <h2><i class="fas fa-clipboard-list"></i> Current Tasks</h2>
-      <button class="refresh-btn" id="refresh-tasks">
-        <i class="fas fa-sync-alt"></i> Refresh
-      </button>
+      <div>
+        <button class="refresh-btn" id="refresh-tasks">
+          <i class="fas fa-sync-alt"></i> Refresh
+        </button>
+      </div>
     </div>
-    <div id="tasks-loading" style="text-align: center; padding: 2rem;">
-      <div class="spinner" style="width: 2rem; height: 2rem; border-width: 3px; margin: 0 auto;"></div>
-      <p>Loading tasks...</p>
+    
+    <div class="search-container" id="search-container" style="display: none;">
+      <input type="text" class="search-input" id="task-search" placeholder="Search tasks...">
+      <select class="search-input" id="status-filter">
+        <option value="">All Statuses</option>
+        <option value="pending">Pending</option>
+        <option value="in-progress">In Progress</option>
+        <option value="completed">Completed</option>
+        <option value="delayed">Delayed</option>
+      </select>
+    </div>
+    
+    <div id="tasks-loading">
+      <!-- Loading skeleton -->
+      <div class="skeleton-row"></div>
+      <div class="skeleton-row"></div>
+      <div class="skeleton-row"></div>
     </div>
     <div id="tasks-content" style="display: none;"></div>
+    
+    <div class="pagination" id="pagination" style="display: none;"></div>
   </div>
 </div>
 
 <script>
+// Global variables
 let isLoading = false;
+let currentTasks = [];
+let currentPage = 1;
+const tasksPerPage = 10;
 const workflowId = <%= JSON.stringify(workflowDetails?.workFlowID ?? null) %>;
+const processId = <%= JSON.stringify(workflowDetails?.ProcessID ?? null) %>;
 
+// DOM Content Loaded
 document.addEventListener('DOMContentLoaded', function() {
+  // Initialize form validation
+  setupFormValidation();
+  
+  // Initialize department selection logic
+  setupDepartmentSelection();
+  
+  // Load tasks if workflow ID exists
   if (workflowId) {
     loadTasks();
     setupWorkflowActivation();
+    
+    // Set up periodic refresh (every 2 minutes)
+    setInterval(() => {
+      if (!isLoading && document.visibilityState === 'visible') {
+        loadTasks();
+      }
+    }, 120000);
   } else {
     document.getElementById('tasks-loading').innerHTML = '<p>Select a workflow to view tasks.</p>';
   }
+  
+  // Set up task search functionality
+  document.getElementById('task-search')?.addEventListener('input', function() {
+    filterAndRenderTasks();
+  });
+  
+  // Set up status filter
+  document.getElementById('status-filter')?.addEventListener('change', function() {
+    filterAndRenderTasks();
+  });
 });
 
-document.getElementById('refresh-tasks').addEventListener('click', function() {
-  if (workflowId) {
-    loadTasks();
+// Form Validation
+function setupFormValidation() {
+  const form = document.querySelector('form');
+  const inputs = form.querySelectorAll('input, select, textarea');
+  
+  // Real-time validation
+  inputs.forEach(input => {
+    input.addEventListener('input', () => {
+      validateField(input);
+      
+      // Update character counters for text inputs
+      if (input.type === 'text' && input.id.includes('counter')) {
+        const counterId = input.id + '-counter';
+        const counter = document.getElementById(counterId);
+        if (counter) {
+          counter.textContent = `${input.value.length}/${input.maxLength}`;
+        }
+      }
+    });
+    
+    // Add blur validation
+    input.addEventListener('blur', () => {
+      validateField(input);
+    });
+  });
+  
+  // Form submission validation
+  form.addEventListener('submit', function(e) {
+    let isValid = true;
+    inputs.forEach(input => {
+      if (!validateField(input)) {
+        isValid = false;
+      }
+    });
+    
+    if (!isValid) {
+      e.preventDefault();
+      showToast('Please fix the errors in the form', true);
+      
+      // Scroll to first error
+      const firstError = document.querySelector('.validation-error:not([style*="display: none"])');
+      if (firstError) {
+        firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    } else {
+      // Show loading state on submit button
+      const submitBtn = document.getElementById('submit-btn');
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
+    }
+  });
+}
+
+function validateField(field) {
+  const errorElement = document.getElementById(`${field.id}-error`);
+  
+  if (field.required && !field.value.trim()) {
+    showError(field, errorElement, 'This field is required');
+    return false;
   }
-});
+  
+  // Specific validations
+  if (field.id === 'DaysRequired' && (isNaN(field.value) || field.value < 1)) {
+    showError(field, errorElement, 'Please enter a valid number of days');
+    return false;
+  }
+  
+  // If we get here, field is valid
+  clearError(field, errorElement);
+  return true;
+}
 
+function showError(field, errorElement, message) {
+  field.style.borderColor = 'var(--danger)';
+  field.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.15)';
+  
+  if (errorElement) {
+    errorElement.textContent = message;
+    errorElement.style.display = 'block';
+  }
+  
+  return false;
+}
+
+function clearError(field, errorElement) {
+  field.style.borderColor = '';
+  field.style.boxShadow = '';
+  
+  if (errorElement) {
+    errorElement.style.display = 'none';
+  }
+  
+  return true;
+}
+
+// Department Selection Logic
+function setupDepartmentSelection() {
+  const depSelect = document.getElementById('DepId');
+  if (!depSelect) return;
+  
+  let debounceTimer;
+  
+  depSelect.addEventListener('change', function() {
+    clearTimeout(debounceTimer);
+    
+    // Show loading state
+    const daysInput = document.getElementById('DaysRequired');
+    daysInput.disabled = true;
+    daysInput.placeholder = 'Checking department...';
+    
+    debounceTimer = setTimeout(() => {
+      const selectedDepId = this.value;
+      if (!workflowId || !selectedDepId || !processId) return;
+      
+      fetch(`/api/check-department-step?workflowId=${workflowId}&depId=${selectedDepId}&processId=${processId}`)
+        .then(response => {
+          if (!response.ok) throw new Error('Network response was not ok.');
+          return response.json();
+        })
+        .then(data => {
+          if (data.isFirstStep && !data.hasTasks) {
+            daysInput.value = 1;
+            daysInput.disabled = true;
+            showToast('This is the first step with no existing tasks. Days set to 1.');
+          } else {
+            daysInput.disabled = false;
+            daysInput.value = '';
+            daysInput.placeholder = 'Enter estimated days';
+          }
+        })
+        .catch(err => {
+          console.error('Error:', err);
+          daysInput.disabled = false;
+          showToast('Error checking department status', true);
+        });
+    }, 500); // 500ms debounce
+  });
+}
+
+// Task Loading and Rendering
 function loadTasks() {
+  if (!workflowId) return;
+  
   isLoading = true;
   const loadingEl = document.getElementById('tasks-loading');
   const contentEl = document.getElementById('tasks-content');
+  const searchContainer = document.getElementById('search-container');
+  const paginationEl = document.getElementById('pagination');
 
+  // Show loading state
   loadingEl.style.display = 'block';
   contentEl.style.display = 'none';
+  searchContainer.style.display = 'none';
+  paginationEl.style.display = 'none';
+  
+  // Show loading skeleton
   loadingEl.innerHTML = `
-    <div class="spinner" style="width:2rem;height:2rem;border-width:3px;margin:0 auto;"></div>
-    <p>Loading tasks...</p>
+    <div class="skeleton-row"></div>
+    <div class="skeleton-row"></div>
+    <div class="skeleton-row"></div>
   `;
 
   fetch(`/api/tasks?workflowId=${workflowId}`)
@@ -635,35 +941,316 @@ function loadTasks() {
       return response.json();
     })
     .then(data => {
-      try {
-        renderTasks(data);
-      } catch (err) {
-        console.error("Error rendering tasks:", err);
-        loadingEl.innerHTML = `<p>Error displaying tasks.</p>`;
-      }
-      loadingEl.style.display = 'none';
-      contentEl.style.display = 'block';
+      currentTasks = data;
+      filterAndRenderTasks();
     })
     .catch(error => {
       console.error('Error loading tasks:', error);
       loadingEl.innerHTML = `
-        <p style="color:var(--danger);">
-          <i class="fas fa-exclamation-circle"></i>
-          Error loading tasks. Please try again.
-        </p>`;
+        <div class="no-tasks">
+          <i class="fas fa-exclamation-circle" style="color:var(--danger);font-size:2rem;margin-bottom:1rem;"></i>
+          <p>Error loading tasks. Please try again.</p>
+          <button class="btn btn-primary" onclick="loadTasks()">
+            <i class="fas fa-sync-alt"></i> Retry
+          </button>
+        </div>`;
     })
     .finally(() => {
       isLoading = false;
     });
 }
 
+function filterAndRenderTasks() {
+  const searchTerm = document.getElementById('task-search')?.value.toLowerCase() || '';
+  const statusFilter = document.getElementById('status-filter')?.value || '';
+  
+  // Filter tasks
+  let filteredTasks = currentTasks;
+  
+  if (searchTerm) {
+    filteredTasks = filteredTasks.filter(task => 
+      (task.TaskName && task.TaskName.toLowerCase().includes(searchTerm)) ||
+      (task.TaskPlanned && task.TaskPlanned.toLowerCase().includes(searchTerm))
+    );
+  }
+  
+  if (statusFilter) {
+    filteredTasks = filteredTasks.filter(task => getTaskStatus(task) === statusFilter);
+  }
+  
+  // Render paginated results
+  renderPaginatedTasks(filteredTasks);
+}
+
+function renderPaginatedTasks(tasks) {
+  const contentEl = document.getElementById('tasks-content');
+  const loadingEl = document.getElementById('tasks-loading');
+  const searchContainer = document.getElementById('search-container');
+  const paginationEl = document.getElementById('pagination');
+  
+  if (!tasks || tasks.length === 0) {
+    contentEl.innerHTML = `
+      <div class="no-tasks">
+        <i class="fas fa-inbox"></i>
+        <p>No tasks found matching your criteria.</p>
+      </div>`;
+    loadingEl.style.display = 'none';
+    contentEl.style.display = 'block';
+    searchContainer.style.display = 'flex';
+    paginationEl.style.display = 'none';
+    return;
+  }
+  
+  // Calculate pagination
+  const totalPages = Math.ceil(tasks.length / tasksPerPage);
+  currentPage = Math.min(currentPage, totalPages);
+  
+  // Get tasks for current page
+  const startIdx = (currentPage - 1) * tasksPerPage;
+  const endIdx = startIdx + tasksPerPage;
+  const paginatedTasks = tasks.slice(startIdx, endIdx);
+  
+  // Render tasks
+  renderTasks(paginatedTasks);
+  
+  // Render pagination controls
+  renderPagination(totalPages);
+  
+  // Update UI
+  loadingEl.style.display = 'none';
+  contentEl.style.display = 'block';
+  searchContainer.style.display = 'flex';
+  paginationEl.style.display = 'flex';
+}
+
+function renderTasks(tasks) {
+  const contentEl = document.getElementById('tasks-content');
+
+  // Group by department
+  const grouped = {};
+  tasks.forEach(task => {
+    if (!grouped[task.DepId]) {
+      grouped[task.DepId] = { DeptName: task.DeptName, Tasks: [] };
+    }
+    grouped[task.DepId].Tasks.push(task);
+  });
+
+  let html = '';
+  for (const depId in grouped) {
+    const group = grouped[depId];
+    
+    // Sort tasks by status (delayed first) then by planned date
+    group.Tasks.sort((a, b) => {
+      const statusA = getTaskStatus(a);
+      const statusB = getTaskStatus(b);
+      
+      // Delayed tasks first
+      if (statusA === 'delayed' && statusB !== 'delayed') return -1;
+      if (statusB === 'delayed' && statusA !== 'delayed') return 1;
+      
+      // Then by planned date
+      return new Date(a.PlannedDate) - new Date(b.PlannedDate);
+    });
+
+    html += `
+      <div class="department-group">
+        <div class="department-header">
+          <i class="fas fa-building"></i>
+          <h3>${group.DeptName}</h3>
+          <span class="task-count">${group.Tasks.length} tasks</span>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="tasks-table">
+            <thead>
+              <tr>
+                <th>Task Name</th>
+                <th>Description</th>
+                <th>Planned Date</th>
+                <th>Days</th>
+                <th>Status</th>
+                <th>Started</th>
+                <th>Finished</th>
+                <th>Delay</th>
+              </tr>
+            </thead>
+            <tbody>`;
+            
+    group.Tasks.forEach(task => {
+      const status = getTaskStatus(task);
+      const statusBadge = getStatusBadge(status);
+      const isOverdue = status === 'delayed' || 
+                       (status === 'pending' && new Date(task.PlannedDate) < new Date());
+      
+      html += `
+        <tr class="${isOverdue ? 'overdue-task' : ''}">
+          <td>
+            ${task.TaskName || '-'}
+            ${task.TaskNote ? `<i class="fas fa-sticky-note" title="${task.TaskNote}"></i>` : ''}
+          </td>
+          <td>${task.TaskPlanned || '-'}</td>
+          <td>${task.PlannedDate ? formatDate(task.PlannedDate) : '-'}</td>
+          <td>${task.DaysRequired || '-'}</td>
+          <td>${statusBadge}</td>
+          <td>${task.TimeStarted ? formatDateTime(task.TimeStarted) : '-'}</td>
+          <td>${task.TimeFinished ? formatDateTime(task.TimeFinished) : '-'}</td>
+          <td>
+            ${task.Delay != null ? `
+              <span class="${task.Delay > 0 ? 'delay-warning' : ''}">
+                ${task.Delay} days
+              </span>
+            ` : '-'}
+          </td>
+        </tr>`;
+    });
+    
+    html += `</tbody></table></div></div>`;
+  }
+
+  contentEl.innerHTML = html;
+  
+  // Make table headers sortable
+  const tables = document.querySelectorAll('.tasks-table');
+  tables.forEach(table => {
+    const headers = table.querySelectorAll('th');
+    headers.forEach((header, index) => {
+      if (header.textContent.trim() !== 'Status') {
+        header.style.cursor = 'pointer';
+        header.addEventListener('click', () => {
+          sortTable(table, index);
+        });
+      }
+    });
+  });
+}
+
+function renderPagination(totalPages) {
+  const paginationEl = document.getElementById('pagination');
+  
+  if (totalPages <= 1) {
+    paginationEl.style.display = 'none';
+    return;
+  }
+  
+  let html = '';
+  
+  // Previous button
+  html += `
+    <button class="page-btn" ${currentPage === 1 ? 'disabled' : ''} onclick="changePage(${currentPage - 1})">
+      <i class="fas fa-chevron-left"></i>
+    </button>`;
+  
+  // Page numbers
+  const maxVisiblePages = 5;
+  let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+  let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+  
+  if (endPage - startPage + 1 < maxVisiblePages) {
+    startPage = Math.max(1, endPage - maxVisiblePages + 1);
+  }
+  
+  if (startPage > 1) {
+    html += `<button class="page-btn" onclick="changePage(1)">1</button>`;
+    if (startPage > 2) {
+      html += `<span class="page-btn" style="cursor:default;">...</span>`;
+    }
+  }
+  
+  for (let i = startPage; i <= endPage; i++) {
+    html += `
+      <button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="changePage(${i})">
+        ${i}
+      </button>`;
+  }
+  
+  if (endPage < totalPages) {
+    if (endPage < totalPages - 1) {
+      html += `<span class="page-btn" style="cursor:default;">...</span>`;
+    }
+    html += `<button class="page-btn" onclick="changePage(${totalPages})">${totalPages}</button>`;
+  }
+  
+  // Next button
+  html += `
+    <button class="page-btn" ${currentPage === totalPages ? 'disabled' : ''} onclick="changePage(${currentPage + 1})">
+      <i class="fas fa-chevron-right"></i>
+    </button>`;
+  
+  paginationEl.innerHTML = html;
+}
+
+function changePage(newPage) {
+  currentPage = newPage;
+  filterAndRenderTasks();
+  window.scrollTo({ top: document.getElementById('tasks-container').offsetTop, behavior: 'smooth' });
+}
+
+function sortTable(table, columnIndex) {
+  const tbody = table.querySelector('tbody');
+  const rows = Array.from(tbody.querySelectorAll('tr'));
+  
+  // Determine sort direction
+  const isAscending = table.dataset.sortedColumn !== String(columnIndex) || 
+                     table.dataset.sortedDirection === 'desc';
+  
+  rows.sort((a, b) => {
+    const aText = a.cells[columnIndex].textContent.trim();
+    const bText = b.cells[columnIndex].textContent.trim();
+    
+    // Special handling for dates
+    if (columnIndex === 2 || columnIndex === 5 || columnIndex === 6) {
+      const aDate = new Date(aText);
+      const bDate = new Date(bText);
+      return isAscending ? aDate - bDate : bDate - aDate;
+    }
+    
+    // Numeric columns
+    if (columnIndex === 3 || columnIndex === 7) {
+      const aNum = parseInt(aText) || 0;
+      const bNum = parseInt(bText) || 0;
+      return isAscending ? aNum - bNum : bNum - aNum;
+    }
+    
+    // Status column (special handling)
+    if (columnIndex === 4) {
+      const aStatus = a.cells[columnIndex].querySelector('.status-badge')?.textContent.trim() || '';
+      const bStatus = b.cells[columnIndex].querySelector('.status-badge')?.textContent.trim() || '';
+      return isAscending ? aStatus.localeCompare(bStatus) : bStatus.localeCompare(aStatus);
+    }
+    
+    // Default text comparison
+    return isAscending ? aText.localeCompare(bText) : bText.localeCompare(aText);
+  });
+  
+  // Update sort state
+  table.dataset.sortedColumn = columnIndex;
+  table.dataset.sortedDirection = isAscending ? 'asc' : 'desc';
+  
+  // Rebuild table
+  rows.forEach(row => tbody.appendChild(row));
+  
+  // Update sort indicators
+  const headers = table.querySelectorAll('th');
+  headers.forEach((header, i) => {
+    header.innerHTML = header.textContent; // Remove any existing icons
+    
+    if (i === columnIndex) {
+      const icon = document.createElement('i');
+      icon.className = 'fas';
+      icon.classList.add(isAscending ? 'fa-arrow-up' : 'fa-arrow-down');
+      icon.style.marginLeft = '0.5rem';
+      header.appendChild(icon);
+    }
+  });
+}
+
+// Workflow Activation
 function setupWorkflowActivation() {
   const activateBtn = document.getElementById('activate-btn');
   const deactivateBtn = document.getElementById('deactivate-btn');
 
   if (activateBtn) {
     activateBtn.addEventListener('click', () => {
-      if (confirm('Are you sure you want to activate this workflow?')) {
+      if (confirm('Activating this workflow will make it available for use. Are you sure?')) {
         toggleWorkflowActivation(true, activateBtn);
       }
     });
@@ -671,7 +1258,7 @@ function setupWorkflowActivation() {
 
   if (deactivateBtn) {
     deactivateBtn.addEventListener('click', () => {
-      if (confirm('Are you sure you want to deactivate this workflow?')) {
+      if (confirm('Deactivating this workflow will prevent new tasks from being created. Are you sure?')) {
         toggleWorkflowActivation(false, deactivateBtn);
       }
     });
@@ -724,7 +1311,7 @@ function toggleWorkflowActivation(activate, button) {
   })
   .catch(err => {
     console.error(err);
-    showToast('Error updating workflow status.', true);
+    showToast('Error updating workflow status', true);
   })
   .finally(() => {
     button.disabled = false;
@@ -749,91 +1336,7 @@ function createActivateDeactivateButton(activate) {
   container.prepend(btn);
 }
 
-function showToast(message, isError = false) {
-  const toast = document.createElement('div');
-  toast.style.position = 'fixed';
-  toast.style.bottom = '1rem';
-  toast.style.right = '1rem';
-  toast.style.padding = '1rem 1.5rem';
-  toast.style.background = isError ? 'var(--danger)' : 'var(--success)';
-  toast.style.color = 'white';
-  toast.style.borderRadius = '6px';
-  toast.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
-  toast.style.fontSize = '0.95rem';
-  toast.style.zIndex = '9999';
-  toast.innerHTML = `
-    <i class="fas ${isError ? 'fa-exclamation-triangle' : 'fa-check-circle'}"></i>
-    ${message}
-  `;
-  document.body.appendChild(toast);
-  setTimeout(() => { toast.remove(); }, 3000);
-}
-
-function renderTasks(tasks) {
-  const contentEl = document.getElementById('tasks-content');
-
-  if (!tasks || tasks.length === 0) {
-    contentEl.innerHTML = `
-      <div class="no-tasks">
-        <i class="fas fa-inbox"></i>
-        <p>No tasks found for this workflow.</p>
-      </div>`;
-    return;
-  }
-
-  const grouped = {};
-  tasks.forEach(task => {
-    if (!grouped[task.DepId]) {
-      grouped[task.DepId] = { DeptName: task.DeptName, Tasks: [] };
-    }
-    grouped[task.DepId].Tasks.push(task);
-  });
-
-  let html = '';
-  for (const depId in grouped) {
-    const group = grouped[depId];
-    html += `
-      <div class="department-group">
-        <div class="department-header">
-          <i class="fas fa-building"></i>
-          <h3>${group.DeptName}</h3>
-        </div>
-        <div style="overflow-x:auto;">
-          <table class="tasks-table">
-            <thead>
-              <tr>
-                <th>Task Name</th>
-                <th>Description</th>
-                <th>Planned Date</th>
-                <th>Days</th>
-                <th>Status</th>
-                <th>Started</th>
-                <th>Finished</th>
-                <th>Delay</th>
-              </tr>
-            </thead>
-            <tbody>`;
-    group.Tasks.forEach(task => {
-      const status = getTaskStatus(task);
-      const statusBadge = getStatusBadge(status);
-      html += `
-        <tr>
-          <td>${task.TaskName || '-'}</td>
-          <td>${task.TaskPlanned || '-'}</td>
-          <td>${task.PlannedDate ? formatDate(task.PlannedDate) : '-'}</td>
-          <td>${task.DaysRequired || '-'}</td>
-          <td>${statusBadge}</td>
-          <td>${task.TimeStarted ? formatDateTime(task.TimeStarted) : '-'}</td>
-          <td>${task.TimeFinished ? formatDateTime(task.TimeFinished) : '-'}</td>
-          <td>${task.Delay != null ? `${task.Delay} days` : '-'}</td>
-        </tr>`;
-    });
-    html += `</tbody></table></div></div>`;
-  }
-
-  contentEl.innerHTML = html;
-}
-
+// Utility Functions
 function getTaskStatus(task) {
   if (task.TimeFinished) return 'completed';
   if (task.TimeStarted) return 'in-progress';
@@ -846,7 +1349,7 @@ function getStatusBadge(status) {
     case 'completed':
       return `<span class="status-badge status-completed"><i class="fas fa-check-circle"></i> Completed</span>`;
     case 'in-progress':
-      return `<span class="status-badge status-pending"><i class="fas fa-spinner"></i> In Progress</span>`;
+      return `<span class="status-badge status-in-progress"><i class="fas fa-spinner fa-pulse"></i> In Progress</span>`;
     case 'delayed':
       return `<span class="status-badge status-delayed"><i class="fas fa-exclamation-triangle"></i> Delayed</span>`;
     default:
@@ -855,16 +1358,76 @@ function getStatusBadge(status) {
 }
 
 function formatDate(dateString) {
-  return new Date(dateString).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  if (!dateString) return '-';
+  const options = { year: 'numeric', month: 'short', day: 'numeric' };
+  return new Date(dateString).toLocaleDateString(undefined, options);
 }
 
 function formatDateTime(dateString) {
-  return new Date(dateString).toLocaleString(undefined, {
-    year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
-  });
+  if (!dateString) return '-';
+  const options = {
+    year: 'numeric', 
+    month: 'short', 
+    day: 'numeric', 
+    hour: '2-digit', 
+    minute: '2-digit'
+  };
+  return new Date(dateString).toLocaleString(undefined, options);
 }
+
+function showToast(message, isError = false) {
+  const toast = document.createElement('div');
+  toast.style.position = 'fixed';
+  toast.style.bottom = '1rem';
+  toast.style.right = '1rem';
+  toast.style.padding = '1rem 1.5rem';
+  toast.style.background = isError ? 'var(--danger)' : 'var(--success)';
+  toast.style.color = 'white';
+  toast.style.borderRadius = '6px';
+  toast.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+  toast.style.fontSize = '0.95rem';
+  toast.style.zIndex = '9999';
+  toast.style.display = 'flex';
+  toast.style.alignItems = 'center';
+  toast.style.gap = '0.5rem';
+  toast.style.animation = 'fadeIn 0.3s ease forwards';
+  toast.innerHTML = `
+    <i class="fas ${isError ? 'fa-exclamation-triangle' : 'fa-check-circle'}"></i>
+    ${message}
+  `;
+  document.body.appendChild(toast);
+  
+  setTimeout(() => {
+    toast.style.animation = 'fadeOut 0.3s ease forwards';
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
+}
+
+// Add fadeOut animation to style
+const style = document.createElement('style');
+style.textContent = `
+  @keyframes fadeOut {
+    from { opacity: 1; transform: translateY(0); }
+    to { opacity: 0; transform: translateY(10px); }
+  }
+`;
+document.head.appendChild(style);
+
+// Set up refresh button
+document.getElementById('refresh-tasks').addEventListener('click', function() {
+  if (workflowId && !isLoading) {
+    loadTasks();
+  }
+});
+
+// Set up character counters
+document.getElementById('TaskName')?.addEventListener('input', function() {
+  document.getElementById('TaskName-counter').textContent = `${this.value.length}/100`;
+});
+
+document.getElementById('TaskPlanned')?.addEventListener('input', function() {
+  document.getElementById('TaskPlanned-counter').textContent = `${this.value.length}/255`;
+});
 </script>
-
-
-
-</html> 
+</body>
+</html>
