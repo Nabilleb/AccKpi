@@ -258,9 +258,16 @@ const usrAdmin = <%= usrAdmin ? 'true' : 'false' %>;
 
 
 document.addEventListener("DOMContentLoaded", async () => {
+      if (!usrAdmin) {
+    const btn = document.getElementById('newItemBtn');
+    if (btn) {
+      btn.style.display = 'none';
+    }
+  }
     await loadWorkflowData();
     setupEventListeners();
     updateTable();
+
 });
 
 async function loadWorkflowData() {
