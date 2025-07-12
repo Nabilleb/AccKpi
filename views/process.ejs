@@ -531,6 +531,49 @@
         </table>
       <% } %>
     </div>
+    <div id="addTaskContainer" style="display: none; margin-top: 2rem;">
+  <h3>Add Task for <span id="processNameTitle"></span></h3>
+  <form action="/add-task" method="POST" class="form-grid">
+    <input type="hidden" name="ProcessID" id="ProcessID" />
+
+    <div class="form-group">
+      <label for="TaskName" class="required-field">Task Name</label>
+      <input type="text" name="TaskName" id="TaskName" required maxlength="100" />
+    </div>
+
+    <div class="form-group">
+      <label for="TaskPlanned" class="required-field">Task Description</label>
+      <input type="text" name="TaskPlanned" id="TaskPlanned" required maxlength="255" />
+    </div>
+
+    <div class="form-group">
+      <label for="IsDateFixed">Fixed Deadline?</label>
+      <select name="IsDateFixed" id="IsDateFixed">
+        <option value="1">Yes</option>
+        <option value="0" selected>No</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="DaysRequired" class="required-field">Estimated Days</label>
+      <input type="number" name="DaysRequired" id="DaysRequired" min="1" required />
+    </div>
+
+      <div class="form-group">
+        <label for="DepId" class="required-field">Responsible Department</label>
+        <select name="DepId" id="DepId" required>
+          <option value="">Select a department</option>
+       
+        </select>
+      </div>
+=
+    <div class="form-actions">
+      <button type="button" class="btn btn-secondary" id="cancelAddTask">Cancel</button>
+      <button type="submit" class="btn btn-primary">Create Task</button>
+    </div>
+  </form>
+</div>
+
   </div>
 
   <script>
