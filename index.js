@@ -1409,7 +1409,7 @@ app.post("/postProcess", async (req, res) => {
     ? Steps.map(id => parseInt(id))
     : [parseInt(Steps)];
 
-  // Check for duplicates within the provided Steps array
+  // Check for duplicates within the Steps array
   const seenCombinations = new Set();
   let stepNumber = 1;
   for (const deptID of departmentIDs) {
@@ -1424,9 +1424,24 @@ app.post("/postProcess", async (req, res) => {
   }
 
   try {
-    // Insert Process
+    // 1️⃣ Duplicate name check - ignoring case and spaces
+    const duplicateCheck = await pool.request()
+      .input("ProcessName", sql.NVarChar, ProcessName.trim())
+      .query(`
+        SELECT COUNT(*) AS DuplicateCount
+        FROM tblProcess
+        WHERE UPPER(LTRIM(RTRIM(ProcessName))) = UPPER(LTRIM(RTRIM(@ProcessName)))
+      `);
+
+    if (duplicateCheck.recordset[0].DuplicateCount > 0) {
+      return res.status(400).send({
+        error: "A process with this name already exists.",
+      });
+    }
+
+    // 2️⃣ Insert Process
     const processResult = await pool.request()
-      .input("ProcessName", sql.VarChar(100), ProcessName)
+      .input("ProcessName", sql.VarChar(100), ProcessName.trim())
       .query(`
         INSERT INTO tblProcess (ProcessName)
         OUTPUT INSERTED.NumberOfProccessID AS ProcessID
@@ -1435,7 +1450,7 @@ app.post("/postProcess", async (req, res) => {
 
     const ProcessID = processResult.recordset[0].ProcessID;
 
-    // Insert Departments with Steps
+    // 3️⃣ Insert Departments with Steps
     stepNumber = 1;
     for (const deptID of departmentIDs) {
       const IsActive = stepNumber === 1 ? 1 : 0;
@@ -1452,12 +1467,14 @@ app.post("/postProcess", async (req, res) => {
 
       stepNumber++;
     }
-res.redirect("/addProcess");
+
+    res.redirect("/addProcess");
   } catch (err) {
     console.error("Error assigning process:", err);
     res.status(500).send({ error: "Failed to assign process." });
   }
 });
+
 
 
 
