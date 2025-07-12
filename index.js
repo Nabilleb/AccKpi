@@ -229,20 +229,27 @@ app.get("/api/workFlowDashData", async (req, res) => {
 
     const request = pool.request();
     let query = `
-      SELECT 
-        hdr.WorkFlowID AS HdrID,
-        p.ProcessName,
-        pk.PkgeName AS PackageName,
-        prj.projectID,
-        prj.ProjectName,
-        hdr.Status,
-        hdr.completionDate,
-        hdr.activate
-      FROM tblWorkflowHdr hdr
-      LEFT JOIN tblProcess p ON hdr.ProcessID = p.NumberOfProccessID
-      LEFT JOIN tblPackages pk ON hdr.PackageID = pk.PkgeID
-      LEFT JOIN tblProject prj ON hdr.ProjectID = prj.ProjectID
-    `;
+  SELECT 
+    hdr.WorkFlowID AS HdrID,
+    p.ProcessName,
+    pk.PkgeName AS PackageName,
+    prj.projectID,
+    prj.ProjectName,
+    hdr.Status,
+    hdr.completionDate,
+    hdr.activate
+  FROM tblWorkflowHdr hdr
+  LEFT JOIN tblProcess p ON hdr.ProcessID = p.NumberOfProccessID
+  LEFT JOIN tblPackages pk ON hdr.PackageID = pk.PkgeID
+  LEFT JOIN tblProject prj ON hdr.ProjectID = prj.ProjectID
+  ORDER BY 
+    CASE 
+      WHEN hdr.Status = 'Pending' THEN 0
+      ELSE 1
+    END,
+    hdr.Status ASC
+`;
+
 
     if (projectID) {
       request.input('ProjectID', sql.Int, projectID);
@@ -250,6 +257,7 @@ app.get("/api/workFlowDashData", async (req, res) => {
     }
   console.log()
     const result = await request.query(query);
+    console.log(result.recordset)
     res.json(result.recordset);
   } catch (err) {
     console.error("Error fetching workflow dashboard data:", err);

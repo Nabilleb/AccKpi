@@ -595,8 +595,8 @@ async function loadWorkflowData() {
         
         const response = await fetch("/api/workFlowDashData");
         if (!response.ok) throw new Error("Failed to fetch data");
-        
         allWorkflows = await response.json();
+        console.log(allWorkflows)
         filteredWorkflows = [...allWorkflows];
         
         hideLoading();
@@ -731,7 +731,6 @@ function sortWorkflows() {
 
 // Update the table with filtered and sorted data
 function updateTable() {
-    sortWorkflows();
     
     const startIndex = (currentPage - 1) * rowsPerPage;
     const endIndex = startIndex + rowsPerPage;
