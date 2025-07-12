@@ -3,9 +3,78 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="/styles/workflowDash.css">
     <title>System Engineering Workflow Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        :root {
+            --primary: #2563eb;
+            --primary-light: #dbeafe;
+            --primary-lighter: #eff6ff;
+            --primary-dark: #1d4ed8;
+            --secondary: #64748b;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --text: #1e293b;
+            --text-light: #64748b;
+            --border: #e2e8f0;
+            --background: #f8fafc;
+            --white: #ffffff;
+            --radius-sm: 6px;
+            --radius-md: 10px;
+            --radius-lg: 16px;
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+            --shadow-lg: 0 10px 25px rgba(0,0,0,0.1);
+            --gradient: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--background);
+            color: var(--text);
+            line-height: 1.5;
+            padding: 1rem;
+        }
+
+        .dashboard {
+            max-width: 1400px;
+            margin: 0 auto;
+            background-color: var(--white);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            overflow: hidden;
+        }
+
+        .header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: var(--primary-dark);
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
         /* Enhanced status badges with icons */
         .status-badge {
             padding: 4px 8px;
@@ -37,105 +106,45 @@
             background-color: #ffcdd2;
             color: #c62828;
         }
-        .highlight {
-            background-color: #fffde7;
-        }
-        .loading {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-        }
-        .no-results {
-            text-align: center;
-            padding: 20px;
-            color: #757575;
-        }
-        .table-container {
-            position: relative;
-            min-height: 300px;
-        }
-        .clickable {
-            cursor: pointer;
-            transition: background-color 0.2s ease;
-        }
-        .clickable:hover {
-            background-color: #f5f5f5;
-        }
-        .filter-active {
-            background-color: #e3f2fd;
-            border-color: #2196f3;
-        }
-        
-        /* Enhanced filter controls */
-        .filters {
-            display: flex;
-            gap: 16px;
-            flex-wrap: wrap;
-            padding: 12px 0;
+
+        /* Enhanced buttons */
+        .btn {
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius-sm);
+            display: inline-flex;
             align-items: center;
-        }
-        .filter-group {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-        .filter-label {
-            font-size: 12px;
-            color: #616161;
+            gap: 0.5rem;
+            cursor: pointer;
             font-weight: 500;
+            transition: all 0.2s ease;
+            font-size: 0.875rem;
         }
-        .filter-group select {
-            padding: 8px 12px;
-            border-radius: 4px;
-            border: 1px solid #e0e0e0;
-            min-width: 160px;
-        }
-        
-        /* Enhanced pagination */
-        .pagination {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 16px;
-            padding: 12px 0;
-        }
-        .page-info {
-            font-size: 14px;
-            color: #616161;
-        }
-        .page-controls {
-            display: flex;
-            gap: 8px;
-        }
-        .page-btn {
-            padding: 6px 10px;
-            border: 1px solid #e0e0e0;
-            border-radius: 4px;
-            background: white;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-width: 32px;
-            height: 32px;
-        }
-        .page-btn:hover:not(:disabled) {
-            background: #f5f5f5;
-        }
-        .page-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-        .page-btn.active {
-            background: #2196f3;
+        .btn-primary {
+            background: var(--primary);
             color: white;
-            border-color: #2196f3;
+            border: 1px solid var(--primary);
         }
-        
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            border-color: var(--primary-dark);
+        }
+        .btn-outline {
+            background: white;
+            color: var(--primary);
+            border: 1px solid var(--primary);
+        }
+        .btn-outline:hover {
+            background: var(--primary-lighter);
+        }
+        .btn-sm {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+        }
+
         /* Enhanced search box */
         .search-box {
             position: relative;
+            flex: 1;
             min-width: 240px;
         }
         .search-icon {
@@ -144,116 +153,235 @@
             top: 50%;
             transform: translateY(-50%);
             pointer-events: none;
+            color: var(--text-light);
         }
         .search-box input {
-            padding: 8px 12px 8px 36px;
-            border-radius: 4px;
-            border: 1px solid #e0e0e0;
+            padding: 0.5rem 1rem 0.5rem 2.25rem;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
             width: 100%;
-        }
-        
-        /* Enhanced buttons */
-        .btn {
-            padding: 8px 16px;
-            border-radius: 4px;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            cursor: pointer;
-            font-weight: 500;
             transition: all 0.2s ease;
         }
-        .btn-primary {
-            background: #2196f3;
-            color: white;
-            border: 1px solid #2196f3;
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
         }
-        .btn-primary:hover {
-            background: #1976d2;
-            border-color: #1976d2;
+
+        /* Enhanced filters */
+        .filters {
+            display: flex;
+            gap: 1rem;
+            padding: 1rem 1.5rem;
+            background-color: var(--primary-lighter);
+            border-bottom: 1px solid var(--border);
+            flex-wrap: wrap;
         }
-        .btn-outline {
-            background: white;
-            color: #2196f3;
-            border: 1px solid #2196f3;
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            min-width: 160px;
         }
-        .btn-outline:hover {
-            background: #e3f2fd;
+        .filter-label {
+            font-size: 0.75rem;
+            color: var(--text-light);
+            font-weight: 500;
         }
-        
+        .filter-group select {
+            padding: 0.5rem;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
+        }
+        .filter-group select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+        }
+
+        /* Enhanced table container */
+        .table-container {
+            position: relative;
+            min-height: 300px;
+            overflow-x: auto;
+        }
+
         /* Enhanced table */
         table {
             width: 100%;
             border-collapse: collapse;
+            font-size: 0.875rem;
         }
         th {
             text-align: left;
-            padding: 12px;
-            background: #f5f5f5;
-            position: relative;
+            padding: 0.75rem 1rem;
+            background: var(--primary-lighter);
+            color: var(--primary-dark);
+            font-weight: 500;
+            position: sticky;
+            top: 0;
+            z-index: 10;
         }
         td {
-            padding: 12px;
-            border-bottom: 1px solid #e0e0e0;
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border);
+            vertical-align: middle;
         }
+        tr:last-child td {
+            border-bottom: none;
+        }
+        tr:hover td {
+            background-color: var(--primary-lighter);
+        }
+
+        /* Sort indicators */
         .th-inner {
             display: flex;
             align-items: center;
-            gap: 4px;
+            gap: 0.25rem;
         }
         .sort-icon {
+            color: var(--text-light);
             cursor: pointer;
-            opacity: 0.5;
-            transition: opacity 0.2s ease;
+            transition: all 0.2s ease;
         }
         .sort-icon:hover {
-            opacity: 1;
+            color: var(--primary);
         }
         .sort-icon.active {
-            opacity: 1;
+            color: var(--primary);
         }
         .sort-icon.asc svg {
             transform: rotate(180deg);
         }
-        
-        /* Responsive improvements */
-        @media (max-width: 768px) {
-            .toolbar {
-                flex-direction: column;
-                gap: 12px;
-            }
-            .search-box {
-                width: 100%;
-            }
-            .filters {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-            .filter-group {
-                width: 100%;
-            }
-            .filter-group select {
-                width: 100%;
-            }
-            .pagination {
-                flex-direction: column;
-                gap: 12px;
-            }
+
+        /* Clickable rows */
+        .clickable {
+            cursor: pointer;
+            transition: background-color 0.2s ease;
         }
-        
-        /* Animation for loading */
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
+        .clickable:hover td {
+            background-color: var(--primary-lighter);
         }
-        table {
-            animation: fadeIn 0.3s ease;
+
+        /* Loading state */
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: none;
         }
-        
+        .loading-spinner {
+            width: 2.5rem;
+            height: 2.5rem;
+            border: 3px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* No results message */
+        .no-results {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-light);
+            display: none;
+        }
+        .no-results-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            color: var(--text-light);
+        }
+
+        /* Enhanced pagination */
+        .pagination {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--border);
+        }
+        .page-info {
+            font-size: 0.875rem;
+            color: var(--text-light);
+        }
+        .page-controls {
+            display: flex;
+            gap: 0.5rem;
+        }
+        .page-btn {
+            padding: 0.375rem 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: var(--white);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 2rem;
+            height: 2rem;
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
+        }
+        .page-btn:hover:not(:disabled) {
+            background: var(--primary-lighter);
+            border-color: var(--primary);
+        }
+        .page-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .page-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
         /* Badge icons */
         .badge-icon {
             width: 14px;
             height: 14px;
+        }
+
+        /* Responsive improvements */
+        @media (max-width: 768px) {
+            .toolbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .search-box {
+                min-width: 100%;
+            }
+            .filters {
+                flex-direction: column;
+                gap: 0.75rem;
+            }
+            .filter-group {
+                min-width: 100%;
+            }
+            .pagination {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: stretch;
+            }
+            .page-controls {
+                justify-content: center;
+            }
+        }
+
+        /* Animation for table rows */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        tr {
+            animation: fadeIn 0.3s ease forwards;
         }
     </style>
 </head>
@@ -267,11 +395,19 @@
                 System Engineering Workflow
             </h1>
             <div class="toolbar">
+                <div class="search-box">
+                    <span class="search-icon">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M15.5 14H14.71L14.43 13.73C15.41 12.59 16 11.11 16 9.5C16 5.91 13.09 3 9.5 3C5.91 3 3 5.91 3 9.5C3 13.09 5.91 16 9.5 16C11.11 16 12.59 15.41 13.73 14.43L14 14.71V15.5L19 20.49L20.49 19L15.5 14ZM9.5 14C7.01 14 5 11.99 5 9.5C5 7.01 7.01 5 9.5 5C11.99 5 14 7.01 14 9.5C14 11.99 11.99 14 9.5 14Z" fill="currentColor"/>
+                        </svg>
+                    </span>
+                    <input type="text" id="searchInput" placeholder="Search workflows...">
+                </div>
                 <button class="btn btn-primary" id="newItemBtn">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M19 13H13V19H11V13H5V11H11V5H13V11H19V13Z" fill="currentColor"/>
                     </svg>
-                    Add Workflow
+                    New Workflow
                 </button>
                 <button class="btn btn-outline" id="exportBtn">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -279,19 +415,11 @@
                     </svg>
                     Export
                 </button>
-                <div class="search-box">
-                    <span class="search-icon">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M15.5 14H14.71L14.43 13.73C15.41 12.59 16 11.11 16 9.5C16 5.91 13.09 3 9.5 3C5.91 3 3 5.91 3 9.5C3 13.09 5.91 16 9.5 16C11.11 16 12.59 15.41 13.73 14.43L14 14.71V15.5L19 20.49L20.49 19L15.5 14ZM9.5 14C7.01 14 5 11.99 5 9.5C5 7.01 7.01 5 9.5 5C11.99 5 14 7.01 14 9.5C14 11.99 11.99 14 9.5 14Z" fill="currentColor"/>
-                        </svg>
-                    </span>
-                    <input type="text" id="searchInput" placeholder="Search workflow...">
-                </div>
                 <button class="btn btn-outline" id="resetFiltersBtn">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M6 13H18V11H6V13ZM3 6V8H21V6H3ZM10 18H14V16H10V18Z" fill="currentColor"/>
                     </svg>
-                    Reset Filters
+                    Reset
                 </button>
             </div>
         </div>
@@ -318,6 +446,7 @@
                     <option value="Deployment">Deployment</option>
                 </select>
             </div>
+
             <div class="filter-group">
                 <label class="filter-label">Status</label>
                 <select id="statusFilter">
@@ -332,20 +461,16 @@
         </div>
 
         <div class="table-container">
-            <div class="loading" id="loadingIndicator" style="display: none;">
-                <svg width="50" height="50" viewBox="0 0 50 50" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="25" cy="25" r="20" stroke="#e0e0e0" stroke-width="4" fill="none"/>
-                    <circle cx="25" cy="25" r="20" stroke="#2196f3" stroke-width="4" fill="none" stroke-dasharray="125.664" stroke-dashoffset="125.664">
-                        <animate attributeName="stroke-dashoffset" from="125.664" to="0" dur="1s" repeatCount="indefinite"/>
-                    </circle>
-                </svg>
+            <div class="loading" id="loadingIndicator">
+                <div class="loading-spinner"></div>
             </div>
+
             <table>
                 <thead>
                     <tr>
                         <th>
                             <div class="th-inner">
-                                HDR ID
+                                Workflow ID
                                 <span class="sort-icon" data-sort="HdrID">
                                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                         <path d="M7 10L12 15L17 10H7Z" fill="currentColor"/>
@@ -395,7 +520,7 @@
                         </th>
                         <th>
                             <div class="th-inner">
-                                Completed Date
+                                Due Date
                                 <span class="sort-icon" data-sort="DueDate">
                                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                         <path d="M7 10L12 15L17 10H7Z" fill="currentColor"/>
@@ -407,26 +532,31 @@
                     </tr>
                 </thead>
                 <tbody id="workflowTableBody">
+                    <!-- Table content will be populated by JavaScript -->
                 </tbody>
             </table>
 
-            <div class="no-results" id="noResultsMessage" style="display: none;">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-bottom: 12px;">
-                    <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 20C7.59 20 4 16.41 4 12C4 7.59 7.59 4 12 4C16.41 4 20 7.59 20 12C20 16.41 16.41 20 12 20ZM13 17H11V15H13V17ZM13 13H11V7H13V13Z" fill="#757575"/>
-                </svg>
-                <p>No workflows match your search criteria.</p>
-                <button class="btn btn-outline" onclick="resetFilters()">Reset Filters</button>
-            </div>
-
-            <div class="pagination">
-                <div class="page-info" id="pageInfo">Showing 0 to 0 of 0 entries</div>
-                <div class="page-controls" id="paginationControls">
+            <div class="no-results" id="noResultsMessage">
+                <div class="no-results-icon">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 20C7.59 20 4 16.41 4 12C4 7.59 7.59 4 12 4C16.41 4 20 7.59 20 12C20 16.41 16.41 20 12 20ZM13 17H11V15H13V17ZM13 13H11V7H13V13Z" fill="currentColor"/>
+                    </svg>
                 </div>
+                <p>No workflows match your search criteria</p>
+                <button class="btn btn-outline" id="resetNoResultsBtn">Reset Filters</button>
+            </div>
+        </div>
+
+        <div class="pagination">
+            <div class="page-info" id="pageInfo">Showing 0 to 0 of 0 entries</div>
+            <div class="page-controls" id="paginationControls">
+                <!-- Pagination buttons will be populated by JavaScript -->
             </div>
         </div>
     </div>
 
 <script>
+// Global variables
 let allWorkflows = [];
 let filteredWorkflows = [];
 let currentPage = 1;
@@ -435,11 +565,13 @@ let sortColumn = 'HdrID';
 let sortDirection = 'asc';
 let debounceTimer;
 
+// DOM elements
 const searchInput = document.getElementById('searchInput');
 const projectFilter = document.getElementById('projectFilter');
 const processFilter = document.getElementById('processFilter');
 const statusFilter = document.getElementById('statusFilter');
 const resetFiltersBtn = document.getElementById('resetFiltersBtn');
+const resetNoResultsBtn = document.getElementById('resetNoResultsBtn');
 const newItemBtn = document.getElementById('newItemBtn');
 const exportBtn = document.getElementById('exportBtn');
 const workflowTableBody = document.getElementById('workflowTableBody');
@@ -447,86 +579,70 @@ const noResultsMessage = document.getElementById('noResultsMessage');
 const loadingIndicator = document.getElementById('loadingIndicator');
 const pageInfo = document.getElementById('pageInfo');
 const paginationControls = document.getElementById('paginationControls');
-const usrAdmin = <%= usrAdmin ? 'true' : 'false' %>;
 
+// Initialize the dashboard
 document.addEventListener("DOMContentLoaded", async () => {
-    if (!usrAdmin) {
-        newItemBtn.style.display = 'none';
-    }
-    
     await loadWorkflowData();
     setupEventListeners();
     updateTable();
     updatePagination();
 });
 
+// Load workflow data from API
 async function loadWorkflowData() {
     try {
-        loadingIndicator.style.display = 'block';
-        workflowTableBody.innerHTML = '';
+        showLoading();
         
         const response = await fetch("/api/workFlowDashData");
+        if (!response.ok) throw new Error("Failed to fetch data");
+        
         allWorkflows = await response.json();
-        
-        // Add activate status if not present
-        allWorkflows = allWorkflows.map(wf => ({
-            ...wf,
-            activate: wf.activate !== undefined ? wf.activate : true
-        }));
-        
         filteredWorkflows = [...allWorkflows];
-        loadingIndicator.style.display = 'none';
+        
+        hideLoading();
     } catch (err) {
         console.error("Failed to load workflow dashboard data", err);
-        loadingIndicator.style.display = 'none';
-        workflowTableBody.innerHTML = `
-            <tr>
-                <td colspan="7" style="text-align: center; color: #c62828; padding: 24px;">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-bottom: 8px;">
-                        <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM13 17H11V15H13V17ZM13 13H11V7H13V13Z" fill="#c62828"/>
-                    </svg>
-                    <p>Failed to load data. Please try again.</p>
-                    <button class="btn btn-outline" onclick="loadWorkflowData()" style="margin-top: 8px;">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4C7.58 4 4 7.58 4 12C4 16.42 7.58 20 12 20C15.73 20 18.84 17.45 19.73 14H17.65C16.83 16.33 14.61 18 12 18C8.69 18 6 15.31 6 12C6 8.69 8.69 6 12 6C13.66 6 15.14 6.69 16.22 7.78L13 11H20V4L17.65 6.35Z" fill="currentColor"/>
-                        </svg>
-                        Retry
-                    </button>
-                </td>
-            </tr>
-        `;
+        hideLoading();
+        showError("Failed to load data. Please try again.");
     }
 }
 
+// Set up event listeners
 function setupEventListeners() {
-    // Debounced search input
+    // Search input with debounce
     searchInput.addEventListener('input', () => {
         clearTimeout(debounceTimer);
         debounceTimer = setTimeout(applyFilters, 300);
     });
     
+    // Filter dropdowns
     projectFilter.addEventListener('change', applyFilters);
     processFilter.addEventListener('change', applyFilters);
     statusFilter.addEventListener('change', applyFilters);
     
+    // Reset filters button
     resetFiltersBtn.addEventListener('click', resetFilters);
+    resetNoResultsBtn.addEventListener('click', resetFilters);
     
+    // New workflow button
     newItemBtn.addEventListener('click', () => {
         window.location.href = '/workflow/new';
     });
     
+    // Export button
     exportBtn.addEventListener('click', exportData);
     
-    // Enhanced sort icons with visual feedback
+    // Sort icons
     document.querySelectorAll('.sort-icon').forEach(icon => {
         icon.addEventListener('click', (e) => {
             const column = e.currentTarget.getAttribute('data-sort');
             
-            // Update all sort icons
+            // Reset all sort icons
             document.querySelectorAll('.sort-icon').forEach(i => {
                 i.classList.remove('active', 'asc');
             });
             
+            // Toggle sort direction if same column
             if (sortColumn === column) {
                 sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
             } else {
@@ -546,6 +662,7 @@ function setupEventListeners() {
     });
 }
 
+// Apply all filters
 function applyFilters() {
     currentPage = 1;
     
@@ -573,6 +690,7 @@ function applyFilters() {
     updatePagination();
 }
 
+// Reset all filters
 function resetFilters() {
     searchInput.value = '';
     projectFilter.value = '';
@@ -582,6 +700,7 @@ function resetFilters() {
     applyFilters();
 }
 
+// Sort workflows based on current sort column and direction
 function sortWorkflows() {
     filteredWorkflows.sort((a, b) => {
         let valueA = a[sortColumn];
@@ -591,57 +710,41 @@ function sortWorkflows() {
         if (valueA === null || valueA === undefined) valueA = '';
         if (valueB === null || valueB === undefined) valueB = '';
         
-        // Handle numeric sorting for HdrID
+        // Numeric sorting for HdrID
         if (sortColumn === 'HdrID') {
             return sortDirection === 'asc' ? valueA - valueB : valueB - valueA;
         }
         
-        // Handle date sorting
-        if (sortColumn === 'DueDate' || sortColumn === 'completionDate') {
+        // Date sorting for DueDate
+        if (sortColumn === 'DueDate') {
             const dateA = valueA ? new Date(valueA) : new Date(0);
             const dateB = valueB ? new Date(valueB) : new Date(0);
             return sortDirection === 'asc' ? dateA - dateB : dateB - dateA;
         }
         
         // Default string sorting
-        if (sortDirection === 'asc') {
-            return String(valueA).localeCompare(String(valueB));
-        } else {
-            return String(valueB).localeCompare(String(valueA));
-        }
+        return sortDirection === 'asc' 
+            ? String(valueA).localeCompare(String(valueB))
+            : String(valueB).localeCompare(String(valueA));
     });
 }
 
+// Update the table with filtered and sorted data
 function updateTable() {
     sortWorkflows();
-
-    // Filter based on activate and usrAdmin
-    const activeWorkflows = filteredWorkflows.filter(wf => {
-        if (usrAdmin) {
-            // Admin sees everything
-            return true;
-        } else {
-            // Non-admin sees only activate = true
-            return wf.activate === true;
-        }
-    });
-
+    
     const startIndex = (currentPage - 1) * rowsPerPage;
     const endIndex = startIndex + rowsPerPage;
-    const paginatedWorkflows = activeWorkflows.slice(startIndex, endIndex);
-
-    if (activeWorkflows.length === 0) {
+    const paginatedWorkflows = filteredWorkflows.slice(startIndex, endIndex);
+    
+    if (filteredWorkflows.length === 0) {
         noResultsMessage.style.display = 'block';
         workflowTableBody.innerHTML = '';
     } else {
         noResultsMessage.style.display = 'none';
         workflowTableBody.innerHTML = paginatedWorkflows.map(workflow => `
-            <tr class="clickable" 
-                data-hdrid="${workflow.HdrID}"
-                data-process="${workflow.ProcessName || ''}"
-                data-package="${workflow.PackageName || ''}"
-                data-active="${workflow.activate}">
-                <td>${workflow.HdrID}</td>
+            <tr class="clickable" data-hdrid="${workflow.HdrID}">
+                <td>${workflow.HdrID || '-'}</td>
                 <td>${workflow.ProcessName || '-'}</td>
                 <td>${workflow.PackageName || '-'}</td>
                 <td>${workflow.ProjectName || '-'}</td>
@@ -651,65 +754,45 @@ function updateTable() {
                         ${workflow.Status || '-'}
                     </span>
                 </td>
-                <td>${workflow.completionDate ? formatDate(workflow.completionDate) : '-'}</td>
+                <td>${workflow.DueDate ? formatDate(workflow.DueDate) : '-'}</td>
                 <td>
-                    <button class="btn btn-outline btn-sm action-btn" data-action="view" style="padding: 4px 8px;">
+                    <button class="btn btn-outline btn-sm action-btn" data-action="view">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M12 4.5C7 4.5 2.73 7.61 1 12C2.73 16.39 7 19.5 12 19.5C17 19.5 21.27 16.39 23 12C21.27 7.61 17 4.5 12 4.5ZM12 17C9.24 17 7 14.76 7 12C7 9.24 9.24 7 12 7C14.76 7 17 9.24 17 12C17 14.76 14.76 17 12 17ZM12 9C10.34 9 9 10.34 9 12C9 13.66 10.34 15 12 15C13.66 15 15 13.66 15 12C15 10.34 13.66 9 12 9Z" fill="currentColor"/>
                         </svg>
+                        View
                     </button>
-                    ${usrAdmin ? `
-                    <button class="btn btn-outline btn-sm action-btn" data-action="edit" style="padding: 4px 8px;">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M3 17.25V21H6.75L17.81 9.94L14.06 6.19L3 17.25ZM20.71 7.04C21.1 6.65 21.1 6.02 20.71 5.63L18.37 3.29C17.98 2.9 17.35 2.9 16.96 3.29L15.13 5.12L18.88 8.87L20.71 7.04Z" fill="currentColor"/>
-                        </svg>
-                    </button>
-                    ` : ''}
                 </td>
             </tr>
         `).join('');
-
-        // Add click handlers to rows and action buttons
+        
+        // Add click handlers to rows
         document.querySelectorAll('tr.clickable').forEach(row => {
-            // Row click handler
             row.addEventListener('click', (e) => {
                 // Don't navigate if clicking on an action button
                 if (e.target.closest('.action-btn')) return;
                 
                 const hdrId = row.getAttribute('data-hdrid');
-                const process = row.getAttribute('data-process');
-                const packageName = row.getAttribute('data-package');
-                const isActive = row.getAttribute('data-active');
+                window.location.href = `/userpage/${hdrId}`;
+            });
+        });
+        
+        // Add click handlers to action buttons
+        document.querySelectorAll('.action-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const action = btn.getAttribute('data-action');
+                const hdrId = btn.closest('tr').getAttribute('data-hdrid');
                 
-                if (usrAdmin) {
-                    window.location.href = `/add-task?workflowId=${encodeURIComponent(hdrId)}&process=${encodeURIComponent(process)}&package=${encodeURIComponent(packageName)}&active=${isActive}`;
-                } else {
+                if (action === 'view') {
                     window.location.href = `/userpage/${hdrId}`;
                 }
-            });
-            
-            // Action button handlers
-            row.querySelectorAll('.action-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    const action = btn.getAttribute('data-action');
-                    const hdrId = row.getAttribute('data-hdrid');
-                    
-                    if (action === 'view') {
-                        if (usrAdmin) {
-                            window.location.href = `/add-task?workflowId=${encodeURIComponent(hdrId)}`;
-                        } else {
-                            window.location.href = `/userpage/${hdrId}`;
-                        }
-                    } else if (action === 'edit') {
-                        window.location.href = `/workflow/edit/${hdrId}`;
-                    }
-                });
             });
         });
     }
 }
 
+// Get appropriate icon for status badge
 function getStatusIcon(status) {
     if (!status) return '';
     
@@ -724,12 +807,18 @@ function getStatusIcon(status) {
     return icons[status] || '';
 }
 
+// Format date for display
 function formatDate(dateString) {
     if (!dateString) return '';
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+    return date.toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric' 
+    });
 }
 
+// Update pagination controls
 function updatePagination() {
     const totalPages = Math.ceil(filteredWorkflows.length / rowsPerPage);
     
@@ -738,7 +827,7 @@ function updatePagination() {
     const endItem = Math.min(currentPage * rowsPerPage, filteredWorkflows.length);
     pageInfo.textContent = `Showing ${startItem} to ${endItem} of ${filteredWorkflows.length} entries`;
     
-    // Update pagination buttons
+    // Clear existing pagination controls
     paginationControls.innerHTML = '';
     
     // Previous button
@@ -759,15 +848,17 @@ function updatePagination() {
     });
     paginationControls.appendChild(prevButton);
     
-    // Page buttons
+    // Page number buttons
     const maxVisiblePages = 5;
     let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
     let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
     
+    // Adjust if we don't have enough pages
     if (endPage - startPage + 1 < maxVisiblePages) {
         startPage = Math.max(1, endPage - maxVisiblePages + 1);
     }
     
+    // First page and ellipsis if needed
     if (startPage > 1) {
         const firstPageButton = document.createElement('button');
         firstPageButton.className = 'page-btn';
@@ -783,10 +874,13 @@ function updatePagination() {
             const ellipsis = document.createElement('span');
             ellipsis.textContent = '...';
             ellipsis.style.padding = '0 8px';
+            ellipsis.style.display = 'flex';
+            ellipsis.style.alignItems = 'center';
             paginationControls.appendChild(ellipsis);
         }
     }
     
+    // Page number buttons
     for (let i = startPage; i <= endPage; i++) {
         const pageButton = document.createElement('button');
         pageButton.className = `page-btn ${i === currentPage ? 'active' : ''}`;
@@ -799,11 +893,14 @@ function updatePagination() {
         paginationControls.appendChild(pageButton);
     }
     
+    // Last page and ellipsis if needed
     if (endPage < totalPages) {
         if (endPage < totalPages - 1) {
             const ellipsis = document.createElement('span');
             ellipsis.textContent = '...';
             ellipsis.style.padding = '0 8px';
+            ellipsis.style.display = 'flex';
+            ellipsis.style.alignItems = 'center';
             paginationControls.appendChild(ellipsis);
         }
         
@@ -837,27 +934,33 @@ function updatePagination() {
     paginationControls.appendChild(nextButton);
 }
 
+// Export data to CSV
 function exportData() {
     if (filteredWorkflows.length === 0) {
         alert('No data to export');
         return;
     }
     
-    const headers = ['HDR ID', 'Process', 'Package', 'Project', 'Status', 'Completed Date'];
+    // Define CSV headers
+    const headers = ['HDR ID', 'Process', 'Package', 'Project', 'Status', 'Due Date'];
+    
+    // Create CSV rows
     const rows = filteredWorkflows.map(workflow => [
         workflow.HdrID,
         workflow.ProcessName || '',
         workflow.PackageName || '',
         workflow.ProjectName || '',
         workflow.Status || '',
-        workflow.completionDate ? formatDate(workflow.completionDate) : ''
+        workflow.DueDate ? formatDate(workflow.DueDate) : ''
     ]);
     
+    // Create CSV content
     let csvContent = headers.join(',') + '\n';
     rows.forEach(row => {
         csvContent += row.map(field => `"${field.toString().replace(/"/g, '""')}"`).join(',') + '\n';
     });
     
+    // Create download link
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -865,9 +968,42 @@ function exportData() {
     link.setAttribute('download', `workflows_export_${new Date().toISOString().slice(0, 10)}.csv`);
     link.style.display = 'none';
     
+    // Trigger download
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+}
+
+// Show loading indicator
+function showLoading() {
+    loadingIndicator.style.display = 'flex';
+    workflowTableBody.innerHTML = '';
+    noResultsMessage.style.display = 'none';
+}
+
+// Hide loading indicator
+function hideLoading() {
+    loadingIndicator.style.display = 'none';
+}
+
+// Show error message
+function showError(message) {
+    workflowTableBody.innerHTML = `
+        <tr>
+            <td colspan="7" style="text-align: center; padding: 2rem; color: var(--danger);">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-bottom: 0.5rem;">
+                    <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM13 17H11V15H13V17ZM13 13H11V7H13V13Z" fill="currentColor"/>
+                </svg>
+                <p>${message}</p>
+                <button class="btn btn-outline" onclick="loadWorkflowData()" style="margin-top: 0.5rem;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4C7.58 4 4 7.58 4 12C4 16.42 7.58 20 12 20C15.73 20 18.84 17.45 19.73 14H17.65C16.83 16.33 14.61 18 12 18C8.69 18 6 15.31 6 12C6 8.69 8.69 6 12 6C13.66 6 15.14 6.69 16.22 7.78L13 11H20V4L17.65 6.35Z" fill="currentColor"/>
+                    </svg>
+                    Retry
+                </button>
+            </td>
+        </tr>
+    `;
 }
 </script>
 </body>

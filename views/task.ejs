@@ -30,6 +30,8 @@
 
     * {
       box-sizing: border-box;
+      margin: 0;
+      padding: 0;
     }
 
     body {
@@ -130,7 +132,7 @@
       color: var(--danger);
     }
 
-    input, select {
+    input, select, textarea {
       padding: 0.875rem 1.25rem;
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
@@ -140,13 +142,13 @@
       width: 100%;
     }
 
-    input:focus, select:focus {
+    input:focus, select:focus, textarea:focus {
       outline: none;
       border-color: var(--primary);
       box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
     }
 
-    input::placeholder {
+    input::placeholder, textarea::placeholder {
       color: var(--text-light);
       opacity: 0.6;
     }
@@ -591,47 +593,15 @@
     </div>
   <% } %>
 
-  <form action="/add-task" method="POST" class="form-grid">
-    <% if (workflowDetails) { %>
+  <form id="taskForm" action="/add-task" method="POST" class="form-grid">
+    <input type="hidden" name="ProcessID" value="<%= workflowDetails.ProcessID %>">
+    
     <div class="workflow-info">
-      <div><i class="fas fa-project-diagram"></i> <strong>Workflow ID:</strong> <%= workflowDetails.workFlowID %></div>
       <div><i class="fas fa-sitemap"></i> <strong>Process:</strong> <%= workflowDetails.ProcessName %></div>
-      <div><i class="fas fa-box-open"></i> <strong>Package:</strong> <%= workflowDetails.PackageName %></div>
-      <div>
-        <strong>Status:</strong>
-        <% if (workflowDetails.activate === '1' || workflowDetails.activate === 'true') { %>
-          <span class="status-badge status-completed"><i class="fas fa-check"></i> Active</span>
-        <% } else { %>
-          <span class="status-badge status-pending"><i class="fas fa-times"></i> Inactive</span>
-        <% } %>
-      </div>
+     
+      <div><i class="fas fa-layer-group"></i> <strong>Steps:</strong> <%= processSteps.length %></div>
+    
     </div>
-
-    <div class="form-actions" style="margin-top: 1rem;">
-      <% if (workflowDetails.activate === '1' || workflowDetails.activate === 'true') { %>
-        <button type="button" class="btn btn-danger" id="deactivate-btn">
-          <i class="fas fa-ban"></i> Deactivate Workflow
-        </button>
-      <% } else { %>
-        <button type="button" class="btn btn-success" id="activate-btn">
-          <i class="fas fa-check"></i> Activate Workflow
-        </button>
-      <% } %>
-    </div>
-
-      <input type="hidden" name="WorkFlowHdrID" value="<%= workflowDetails.workFlowID %>"/>
-    <% } else { %>
-      <div class="form-group">
-        <label for="WorkFlowHdrID" class="required-field">Workflow Header</label>
-        <select name="WorkFlowHdrID" id="WorkFlowHdrID" required>
-          <option value="">Select workflow</option>
-          <% workflow.forEach(wf => { %>
-            <option value="<%= wf.workFlowID %>"><%= wf.workFlowID %></option>
-          <% }) %>
-        </select>
-        <div class="validation-error" id="WorkFlowHdrID-error">Please select a workflow</div>
-      </div>
-    <% } %>
 
     <% if (processSteps && processSteps.length > 0) { %>
       <div class="process-steps">
@@ -653,7 +623,7 @@
 
     <div class="form-group">
       <label for="TaskPlanned" class="required-field">Task Description</label>
-      <input type="text" name="TaskPlanned" id="TaskPlanned" required placeholder="Describe what needs to be done" maxlength="255"/>
+      <textarea name="TaskPlanned" id="TaskPlanned" required placeholder="Describe what needs to be done" maxlength="255" rows="3"></textarea>
       <div class="char-counter" id="TaskPlanned-counter">0/255</div>
       <div class="validation-error" id="TaskPlanned-error">Description is required</div>
     </div>
@@ -672,20 +642,16 @@
       <div class="validation-error" id="DaysRequired-error">Please enter a valid number of days</div>
     </div>
 
-    <% if (isAdmin) { %>
-      <div class="form-group">
-        <label for="DepId" class="required-field">Responsible Department</label>
-        <select name="DepId" id="DepId" required>
-          <option value="">Select a department</option>
-          <% departments.forEach(d => { %>
-            <option value="<%= d.DepartmentID %>" <%= d.DepartmentID === departmentId ? "selected" : "" %>><%= d.DeptName %></option>
-          <% }) %>
-        </select>
-        <div class="validation-error" id="DepId-error">Please select a department</div>
-      </div>
-    <% } else { %>
-      <input type="hidden" name="DepId" value="<%= departmentId %>"/>
-    <% } %>
+    <div class="form-group">
+      <label for="DepId" class="required-field">Responsible Department</label>
+      <select name="DepId" id="DepId" required>
+        <option value="">Select a department</option>
+        <% departments.forEach(d => { %>
+          <option value="<%= d.DepartmentID %>" <%= d.DepartmentID === departmentId ? "selected" : "" %>><%= d.DeptName %></option>
+        <% }) %>
+      </select>
+      <div class="validation-error" id="DepId-error">Please select a department</div>
+    </div>
 
     <div class="form-actions">
       <button type="button" class="btn btn-secondary" onclick="history.back()">
@@ -707,7 +673,7 @@
       </div>
     </div>
     
-    <div class="search-container" id="search-container" style="display: none;">
+    <div class="search-container">
       <input type="text" class="search-input" id="task-search" placeholder="Search tasks...">
       <select class="search-input" id="status-filter">
         <option value="">All Statuses</option>
@@ -736,8 +702,7 @@ let isLoading = false;
 let currentTasks = [];
 let currentPage = 1;
 const tasksPerPage = 10;
-const workflowId = <%= JSON.stringify(workflowDetails?.workFlowID ?? null) %>;
-const processId = <%= JSON.stringify(workflowDetails?.ProcessID ?? null) %>;
+const processId = "<%= workflowDetails.ProcessID %>";
 
 // DOM Content Loaded
 document.addEventListener('DOMContentLoaded', function() {
@@ -747,35 +712,37 @@ document.addEventListener('DOMContentLoaded', function() {
   // Initialize department selection logic
   setupDepartmentSelection();
   
-  // Load tasks if workflow ID exists
-  if (workflowId) {
-    loadTasks();
-    setupWorkflowActivation();
-    
-    // Set up periodic refresh (every 2 minutes)
-    setInterval(() => {
-      if (!isLoading && document.visibilityState === 'visible') {
-        loadTasks();
-      }
-    }, 120000);
-  } else {
-    document.getElementById('tasks-loading').innerHTML = '<p>Select a workflow to view tasks.</p>';
-  }
+  // Load tasks for this process
+  loadTasks();
+  
+  // Set up periodic refresh (every 2 minutes)
+  setInterval(() => {
+    if (!isLoading && document.visibilityState === 'visible') {
+      loadTasks();
+    }
+  }, 120000);
   
   // Set up task search functionality
-  document.getElementById('task-search')?.addEventListener('input', function() {
+  document.getElementById('task-search').addEventListener('input', function() {
     filterAndRenderTasks();
   });
   
   // Set up status filter
-  document.getElementById('status-filter')?.addEventListener('change', function() {
+  document.getElementById('status-filter').addEventListener('change', function() {
     filterAndRenderTasks();
+  });
+  
+  // Set up refresh button
+  document.getElementById('refresh-tasks').addEventListener('click', function() {
+    if (!isLoading) {
+      loadTasks();
+    }
   });
 });
 
 // Form Validation
 function setupFormValidation() {
-  const form = document.querySelector('form');
+  const form = document.getElementById('taskForm');
   const inputs = form.querySelectorAll('input, select, textarea');
   
   // Real-time validation
@@ -784,7 +751,7 @@ function setupFormValidation() {
       validateField(input);
       
       // Update character counters for text inputs
-      if (input.type === 'text' && input.id.includes('counter')) {
+      if (input.type === 'text' || input.tagName === 'TEXTAREA') {
         const counterId = input.id + '-counter';
         const counter = document.getElementById(counterId);
         if (counter) {
@@ -885,9 +852,9 @@ function setupDepartmentSelection() {
     
     debounceTimer = setTimeout(() => {
       const selectedDepId = this.value;
-      if (!workflowId || !selectedDepId || !processId) return;
+      if (!processId || !selectedDepId) return;
       
-      fetch(`/api/check-department-step?workflowId=${workflowId}&depId=${selectedDepId}&processId=${processId}`)
+      fetch(`/api/check-department-step?processId=${processId}&depId=${selectedDepId}`)
         .then(response => {
           if (!response.ok) throw new Error('Network response was not ok.');
           return response.json();
@@ -914,18 +881,16 @@ function setupDepartmentSelection() {
 
 // Task Loading and Rendering
 function loadTasks() {
-  if (!workflowId) return;
+  if (!processId) return;
   
   isLoading = true;
   const loadingEl = document.getElementById('tasks-loading');
   const contentEl = document.getElementById('tasks-content');
-  const searchContainer = document.getElementById('search-container');
   const paginationEl = document.getElementById('pagination');
 
   // Show loading state
   loadingEl.style.display = 'block';
   contentEl.style.display = 'none';
-  searchContainer.style.display = 'none';
   paginationEl.style.display = 'none';
   
   // Show loading skeleton
@@ -935,7 +900,7 @@ function loadTasks() {
     <div class="skeleton-row"></div>
   `;
 
-  fetch(`/api/tasks?workflowId=${workflowId}`)
+  fetch(`/api/tasks?processId=${processId}`)
     .then(response => {
       if (!response.ok) throw new Error('Network response was not ok');
       return response.json();
@@ -961,8 +926,8 @@ function loadTasks() {
 }
 
 function filterAndRenderTasks() {
-  const searchTerm = document.getElementById('task-search')?.value.toLowerCase() || '';
-  const statusFilter = document.getElementById('status-filter')?.value || '';
+  const searchTerm = document.getElementById('task-search').value.toLowerCase();
+  const statusFilter = document.getElementById('status-filter').value;
   
   // Filter tasks
   let filteredTasks = currentTasks;
@@ -985,7 +950,6 @@ function filterAndRenderTasks() {
 function renderPaginatedTasks(tasks) {
   const contentEl = document.getElementById('tasks-content');
   const loadingEl = document.getElementById('tasks-loading');
-  const searchContainer = document.getElementById('search-container');
   const paginationEl = document.getElementById('pagination');
   
   if (!tasks || tasks.length === 0) {
@@ -996,7 +960,6 @@ function renderPaginatedTasks(tasks) {
       </div>`;
     loadingEl.style.display = 'none';
     contentEl.style.display = 'block';
-    searchContainer.style.display = 'flex';
     paginationEl.style.display = 'none';
     return;
   }
@@ -1019,7 +982,6 @@ function renderPaginatedTasks(tasks) {
   // Update UI
   loadingEl.style.display = 'none';
   contentEl.style.display = 'block';
-  searchContainer.style.display = 'flex';
   paginationEl.style.display = 'flex';
 }
 
@@ -1243,99 +1205,6 @@ function sortTable(table, columnIndex) {
   });
 }
 
-// Workflow Activation
-function setupWorkflowActivation() {
-  const activateBtn = document.getElementById('activate-btn');
-  const deactivateBtn = document.getElementById('deactivate-btn');
-
-  if (activateBtn) {
-    activateBtn.addEventListener('click', () => {
-      if (confirm('Activating this workflow will make it available for use. Are you sure?')) {
-        toggleWorkflowActivation(true, activateBtn);
-      }
-    });
-  }
-
-  if (deactivateBtn) {
-    deactivateBtn.addEventListener('click', () => {
-      if (confirm('Deactivating this workflow will prevent new tasks from being created. Are you sure?')) {
-        toggleWorkflowActivation(false, deactivateBtn);
-      }
-    });
-  }
-}
-
-function toggleWorkflowActivation(activate, button) {
-  button.disabled = true;
-  const originalText = button.innerHTML;
-  button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
-
-  fetch(`/workflow/${workflowId}/activation`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ activate })
-  })
-  .then(response => {
-    if (!response.ok) throw new Error('Failed to update workflow status.');
-    return response.json();
-  })
-  .then(data => {
-    showToast(`Workflow ${activate ? 'activated' : 'deactivated'} successfully!`);
-
-    const statusContainer = document.querySelector('.workflow-info div:nth-child(4)');
-    if (activate) {
-      statusContainer.innerHTML = `
-        <strong>Status:</strong>
-        <span class="status-badge status-completed"><i class="fas fa-check"></i> Active</span>
-      `;
-      button.style.display = 'none';
-      let deactivateBtn = document.getElementById('deactivate-btn');
-      if (deactivateBtn) {
-        deactivateBtn.style.display = 'inline-flex';
-      } else {
-        createActivateDeactivateButton(false);
-      }
-    } else {
-      statusContainer.innerHTML = `
-        <strong>Status:</strong>
-        <span class="status-badge status-pending"><i class="fas fa-times"></i> Inactive</span>
-      `;
-      button.style.display = 'none';
-      let activateBtn = document.getElementById('activate-btn');
-      if (activateBtn) {
-        activateBtn.style.display = 'inline-flex';
-      } else {
-        createActivateDeactivateButton(true);
-      }
-    }
-  })
-  .catch(err => {
-    console.error(err);
-    showToast('Error updating workflow status', true);
-  })
-  .finally(() => {
-    button.disabled = false;
-    button.innerHTML = originalText;
-  });
-}
-
-function createActivateDeactivateButton(activate) {
-  const container = document.querySelector('.form-actions');
-  const btn = document.createElement('button');
-  btn.type = 'button';
-  btn.className = `btn ${activate ? 'btn-success' : 'btn-danger'}`;
-  btn.id = activate ? 'activate-btn' : 'deactivate-btn';
-  btn.innerHTML = activate
-    ? `<i class="fas fa-check"></i> Activate Workflow`
-    : `<i class="fas fa-ban"></i> Deactivate Workflow`;
-  btn.addEventListener('click', () => {
-    if (confirm(`Are you sure you want to ${activate ? 'activate' : 'deactivate'} this workflow?`)) {
-      toggleWorkflowActivation(activate, btn);
-    }
-  });
-  container.prepend(btn);
-}
-
 // Utility Functions
 function getTaskStatus(task) {
   if (task.TimeFinished) return 'completed';
@@ -1413,19 +1282,12 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
-// Set up refresh button
-document.getElementById('refresh-tasks').addEventListener('click', function() {
-  if (workflowId && !isLoading) {
-    loadTasks();
-  }
-});
-
 // Set up character counters
-document.getElementById('TaskName')?.addEventListener('input', function() {
+document.getElementById('TaskName').addEventListener('input', function() {
   document.getElementById('TaskName-counter').textContent = `${this.value.length}/100`;
 });
 
-document.getElementById('TaskPlanned')?.addEventListener('input', function() {
+document.getElementById('TaskPlanned').addEventListener('input', function() {
   document.getElementById('TaskPlanned-counter').textContent = `${this.value.length}/255`;
 });
 </script>

@@ -356,32 +356,41 @@ console.log(tasksResult.recordset)
 
 app.get("/addProcess", isAdmin, async (req, res) => {
   try {
-    // Fetch departments
-    const deptResult = await pool.request()
-      .query("SELECT DepartmentID, DeptName FROM tblDepartments");
-    const departments = deptResult.recordset;
+    const processesResult = await pool.request().query(`
+      SELECT NumberOfProccessID, ProcessName, processDesc
+      FROM tblProcess
+    `);
 
-    // Fetch processes
-    const processResult = await pool.request()
-      .query(`
-        SELECT TOP (1000)
-          NumberOfProccessID,
-          ProcessName,
-          processDesc
-        FROM [AccDBF].[dbo].[tblProcess]
-      `);
-    const processes = processResult.recordset;
-   console.log(processes)
-    // Render with both datasets
-    res.render("process.ejs", {
-      departments,
-      processes
+    const processes = processesResult.recordset;
+
+    const stepsResult = await pool.request().query(`
+      SELECT p.ProcessID, p.StepOrder, d.DeptName
+      FROM tblProcessDepartment p
+      JOIN tblDepartments d ON p.DepartmentID = d.DepartmentID
+      ORDER BY p.ProcessID, p.StepOrder
+    `);
+
+    const stepsByProcess = {};
+    stepsResult.recordset.forEach(step => {
+      if (!stepsByProcess[step.ProcessID]) stepsByProcess[step.ProcessID] = [];
+      stepsByProcess[step.ProcessID].push(step);
+    });
+
+    const departmentsResult = await pool.request().query(`SELECT DepartmentID, DeptName FROM tblDepartments`);
+
+    res.render("process", {
+      processes,
+      stepsByProcess,
+      departments: departmentsResult.recordset,
+      isAdmin: req.session.user.usrAdmin,
+      departmentId: req.session.user.DepartmentID
     });
   } catch (err) {
-    console.error("Failed to fetch departments or processes:", err);
-    res.status(500).send("Error loading process data.");
+    console.error("Error loading processes:", err);
+    res.status(500).send("Error loading processes.");
   }
 });
+
 
 
 app.get('/api/tasks/by-department/:departmentID', async (req, res) => {
@@ -589,27 +598,17 @@ if (!isActive) {
 });
 
 app.get('/add-task',ensureAuthenticated ,async (req, res) => {
-  const workflowId = parseInt(req.query.workflowId);
-  const processName = req.query.process;
-  const packageName = req.query.package;
+  const processId = req.query.processId;
   const isActive = req.query.active
+  const processName = req.query.process
+  console.log(req.query)
   console.log("isactive", isActive)
   let workflowDetails = null;
   let processSteps = [];
   let departments = [];
 
-  if (workflowId) {
     // Get processID from tblWorkflowHdr
-    const hdrResult = await pool.request()
-      .input('workflowId', sql.Int, workflowId)
-      .query(`
-        SELECT ProcessID
-        FROM tblWorkflowHdr
-        WHERE workFlowID = @workflowId
-      `);
-
-    if (hdrResult.recordset.length > 0) {
-      const processId = hdrResult.recordset[0].ProcessID;
+  
 
       // Get the steps for this process
       const stepsResult = await pool.request()
@@ -631,14 +630,11 @@ app.get('/add-task',ensureAuthenticated ,async (req, res) => {
       }));
 
       workflowDetails = {
-        workFlowID: workflowId,
         ProcessName: processName,
-        PackageName: packageName,
         ProcessID: processId,
-        activate: isActive
       };
-    }
-  }
+    
+  
 
   // If no workflow selected, fallback to all departments
   if (departments.length === 0) {
@@ -648,7 +644,7 @@ app.get('/add-task',ensureAuthenticated ,async (req, res) => {
 
   const workflowHdrResult = await pool.request().query(`SELECT * FROM tblWorkflowHdr`);
 console.log(workflowDetails)
-  res.render('task', {
+  res.render('task.ejs', {
     workflowDetails,
     workflow: workflowHdrResult.recordset,
     departments,
@@ -662,38 +658,49 @@ console.log(workflowDetails)
 
 app.get('/api/tasks', ensureAuthenticated, async (req, res) => {
   try {
-    const workflowId = parseInt(req.query.workflowId);
-    if (!workflowId) return res.status(400).json({ error: 'workflowId is required' });
+    const processId = parseInt(req.query.processId);
+    if (!processId) {
+      return res.status(400).json({ error: 'processId is required' });
+    }
 
     const result = await pool.request()
-      .input('workflowId', sql.Int, workflowId)
+      .input('processId', sql.Int, processId)
       .query(`
         SELECT 
           t.TaskID,
           t.TaskName,
           t.TaskPlanned,
+          t.IsTaskSelected,
+          t.IsDateFixed,
           t.PlannedDate,
           t.DaysRequired,
           t.DepId,
           d.DeptName,
+          t.Priority,
+          t.PredecessorID,
+          t.linkTasks,
+          t.WorkFlowHdrID,
           wd.TimeStarted,
           wd.TimeFinished,
           wd.DelayReason,
-          wd.Delay
+          wd.Delay,
+          wd.assignUser
         FROM tblTasks t
         LEFT JOIN tblWorkflowDtl wd 
-          ON t.TaskID = wd.TaskID AND t.WorkFlowHdrID = wd.workFlowHdrId
-        JOIN tblDepartments d ON t.DepId = d.DepartmentID
-        WHERE t.WorkFlowHdrID = @workflowId
+          ON t.TaskID = wd.TaskID
+        JOIN tblDepartments d 
+          ON t.DepId = d.DepartmentID
+        WHERE t.proccessID = @processId
         ORDER BY t.DepId, t.Priority, t.TaskID
       `);
 
     res.json(result.recordset);
   } catch (error) {
-    console.error(error);
+    console.error('Error fetching tasks by processId:', error);
     res.status(500).json({ error: 'Server error' });
   }
 });
+
 
 
 app.get('/department/:departmentId/tasks', async (req, res) => {
@@ -946,52 +953,51 @@ app.post("/addPackage", async (req, res) => {
 });
 
 app.post('/add-task', ensureAuthenticated, async (req, res) => {
-  const { TaskName, TaskPlanned, PlannedDate, DepId, DaysRequired, WorkFlowHdrID } = req.body;
-  const IsDateFixed = req.body.IsDateFixed == '1' ? 1 : 0;
-console.log('REQ.BODY:', req.body);
+  const {
+    TaskName,
+    TaskPlanned,
+    PlannedDate,
+    DepId,
+    DaysRequired,
+    ProcessID
+  } = req.body;
+
+  const IsDateFixed = req.body.IsDateFixed === '1' ? 1 : 0;
+
+  console.log('REQ.BODY:', req.body);
 
   try {
     // 1. Duplicate check
     const duplicateCheck = await pool.request()
       .input('TaskName', sql.NVarChar, TaskName)
       .input('DepId', sql.Int, DepId)
+      .input('ProcessID', sql.Int, ProcessID)
       .query(`
         SELECT COUNT(*) AS DuplicateCount
         FROM tblTasks
-        WHERE TaskName = @TaskName AND DepId = @DepId
+        WHERE TaskName = @TaskName
+          AND DepId = @DepId
+          AND proccessID = @ProcessID
       `);
+
     if (duplicateCheck.recordset[0].DuplicateCount > 0) {
       return res.status(400).send('A task with the same name already exists in this department.');
     }
 
-    // 2. Is first task in department/workflow?
+    // 2. Check if first task
     const existingTasksResult = await pool.request()
       .input('DepId', sql.Int, DepId)
-      .input('WorkFlowHdrID', sql.Int, WorkFlowHdrID)
+      .input('ProcessID', sql.Int, ProcessID)
       .query(`
         SELECT COUNT(*) AS TaskCount
-        FROM tblTasks t
-        INNER JOIN tblWorkflowDtl d ON t.TaskID = d.TaskID
-        WHERE t.DepId = @DepId AND d.workFlowHdrId = @WorkFlowHdrID
+        FROM tblTasks
+        WHERE DepId = @DepId
+          AND proccessID = @ProcessID
       `);
 
     const isFirstTask = existingTasksResult.recordset[0].TaskCount === 0;
 
-    // 3. Get process ID from workflow header
-    const hdrResult = await pool.request()
-      .input('WorkFlowHdrID', sql.Int, WorkFlowHdrID)
-      .query(`
-        SELECT ProcessID, pk.PkgeName AS PackageName, p.ProcessName, h.workFlowID,h.activate
-        FROM tblWorkflowHdr h
-        JOIN tblPackages pk ON h.packageID = pk.PkgeID
-        JOIN tblProcess p ON h.processID = p.NumberOfProccessID
-        WHERE h.workFlowID = @WorkFlowHdrID
-      `);
-
-    const workflowDetails = hdrResult.recordset[0];
-    const ProcessID = workflowDetails?.ProcessID ?? null;
-
-    // 4. Get step order for this department
+    // 3. Get StepOrder
     const stepOrderResult = await pool.request()
       .input('DepId', sql.Int, DepId)
       .input('ProcessID', sql.Int, ProcessID)
@@ -1003,7 +1009,7 @@ console.log('REQ.BODY:', req.body);
 
     const StepOrder = stepOrderResult.recordset[0]?.StepOrder ?? null;
 
-    // 5. Set selection and planned date
+    // 4. Determine if selected and planned date
     let IsTaskSelected = 0;
     let PlannedDateToInsert = PlannedDate;
 
@@ -1014,39 +1020,39 @@ console.log('REQ.BODY:', req.body);
       PlannedDateToInsert = now.toISOString().split('T')[0];
     }
 
-    // 6. Determine Priority
+    // 5. Priority
     const priorityResult = await pool.request()
       .input('DepId', sql.Int, DepId)
-      .input('WorkFlowHdrID', sql.Int, WorkFlowHdrID)
+      .input('ProcessID', sql.Int, ProcessID)
       .query(`
-        SELECT ISNULL(MAX(t.Priority), 0) + 1 AS NewPriority
-        FROM tblTasks t
-        INNER JOIN tblWorkflowDtl d ON t.TaskID = d.TaskID
-        WHERE t.DepId = @DepId AND d.workFlowHdrId = @WorkFlowHdrID
+        SELECT ISNULL(MAX(Priority), 0) + 1 AS NewPriority
+        FROM tblTasks
+        WHERE DepId = @DepId
+          AND proccessID = @ProcessID
       `);
 
     const newPriority = priorityResult.recordset[0].NewPriority;
 
-    // 7. Determine Predecessor
+    // 6. Predecessor
     let PredecessorID = null;
     if (!isFirstTask) {
       const predecessorResult = await pool.request()
         .input('DepId', sql.Int, DepId)
-        .input('WorkFlowHdrID', sql.Int, WorkFlowHdrID)
+        .input('ProcessID', sql.Int, ProcessID)
         .query(`
-          SELECT TOP 1 t.TaskID
-          FROM tblTasks t
-          INNER JOIN tblWorkflowDtl d ON t.TaskID = d.TaskID
-          WHERE t.DepId = @DepId AND d.workFlowHdrId = @WorkFlowHdrID
-          ORDER BY t.Priority DESC
+          SELECT TOP 1 TaskID
+          FROM tblTasks
+          WHERE DepId = @DepId
+            AND proccessID = @ProcessID
+          ORDER BY Priority DESC
         `);
       if (predecessorResult.recordset.length > 0) {
         PredecessorID = predecessorResult.recordset[0].TaskID;
       }
     }
 
-    // 8. Insert task
-    const taskInsertResult = await pool.request()
+    // 7. Insert into tblTasks
+    const insertResult = await pool.request()
       .input('TaskName', sql.NVarChar, TaskName)
       .input('TaskPlanned', sql.NVarChar, TaskPlanned)
       .input('IsTaskSelected', sql.Bit, IsTaskSelected)
@@ -1054,84 +1060,72 @@ console.log('REQ.BODY:', req.body);
       .input('PlannedDate', sql.Date, PlannedDateToInsert)
       .input('DepId', sql.Int, DepId)
       .input('Priority', sql.Int, newPriority)
-      .input('PredecessorID', sql.Int, PredecessorID)
+      .input('PredecessorID', PredecessorID ? sql.Int : sql.Int, PredecessorID)
       .input('DaysRequired', sql.Int, DaysRequired)
-      .input('WorkFlowHdrID', sql.Int, WorkFlowHdrID)
+      .input('ProcessID', sql.Int, ProcessID)
       .query(`
         INSERT INTO tblTasks (
-          TaskName, TaskPlanned, IsTaskSelected, IsDateFixed, PlannedDate,
-          DepId, Priority, PredecessorID, DaysRequired, WorkFlowHdrID
+          TaskName,
+          TaskPlanned,
+          IsTaskSelected,
+          IsDateFixed,
+          PlannedDate,
+          DepId,
+          Priority,
+          PredecessorID,
+          DaysRequired,
+          proccessID
         )
         OUTPUT INSERTED.TaskID
         VALUES (
-          @TaskName, @TaskPlanned, @IsTaskSelected, @IsDateFixed, @PlannedDate,
-          @DepId, @Priority, @PredecessorID, @DaysRequired, @WorkFlowHdrID
+          @TaskName,
+          @TaskPlanned,
+          @IsTaskSelected,
+          @IsDateFixed,
+          @PlannedDate,
+          @DepId,
+          @Priority,
+          @PredecessorID,
+          @DaysRequired,
+          @ProcessID
         )
       `);
 
-    const newTaskId = taskInsertResult.recordset[0].TaskID;
+    const newTaskId = insertResult.recordset[0].TaskID;
+    console.log('✅ New task inserted:', newTaskId);
 
-    // 9. Insert into workflow detail
+    // 8. Insert into tblWorkflowDtl without WorkflowHdr
     await pool.request()
       .input('WorkflowName', sql.NVarChar, TaskName)
       .input('TaskID', sql.Int, newTaskId)
-      .input('WorkFlowHdrID', sql.Int, WorkFlowHdrID)
       .query(`
         INSERT INTO tblWorkflowDtl (
-          WorkflowName, TaskID, workFlowHdrId
+          WorkflowName,
+          TaskID
         )
         VALUES (
-          @WorkflowName, @TaskID, @WorkFlowHdrID
+          @WorkflowName,
+          @TaskID
         )
       `);
 
-    // 🔟 Fetch workflow header and process steps (same logic as GET)
-    const [workflowHdrResult, processStepsResult] = await Promise.all([
-      pool.request().query(`SELECT * FROM tblWorkflowHdr`),
-      pool.request()
-        .input('ProcessID', sql.Int, ProcessID)
-        .query(`
-          SELECT pd.StepOrder, d.DeptName, d.DepartmentID
-          FROM tblProcessDepartment pd
-          JOIN tblDepartments d ON pd.DepartmentID = d.DepartmentID
-          WHERE pd.ProcessID = @ProcessID
-          ORDER BY pd.StepOrder
-        `)
-    ]);
+    console.log('✅ tblWorkflowDtl inserted');
 
-    const processSteps = processStepsResult.recordset;
+    // 9. Redirect back to add-task page
+    res.redirect(`/add-task?processId=${ProcessID}`);
 
-    // ✅ Departments only those linked to the process
-    const departments = processSteps.map(step => ({
-      DepartmentID: step.DepartmentID,
-      DeptName: step.DeptName
-    }));
-
-    const isAdmin = req.session.user.usrAdmin;
-    const departmentId = req.session.user.DepartmentID;
-console.log(workflowDetails)
-    // ✅ Render the page with consistent department list
-    res.render('task.ejs', {
-      success: 'Task added successfully!',
-      departments,
-      workflow: workflowHdrResult.recordset,
-      departmentId,
-      isAdmin,
-      workflowDetails,
-      processSteps,
-      WorkFlowHdrID
-    });
-console.log("post method",workflowDetails)
   } catch (err) {
     console.error('Error adding task:', err);
     res.status(500).send('Failed to add task');
   }
 });
 
-app.get('/api/check-department-step', async (req, res) => {
-  const { workflowId, depId, processId } = req.query;
 
-  if (!workflowId || !depId || !processId) {
+
+app.get('/api/check-department-step', async (req, res) => {
+  const { depId, processId } = req.query;
+
+  if ( !depId || !processId) {
     return res.status(400).json({ error: 'Missing parameters' });
   }
 
@@ -1139,7 +1133,6 @@ app.get('/api/check-department-step', async (req, res) => {
     const request = pool.request();
     request.input('ProcessID', processId);
     request.input('DepID', depId);
-    request.input('WorkflowID', workflowId);
 
     // Check if this department is first step in the process
     const processResult = await request.query(`
@@ -1154,7 +1147,7 @@ app.get('/api/check-department-step', async (req, res) => {
     const taskResult = await request.query(`
       SELECT TOP 1 TaskID
       FROM tblTasks
-      WHERE WorkFlowHdrID = @WorkflowID AND DepId = @DepID
+      WHERE proccessID = @processId AND DepId = @DepID
     `);
 
     const hasTasks = taskResult.recordset.length > 0;
@@ -1346,22 +1339,61 @@ app.post('/api/workflows', async (req, res) => {
   const { processID, projectID, packageID, status } = req.body;
 
   try {
-    await pool.request()
+    const poolRequest = pool.request();
+
+    // 1️⃣ Insert workflow header
+    const insertResult = await poolRequest
       .input('processID', sql.Int, processID)
       .input('projectID', sql.Int, projectID)
       .input('packageID', sql.Int, packageID)
       .input('status', sql.NVarChar, status)
       .query(`
         INSERT INTO tblWorkflowHdr (processID, projectID, packageID, status)
+        OUTPUT INSERTED.workFlowID
         VALUES (@processID, @projectID, @packageID, @status)
       `);
 
-    res.status(201).json({ message: 'Workflow created' });
+    const newWorkflowID = insertResult.recordset[0].workFlowID;
+
+    console.log('✅ Inserted WorkflowHdrID:', newWorkflowID);
+
+    // 2️⃣ Update tblTasks (set WorkFlowHdrID where proccessID matches)
+    await pool.request()
+      .input('workflowID', sql.Int, newWorkflowID)
+      .input('processID', sql.Int, processID)
+      .query(`
+        UPDATE tblTasks
+        SET WorkFlowHdrID = @workflowID
+        WHERE proccessID = @processID
+      `);
+
+    console.log('✅ Updated tblTasks');
+
+    // 3️⃣ Update tblWorkflowDtl for all tasks linked to this process
+    await pool.request()
+      .input('workflowID', sql.Int, newWorkflowID)
+      .input('processID', sql.Int, processID)
+      .query(`
+        UPDATE d
+        SET d.workFlowHdrId = @workflowID
+        FROM tblWorkflowDtl d
+        INNER JOIN tblTasks t ON d.TaskID = t.TaskID
+        WHERE t.proccessID = @processID
+      `);
+
+    console.log('✅ Updated tblWorkflowDtl');
+
+    res.status(201).json({
+      message: 'Workflow created and tasks updated',
+      workflowID: newWorkflowID
+    });
+
   } catch (err) {
-    console.error(err);
+    console.error('Error inserting workflow:', err);
     res.status(500).json({ error: 'Database error' });
   }
 });
+
 
 
 

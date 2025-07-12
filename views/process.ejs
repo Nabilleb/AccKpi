@@ -432,6 +432,255 @@
     .gap-2 {
       gap: var(--spacing-sm);
     }
+
+       .form-container {
+      max-width: 900px;
+      margin: 2rem auto;
+      background: var(--white);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      overflow: hidden;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .form-container:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-lg), 0 15px 30px rgba(0,0,0,0.12);
+    }
+
+    .form-header {
+      background: var(--gradient);
+      color: var(--white);
+      padding: 1.75rem 2.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .form-header::before {
+      content: "";
+      position: absolute;
+      top: -50px;
+      right: -50px;
+      width: 150px;
+      height: 150px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 50%;
+    }
+
+    .form-header::after {
+      content: "";
+      position: absolute;
+      bottom: -80px;
+      right: -30px;
+      width: 200px;
+      height: 200px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 50%;
+    }
+
+    .form-header h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin: 0;
+      position: relative;
+      z-index: 1;
+    }
+
+    .form-header i {
+      font-size: 1.5em;
+      color: rgba(255,255,255,0.9);
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1.75rem;
+      padding: 2.5rem;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      position: relative;
+    }
+
+    label {
+      font-weight: 600;
+      color: var(--text);
+      font-size: 0.95rem;
+    }
+
+    .required-field::after {
+      content: " *";
+      color: var(--danger);
+    }
+
+    input, select {
+      padding: 0.875rem 1.25rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 1rem;
+      transition: all 0.2s ease;
+      background: var(--white);
+      width: 100%;
+    }
+
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+    }
+
+    input::placeholder {
+      color: var(--text-light);
+      opacity: 0.6;
+    }
+
+    .form-actions {
+      grid-column: 1 / -1;
+      display: flex;
+      justify-content: flex-end;
+      gap: 1.25rem;
+      border-top: 1px solid var(--border);
+      padding: 1.75rem 2.5rem;
+      margin-top: 1rem;
+    }
+
+    .btn {
+      padding: 0.875rem 1.75rem;
+      border: none;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      transition: all 0.2s ease;
+      font-size: 1rem;
+    }
+
+    .btn-primary {
+      background: var(--gradient);
+      color: var(--white);
+      box-shadow: 0 4px 6px rgba(59, 130, 246, 0.15);
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-dark);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 12px rgba(59, 130, 246, 0.2);
+    }
+
+    .btn-secondary {
+      background: var(--white);
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    .btn-secondary:hover {
+      background: var(--background);
+      border-color: var(--text-light);
+    }
+
+    .btn-success {
+      background: var(--success);
+      color: white;
+    }
+
+    .btn-danger {
+      background: var(--danger);
+      color: white;
+    }
+
+    .workflow-info {
+      background: var(--primary-light);
+      padding: 1.25rem;
+      border-radius: var(--radius-sm);
+      grid-column: 1 / -1;
+      font-size: 0.95rem;
+      border-left: 4px solid var(--primary);
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .workflow-info i {
+      color: var(--primary);
+      margin-right: 0.5rem;
+    }
+
+    .success-message {
+      background: rgba(16, 185, 129, 0.1);
+      padding: 1.25rem;
+      border-radius: var(--radius-sm);
+      grid-column: 1 / -1;
+      font-size: 0.95rem;
+      border-left: 4px solid var(--success);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .success-message i {
+      color: var(--success);
+      font-size: 1.25rem;
+    }
+
+    .process-steps {
+      grid-column: 1 / -1;
+      margin-top: 0.5rem;
+      padding: 1.5rem;
+      background: var(--background);
+      border-radius: var(--radius-md);
+      border: 1px dashed var(--border);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .process-steps::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      background: var(--gradient);
+    }
+
+    .process-steps h3 {
+      margin: 0 0 1rem 0;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .process-steps h3 i {
+      font-size: 1.25rem;
+    }
+
+    .process-steps ol {
+      padding-left: 1.5rem;
+      margin: 0;
+      display: grid;
+      gap: 0.75rem;
+    }
+
+    .process-steps li {
+      padding-left: 0.5rem;
+    }
+
+    .process-steps li::marker {
+      color: var(--primary);
+      font-weight: 600;
+    }
   </style>
 </head>
 <body>
@@ -497,82 +746,115 @@
           <p>Create your first process by filling out the form above.</p>
         </div>
       <% } else { %>
-        <table id="processesTable">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Process Name</th>
-              <th>Description</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <% processes.forEach(proc => { %>
-              <tr>
-                <td><%= proc.NumberOfProccessID %></td>
-                <td><strong><%= proc.ProcessName %></strong></td>
-                <td><%= proc.processDesc || "<span style='color: var(--text-light)'>—</span>" %></td>
-                <td>
-                  <div class="actions">
-                    <a href="/addTask?processId=<%= proc.NumberOfProccessID %>" class="add-task-btn">
-                      Add Task
-                    </a>
-                    <button class="btn btn-secondary btn-sm btn-icon" title="Edit">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                      </svg>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            <% }); %>
-          </tbody>
-        </table>
+     <table>
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Name</th>
+      <th>Description</th>
+      <th>Steps</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% processes.forEach(proc => { %>
+      <tr>
+        <td><%= proc.NumberOfProccessID %></td>
+        <td><%= proc.ProcessName %></td>
+        <td><%= proc.processDesc || '—' %></td>
+        <td>
+          <% const steps = stepsByProcess[proc.NumberOfProccessID] || []; %>
+          <% if (steps.length > 0) { %>
+            <ol>
+              <% steps.forEach(step => { %>
+                <li>Step <%= step.StepOrder %>: <%= step.DeptName %></li>
+              <% }) %>
+            </ol>
+          <% } else { %>
+            No steps
+          <% } %>
+        </td>
+        <td>
+          <button
+            class="add-task-btn"
+            data-process-id="<%= proc.NumberOfProccessID %>"
+            data-process-name="<%= proc.ProcessName %>"
+            data-steps='<%- JSON.stringify(steps) %>'
+          >
+            Add Task
+          </button>
+        </td>
+      </tr>
+    <% }) %>
+  </tbody>
+</table>
+
       <% } %>
-    </div>
-    <div id="addTaskContainer" style="display: none; margin-top: 2rem;">
-  <h3>Add Task for <span id="processNameTitle"></span></h3>
-  <form action="/add-task" method="POST" class="form-grid">
-    <input type="hidden" name="ProcessID" id="ProcessID" />
-
-    <div class="form-group">
-      <label for="TaskName" class="required-field">Task Name</label>
-      <input type="text" name="TaskName" id="TaskName" required maxlength="100" />
+ <div id="addTaskContainer" style="display: none; margin-top: 2rem;">
+  <div class="form-container">
+    <div class="form-header">
+      <h1>
+        <i class="fas fa-tasks"></i>
+        Create New Task for <span id="processNameTitle"></span>
+      </h1>
     </div>
 
-    <div class="form-group">
-      <label for="TaskPlanned" class="required-field">Task Description</label>
-      <input type="text" name="TaskPlanned" id="TaskPlanned" required maxlength="255" />
-    </div>
+    <form action="/add-task" method="POST" class="form-grid">
+      <input type="hidden" name="ProcessID" id="ProcessID" />
 
-    <div class="form-group">
-      <label for="IsDateFixed">Fixed Deadline?</label>
-      <select name="IsDateFixed" id="IsDateFixed">
-        <option value="1">Yes</option>
-        <option value="0" selected>No</option>
-      </select>
-    </div>
+      <div id="processStepsList"></div>
 
-    <div class="form-group">
-      <label for="DaysRequired" class="required-field">Estimated Days</label>
-      <input type="number" name="DaysRequired" id="DaysRequired" min="1" required />
-    </div>
+      <div class="form-group">
+        <label for="TaskName" class="required-field">Task Name</label>
+        <input type="text" name="TaskName" id="TaskName" required maxlength="100" placeholder="e.g., Review Design Mockups"/>
+        <div class="char-counter" id="TaskName-counter">0/100</div>
+        <div class="validation-error" id="TaskName-error">Task name is required</div>
+      </div>
+
+      <div class="form-group">
+        <label for="TaskPlanned" class="required-field">Task Description</label>
+        <input type="text" name="TaskPlanned" id="TaskPlanned" required maxlength="255" placeholder="Describe what needs to be done"/>
+        <div class="char-counter" id="TaskPlanned-counter">0/255</div>
+        <div class="validation-error" id="TaskPlanned-error">Description is required</div>
+      </div>
+
+      <div class="form-group">
+        <label for="IsDateFixed">Fixed Deadline?</label>
+        <select name="IsDateFixed" id="IsDateFixed">
+          <option value="1">Yes</option>
+          <option value="0" selected>No</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="DaysRequired" class="required-field">Estimated Days</label>
+        <input type="number" name="DaysRequired" id="DaysRequired" min="1" required placeholder="3"/>
+        <div class="validation-error" id="DaysRequired-error">Please enter a valid number of days</div>
+      </div>
 
       <div class="form-group">
         <label for="DepId" class="required-field">Responsible Department</label>
         <select name="DepId" id="DepId" required>
           <option value="">Select a department</option>
-       
+          <% departments.forEach(d => { %>
+            <option value="<%= d.DepartmentID %>"><%= d.DeptName %></option>
+          <% }) %>
         </select>
+        <div class="validation-error" id="DepId-error">Please select a department</div>
       </div>
-=
-    <div class="form-actions">
-      <button type="button" class="btn btn-secondary" id="cancelAddTask">Cancel</button>
-      <button type="submit" class="btn btn-primary">Create Task</button>
-    </div>
-  </form>
+
+      <div class="form-actions">
+        <button type="button" class="btn btn-secondary" id="cancelAddTask">
+          <i class="fas fa-arrow-left"></i> Cancel
+        </button>
+        <button type="submit" class="btn btn-primary" id="submit-btn">
+          <i class="fas fa-plus-circle"></i> Create Task
+        </button>
+      </div>
+    </form>
+  </div>
 </div>
+
 
   </div>
 
@@ -754,6 +1036,14 @@
         deptSelect.focus();
       }
     });
+    document.querySelectorAll('.add-task-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const processId = btn.dataset.processId;
+    const processName = encodeURIComponent(btn.dataset.processName);
+    window.location.href = `/add-task?processId=${processId}&process=${processName}`;
+  });
+});
+
   });
   </script>
 </body>
