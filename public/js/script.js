@@ -1,5 +1,4 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // DOM Elements
     const togglePassword = document.querySelector('.toggle-password');
     const passwordInput = document.getElementById('password');
     const loginForm = document.getElementById('loginForm');
@@ -7,7 +6,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const usernameInput = document.getElementById('username');
     const projectSelect = document.getElementById('projectId');
 
-    // Toggle password visibility
     togglePassword.addEventListener('click', () => {
         const isPassword = passwordInput.type === 'password';
         passwordInput.type = isPassword ? 'text' : 'password';
@@ -15,7 +13,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelector('.fa-eye-slash').style.display = isPassword ? 'block' : 'none';
     });
 
-    // Form submission handler
     loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         
@@ -103,4 +100,5 @@ document.addEventListener('DOMContentLoaded', () => {
             toast.className = toast.className.replace('show', '');
         }, 5000);
     }
+    
 });

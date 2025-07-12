@@ -299,3 +299,63 @@ input:focus:invalid {
 .login-container {
     animation: fadeIn 0.6s ease forwards;
 }
+
+/* Custom Select Styling */
+.custom-select {
+    position: relative;
+    width: 100%;
+}
+
+.custom-select select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: #f9f9f9;
+    font-size: 14px;
+    color: #333;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.custom-select select:focus {
+    outline: none;
+    border-color: #4a90e2;
+    box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+    background-color: #fff;
+}
+
+.select-arrow {
+    position: absolute;
+    top: 50%;
+    right: 15px;
+    transform: translateY(-50%);
+    pointer-events: none;
+    color: #666;
+    transition: all 0.3s ease;
+}
+
+.custom-select select:focus + .select-arrow {
+    color: #4a90e2;
+}
+
+/* Hover effects */
+.custom-select:hover select {
+    border-color: #bbb;
+    background-color: #f5f5f5;
+}
+
+/* Disabled option styling */
+.custom-select select option:disabled {
+    color: #999;
+}
+
+/* Option hover styling */
+.custom-select select option:not(:disabled):hover {
+    background-color: #4a90e2;
+    color: white;
+}

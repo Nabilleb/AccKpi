@@ -356,14 +356,33 @@ console.log(tasksResult.recordset)
 
 app.get("/addProcess", isAdmin, async (req, res) => {
   try {
-    const result = await pool.request().query("SELECT DepartmentID, DeptName FROM tblDepartments");
-    const departments = result.recordset;
-    res.render("process.ejs", { departments }); 
+    // Fetch departments
+    const deptResult = await pool.request()
+      .query("SELECT DepartmentID, DeptName FROM tblDepartments");
+    const departments = deptResult.recordset;
+
+    // Fetch processes
+    const processResult = await pool.request()
+      .query(`
+        SELECT TOP (1000)
+          NumberOfProccessID,
+          ProcessName,
+          processDesc
+        FROM [AccDBF].[dbo].[tblProcess]
+      `);
+    const processes = processResult.recordset;
+   console.log(processes)
+    // Render with both datasets
+    res.render("process.ejs", {
+      departments,
+      processes
+    });
   } catch (err) {
-    console.error("Failed to fetch departments:", err);
-    res.status(500).send("Error loading departments.");
+    console.error("Failed to fetch departments or processes:", err);
+    res.status(500).send("Error loading process data.");
   }
 });
+
 
 app.get('/api/tasks/by-department/:departmentID', async (req, res) => {
   const { departmentID } = req.params;
@@ -1109,7 +1128,6 @@ console.log("post method",workflowDetails)
   }
 });
 
-// Assuming you have SQL Server connection `pool`
 app.get('/api/check-department-step', async (req, res) => {
   const { workflowId, depId, processId } = req.query;
 
@@ -1355,7 +1373,23 @@ app.post("/postProcess", async (req, res) => {
   }
 
   // Ensure Steps is always an array
-  const departmentIDs = Array.isArray(Steps) ? Steps.map(id => parseInt(id)) : [parseInt(Steps)];
+  const departmentIDs = Array.isArray(Steps)
+    ? Steps.map(id => parseInt(id))
+    : [parseInt(Steps)];
+
+  // Check for duplicates within the provided Steps array
+  const seenCombinations = new Set();
+  let stepNumber = 1;
+  for (const deptID of departmentIDs) {
+    const key = `${deptID}-${stepNumber}`;
+    if (seenCombinations.has(key)) {
+      return res.status(400).send({
+        error: `Duplicate department-step combination: DepartmentID ${deptID} at Step ${stepNumber}`,
+      });
+    }
+    seenCombinations.add(key);
+    stepNumber++;
+  }
 
   try {
     // Insert Process
@@ -1370,7 +1404,7 @@ app.post("/postProcess", async (req, res) => {
     const ProcessID = processResult.recordset[0].ProcessID;
 
     // Insert Departments with Steps
-    let stepNumber = 1;
+    stepNumber = 1;
     for (const deptID of departmentIDs) {
       const IsActive = stepNumber === 1 ? 1 : 0;
 
@@ -1386,13 +1420,13 @@ app.post("/postProcess", async (req, res) => {
 
       stepNumber++;
     }
-
-    res.status(201).send({ message: "Process created and departments assigned. First step activated." });
+res.redirect("/addProcess");
   } catch (err) {
     console.error("Error assigning process:", err);
     res.status(500).send({ error: "Failed to assign process." });
   }
 });
+
 
 
 
