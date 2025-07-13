@@ -203,67 +203,83 @@ app.get('/api/users', async (req, res) => {
 
 
 
-app.get("/api/workFlowDashData", async (req, res) => {
+app.get("/api/workFlowDashData", ensureAuthenticated, async (req, res) => {
   const projectID = req.query.projectID;
+  const isAdmin = req.session.user.usrAdmin;
+  const userDeptId = req.session.user.DepartmentId;
 
   try {
+    // Update completed workflows
+    await pool.request().query(`
+      UPDATE hdr
+      SET hdr.completionDate = GETDATE(), hdr.status = 'Completed'
+      FROM tblWorkflowHdr hdr
+      WHERE EXISTS (
+          SELECT 1
+          FROM tblWorkflowDtl dtl
+          WHERE dtl.workFlowHdrId = hdr.workFlowID
+      )
+      AND NOT EXISTS (
+          SELECT 1
+          FROM tblWorkflowDtl dtl
+          WHERE dtl.workFlowHdrId = hdr.workFlowID
+            AND dtl.TimeFinished IS NULL
+      )
+      AND hdr.status != 'Completed'
+    `);
 
-      await pool.request().query(`
-  UPDATE hdr
-  SET hdr.completionDate = GETDATE(), hdr.status = 'Completed'
-  FROM tblWorkflowHdr hdr
-  WHERE EXISTS (
-      SELECT 1
-      FROM tblWorkflowDtl dtl
-      WHERE dtl.workFlowHdrId = hdr.workFlowID
-  )
-  AND NOT EXISTS (
-      SELECT 1
-      FROM tblWorkflowDtl dtl
-      WHERE dtl.workFlowHdrId = hdr.workFlowID
-        AND dtl.TimeFinished IS NULL
-  )
-  AND hdr.status != 'Completed'
-`);
-
+    // Base query with extra join
+    let query = `
+      SELECT 
+        hdr.WorkFlowID AS HdrID,
+        p.ProcessName,
+        pk.PkgeName AS PackageName,
+        prj.projectID,
+        prj.ProjectName,
+        hdr.Status,
+        hdr.completionDate,
+        hdr.startDate,
+        hdr.createdDate
+      FROM tblWorkflowHdr hdr
+      LEFT JOIN tblProcess p ON hdr.ProcessID = p.NumberOfProccessID
+      LEFT JOIN tblProcessDepartment pd ON p.NumberOfProccessID = pd.ProcessID
+      LEFT JOIN tblPackages pk ON hdr.PackageID = pk.PkgeID
+      LEFT JOIN tblProject prj ON hdr.ProjectID = prj.ProjectID
+    `;
 
     const request = pool.request();
-    let query = `
-  SELECT 
-    hdr.WorkFlowID AS HdrID,
-    p.ProcessName,
-    pk.PkgeName AS PackageName,
-    prj.projectID,
-    prj.ProjectName,
-    hdr.Status,
-    hdr.completionDate,
-    hdr.activate
-  FROM tblWorkflowHdr hdr
-  LEFT JOIN tblProcess p ON hdr.ProcessID = p.NumberOfProccessID
-  LEFT JOIN tblPackages pk ON hdr.PackageID = pk.PkgeID
-  LEFT JOIN tblProject prj ON hdr.ProjectID = prj.ProjectID
-  ORDER BY 
-    CASE 
-      WHEN hdr.Status = 'Pending' THEN 0
-      ELSE 1
-    END,
-    hdr.Status ASC
-`;
+    const whereClauses = [];
 
-
+    // Project filter
     if (projectID) {
       request.input('ProjectID', sql.Int, projectID);
-      query += ` WHERE hdr.ProjectID = @ProjectID`;
+      whereClauses.push(`hdr.ProjectID = @ProjectID`);
     }
-  console.log()
+
+    // Department filter if NOT admin
+    if (!isAdmin) {
+      request.input('UserDeptId', sql.Int, userDeptId);
+      whereClauses.push(`pd.DepartmentID = @UserDeptId`);
+    }
+
+    if (whereClauses.length > 0) {
+      query += ' WHERE ' + whereClauses.join(' AND ');
+    }
+
+    query += `
+      ORDER BY 
+        CASE WHEN hdr.Status = 'Pending' THEN 0 ELSE 1 END,
+        hdr.Status ASC
+    `;
+
     const result = await request.query(query);
-    console.log(result.recordset)
     res.json(result.recordset);
   } catch (err) {
     console.error("Error fetching workflow dashboard data:", err);
     res.status(500).json({ error: "Failed to fetch workflow dashboard data" });
   }
 });
+
 
 
 
@@ -1872,8 +1888,12 @@ app.post('/start-task/:taskId', async (req, res) => {
   const { startTime } = req.body;
 
   try {
-    // Update the task start time
-    await pool.request()
+    const sqlTransaction = await pool.transaction();
+    await sqlTransaction.begin();
+
+    // 1️⃣ Update the task start time
+    const reqUpdate = sqlTransaction.request();
+    await reqUpdate
       .input('taskId', taskId)
       .input('startTime', startTime)
       .query(`
@@ -1882,8 +1902,49 @@ app.post('/start-task/:taskId', async (req, res) => {
         WHERE TaskID = @taskId AND TimeStarted IS NULL
       `);
 
-    // ✅ Get DepId of the current task
-    const depResult = await pool.request()
+    // 2️⃣ Retrieve WorkFlowHdrID via tblTasks
+    const reqHdr = sqlTransaction.request();
+    const hdrResult = await reqHdr
+      .input('taskId', taskId)
+      .query(`
+        SELECT t.WorkFlowHdrID
+        FROM tblTasks t
+        WHERE t.TaskID = @taskId
+      `);
+
+    const workflowHdrId = hdrResult.recordset[0]?.WorkFlowHdrID;
+
+    if (workflowHdrId) {
+      // 3️⃣ Check if startDate is NULL
+      const reqStartDate = sqlTransaction.request();
+      const startDateResult = await reqStartDate
+        .input('workflowHdrId', workflowHdrId)
+        .query(`
+          SELECT startDate
+          FROM tblWorkflowHdr
+          WHERE workFlowID = @workflowHdrId
+        `);
+
+      const startDate = startDateResult.recordset[0]?.startDate;
+
+      if (!startDate) {
+        // 4️⃣ If startDate is NULL, set it
+        const reqUpdateHdr = sqlTransaction.request();
+        await reqUpdateHdr
+          .input('workflowHdrId', workflowHdrId)
+          .query(`
+            UPDATE tblWorkflowHdr
+            SET startDate = GETDATE()
+            WHERE workFlowID = @workflowHdrId
+          `);
+
+        console.log('✅ startDate set on tblWorkflowHdr');
+      }
+    }
+
+    // 5️⃣ Get DepId of the current task
+    const reqDep = sqlTransaction.request();
+    const depResult = await reqDep
       .input('taskId', taskId)
       .query(`
         SELECT DepId
@@ -1893,8 +1954,9 @@ app.post('/start-task/:taskId', async (req, res) => {
 
     const currentDepId = depResult.recordset[0]?.DepId;
 
-    // ✅ Find the next task in the same department (or your preferred logic)
-    const nextTaskResult = await pool.request()
+    // 6️⃣ Find the next task in the same department
+    const reqNextTask = sqlTransaction.request();
+    const nextTaskResult = await reqNextTask
       .input('depId', currentDepId)
       .query(`
         SELECT TOP 1 TaskID, DepId
@@ -1905,12 +1967,11 @@ app.post('/start-task/:taskId', async (req, res) => {
       `);
 
     let nextDepId = null;
-
     if (nextTaskResult.recordset.length > 0) {
       nextDepId = nextTaskResult.recordset[0].DepId;
     }
 
- 
+    await sqlTransaction.commit();
 
     res.status(200).json({
       message: 'Task started successfully',
@@ -1922,6 +1983,8 @@ app.post('/start-task/:taskId', async (req, res) => {
     res.status(500).json({ error: 'Failed to start task' });
   }
 });
+
+
 
 
 app.post('/finish-task/:taskId', async (req, res) => {
