@@ -724,6 +724,7 @@ let currentTasks = [];
 let currentPage = 1;
 const tasksPerPage = 10;
 const processId = "<%= workflowDetails.ProcessID %>";
+const processSteps = <%- JSON.stringify(processSteps) %>;
 
 const sortFunctions = {
   name: (a, b) => (a.TaskName || '').localeCompare(b.TaskName || ''),
@@ -1024,31 +1025,28 @@ function renderPaginatedTasks(tasks) {
 function renderTasks(tasks) {
   const contentEl = document.getElementById('tasks-content');
 
-  // Group by department
+  // Group tasks by department and attach StepOrder from processSteps
   const grouped = {};
   tasks.forEach(task => {
     if (!grouped[task.DepId]) {
-      grouped[task.DepId] = { DeptName: task.DeptName, Tasks: [] };
+      grouped[task.DepId] = {
+        DeptName: task.DeptName,
+        StepOrder: processSteps.find(p => p.DepartmentID === task.DepId)?.StepOrder ?? 9999,
+        Tasks: []
+      };
     }
     grouped[task.DepId].Tasks.push(task);
   });
 
+  // Convert grouped object to array and sort departments by StepOrder
+  const sortedGroups = Object.values(grouped).sort(
+    (a, b) => a.StepOrder - b.StepOrder
+  );
+
   let html = '';
-  for (const depId in grouped) {
-    const group = grouped[depId];
-    
-    // Sort tasks by status (delayed first) then by planned date
-    group.Tasks.sort((a, b) => {
-      const statusA = getTaskStatus(a);
-      const statusB = getTaskStatus(b);
-      
-      // Delayed tasks first
-      if (statusA === 'delayed' && statusB !== 'delayed') return -1;
-      if (statusB === 'delayed' && statusA !== 'delayed') return 1;
-      
-      // Then by planned date
-      return new Date(a.PlannedDate) - new Date(b.PlannedDate);
-    });
+  for (const group of sortedGroups) {
+    // Sort tasks by Priority ASC
+    group.Tasks.sort((a, b) => (a.Priority ?? 9999) - (b.Priority ?? 9999));
 
     html += `
       <div class="department-group">
@@ -1068,38 +1066,36 @@ function renderTasks(tasks) {
                 <th>Status</th>
                 <th>Started</th>
                 <th>Finished</th>
-                <th>Delay</th>
+                <th>Priority</th>
               </tr>
             </thead>
             <tbody>`;
-            
-    group.Tasks.sort(sortFunctions.sequence);
-    group.Tasks.forEach(task => {
-  const status = getTaskStatus(task);
-  const statusBadge = getStatusBadge(status);
-  const isOverdue = 
-    status === 'delayed' || 
-    (status === 'pending' && new Date(task.PlannedDate) < new Date());
 
-  html += `
-    <tr class="${isOverdue ? 'overdue-task' : ''}">
-      <td>${task.TaskName || '-'}</td>
-      <td>${task.TaskPlanned || '-'}</td>
-      <td>${task.PlannedDate ? formatDate(task.PlannedDate) : '-'}</td>
-      <td>${task.DaysRequired || '-'}</td>
-      <td>${statusBadge}</td>
-      <td>${task.TimeStarted ? formatDateTime(task.TimeStarted) : '-'}</td>
-      <td>${task.TimeFinished ? formatDateTime(task.TimeFinished) : '-'}</td>
-      <td>${task.Priority ?? '-'}</td>
-    </tr>`;
-});
-    
+    group.Tasks.forEach(task => {
+      const status = getTaskStatus(task);
+      const statusBadge = getStatusBadge(status);
+      const isOverdue = status === 'delayed' ||
+        (status === 'pending' && new Date(task.PlannedDate) < new Date());
+
+      html += `
+        <tr class="${isOverdue ? 'overdue-task' : ''}">
+          <td>${task.TaskName || '-'}</td>
+          <td>${task.TaskPlanned || '-'}</td>
+          <td>${task.PlannedDate ? formatDate(task.PlannedDate) : '-'}</td>
+          <td>${task.DaysRequired || '-'}</td>
+          <td>${statusBadge}</td>
+          <td>${task.TimeStarted ? formatDateTime(task.TimeStarted) : '-'}</td>
+          <td>${task.TimeFinished ? formatDateTime(task.TimeFinished) : '-'}</td>
+          <td>${task.Priority ?? '-'}</td>
+        </tr>`;
+    });
+
     html += `</tbody></table></div></div>`;
   }
 
   contentEl.innerHTML = html;
-  
-  // Make table headers sortable
+
+  // Make table headers sortable (except "Status")
   const tables = document.querySelectorAll('.tasks-table');
   tables.forEach(table => {
     const headers = table.querySelectorAll('th');

@@ -651,7 +651,8 @@ app.get('/add-task',ensureAuthenticated ,async (req, res) => {
   }
 
   const workflowHdrResult = await pool.request().query(`SELECT * FROM tblWorkflowHdr`);
-console.log(workflowDetails)
+  
+console.log(processSteps)
   res.render('task.ejs', {
     workflowDetails,
     workflow: workflowHdrResult.recordset,
@@ -701,7 +702,6 @@ app.get('/api/tasks', ensureAuthenticated, async (req, res) => {
         WHERE t.proccessID = @processId
         ORDER BY t.DepId, t.Priority, t.TaskID
       `);
-
     res.json(result.recordset);
   } catch (error) {
     console.error('Error fetching tasks by processId:', error);
