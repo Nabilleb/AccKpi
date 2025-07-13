@@ -1350,23 +1350,35 @@ app.post('/api/workflows', async (req, res) => {
   try {
     const poolRequest = pool.request();
 
-    // 1️⃣ Insert workflow header
+    // 1️⃣ Insert workflow header with createdDate = GETDATE()
     const insertResult = await poolRequest
       .input('processID', sql.Int, processID)
       .input('projectID', sql.Int, projectID)
       .input('packageID', sql.Int, packageID)
       .input('status', sql.NVarChar, status)
       .query(`
-        INSERT INTO tblWorkflowHdr (processID, projectID, packageID, status)
+        INSERT INTO tblWorkflowHdr (
+          processID,
+          projectID,
+          packageID,
+          status,
+          createdDate
+        )
         OUTPUT INSERTED.workFlowID
-        VALUES (@processID, @projectID, @packageID, @status)
+        VALUES (
+          @processID,
+          @projectID,
+          @packageID,
+          @status,
+          GETDATE()
+        )
       `);
 
     const newWorkflowID = insertResult.recordset[0].workFlowID;
 
     console.log('✅ Inserted WorkflowHdrID:', newWorkflowID);
 
-    // 2️⃣ Update tblTasks (set WorkFlowHdrID where proccessID matches)
+    // 2️⃣ Update tblTasks
     await pool.request()
       .input('workflowID', sql.Int, newWorkflowID)
       .input('processID', sql.Int, processID)
@@ -1378,7 +1390,7 @@ app.post('/api/workflows', async (req, res) => {
 
     console.log('✅ Updated tblTasks');
 
-    // 3️⃣ Update tblWorkflowDtl for all tasks linked to this process
+    // 3️⃣ Update tblWorkflowDtl
     await pool.request()
       .input('workflowID', sql.Int, newWorkflowID)
       .input('processID', sql.Int, processID)
@@ -1402,6 +1414,7 @@ app.post('/api/workflows', async (req, res) => {
     res.status(500).json({ error: 'Database error' });
   }
 });
+
 
 
 
