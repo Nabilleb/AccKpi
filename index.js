@@ -1020,11 +1020,12 @@ app.post('/add-task', ensureAuthenticated, async (req, res) => {
     // 4. Determine if selected and planned date
     let IsTaskSelected = 0;
     let PlannedDateToInsert = PlannedDate;
-
+    let DaysRequiredInserted =  DaysRequired;
     if (isFirstTask && StepOrder === 1) {
       IsTaskSelected = 1;
       const now = new Date();
       now.setDate(now.getDate() + 1);
+      DaysRequiredInserted = 1
       PlannedDateToInsert = now.toISOString().split('T')[0];
     }
 
@@ -1069,7 +1070,7 @@ app.post('/add-task', ensureAuthenticated, async (req, res) => {
       .input('DepId', sql.Int, DepId)
       .input('Priority', sql.Int, newPriority)
       .input('PredecessorID', PredecessorID ? sql.Int : sql.Int, PredecessorID)
-      .input('DaysRequired', sql.Int, DaysRequired)
+      .input('DaysRequired', sql.Int, DaysRequiredInserted)
       .input('ProcessID', sql.Int, ProcessID)
       .query(`
         INSERT INTO tblTasks (
