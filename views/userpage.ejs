@@ -1671,7 +1671,7 @@ console.log("tasks: ", taskList)
       // Find the active task
       const activeTask = sortedTasks.find(t => t.IsTaskSelected);
       
-      sortedTasks.forEach(task => {
+      taskList.forEach(task => {
         const timelineItem = document.createElement('div');
         timelineItem.className = 'timeline-item';
         
@@ -1801,21 +1801,41 @@ console.log("next task", nextTask)
         `;
         return;
       }
-
+console.log("sorted tasks:", sortTasks)
       // Group tasks by department
-      const grouped = {};
-      sortedTasks.forEach(task => {
-        if (!grouped[task.DepId]) {
-          grouped[task.DepId] = {
-            deptName: task.DeptName || `Department ${task.DepId}`,
-            tasks: []
-          };
-        }
-        grouped[task.DepId].tasks.push(task);
-      });
+     // 1. Sort the tasks
+taskList.sort((a, b) => {
+  if (a.StepOrder !== b.StepOrder) return a.StepOrder - b.StepOrder;
+  if (a.DeptName !== b.DeptName) return a.DeptName.localeCompare(b.DeptName);
+  return a.Priority - b.Priority;
+});
+
+// 2. Group them
+const grouped = {};
+taskList.forEach(task => {
+  if (!grouped[task.DepId]) {
+    grouped[task.DepId] = {
+      deptName: task.DeptName || `Department ${task.DepId}`,
+      stepOrder: task.StepOrder || 9999,
+      tasks: []
+    };
+  }
+  grouped[task.DepId].tasks.push(task);
+});
+
+// 3. If you want the groups in order
+const groupedArray = Object.values(grouped).sort((a, b) => a.stepOrder - b.stepOrder);
+
+// 4. Use groupedArray to render
+groupedArray.forEach(group => {
+  console.log(`Department: ${group.deptName} (Step ${group.stepOrder})`);
+  group.tasks.forEach(task => {
+    console.log(` - ${task.TaskName}`);
+  });
+});
 
       // Create department sections
-      Object.values(grouped).forEach(group => {
+      Object.values(groupedArray).forEach(group => {
         const section = document.createElement('div');
         section.className = 'department-section';
         

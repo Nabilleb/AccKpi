@@ -578,9 +578,19 @@
     @keyframes spin {
       to { transform: rotate(360deg); }
     }
+
+      .navigation-buttons {
+    display: flex;
+    gap: 1rem;
+    max-width: 900px;
+    margin: 0 auto 1.5rem;
+  }
   </style>
 </head>
 <body>
+
+
+
 <div class="form-container">
   <div class="form-header">
     <h1><i class="fas fa-tasks"></i>Create New Task</h1>
@@ -615,6 +625,18 @@
     <% } %>
 
     <div class="form-group">
+
+        <div class="form-group">
+      <label for="DepId" class="required-field">Responsible Department</label>
+      <select name="DepId" id="DepId" required>
+        <option value="">Select a department</option>
+        <% departments.forEach(d => { %>
+          <option value="<%= d.DepartmentID %>" <%= d.DepartmentID === departmentId ? "selected" : "" %>><%= d.DeptName %></option>
+        <% }) %>
+      </select>
+      <div class="validation-error" id="DepId-error">Please select a department</div>
+    </div>
+
       <label for="TaskName" class="required-field">Task Name</label>
       <input type="text" name="TaskName" id="TaskName" required placeholder="e.g., Review Design Mockups" maxlength="100"/>
       <div class="char-counter" id="TaskName-counter">0/100</div>
@@ -642,21 +664,10 @@
       <div class="validation-error" id="DaysRequired-error">Please enter a valid number of days</div>
     </div>
 
-    <div class="form-group">
-      <label for="DepId" class="required-field">Responsible Department</label>
-      <select name="DepId" id="DepId" required>
-        <option value="">Select a department</option>
-        <% departments.forEach(d => { %>
-          <option value="<%= d.DepartmentID %>" <%= d.DepartmentID === departmentId ? "selected" : "" %>><%= d.DeptName %></option>
-        <% }) %>
-      </select>
-      <div class="validation-error" id="DepId-error">Please select a department</div>
-    </div>
+  
 
     <div class="form-actions">
-      <button type="button" class="btn btn-secondary" onclick="history.back()">
-        <i class="fas fa-arrow-left"></i> Cancel
-      </button>
+      
       <button type="submit" class="btn btn-primary" id="submit-btn">
         <i class="fas fa-plus-circle"></i> Create Task
       </button>
@@ -694,6 +705,16 @@
     
     <div class="pagination" id="pagination" style="display: none;"></div>
   </div>
+ 
+<div class="navigation-buttons" style="margin-bottom: 1.5rem;">
+  <a href="/addProcess" class="btn btn-secondary">
+    <i class="fas fa-arrow-left"></i> Close
+  </a>
+ <a href="/workflow/new" class="btn btn-primary">
+    <i class="fas fa-plus"></i> Create New Workflow
+  </a>
+</div>
+
 </div>
 
 <script>
@@ -704,6 +725,19 @@ let currentPage = 1;
 const tasksPerPage = 10;
 const processId = "<%= workflowDetails.ProcessID %>";
 
+const sortFunctions = {
+  name: (a, b) => (a.TaskName || '').localeCompare(b.TaskName || ''),
+  description: (a, b) => (a.TaskPlanned || '').localeCompare(b.TaskPlanned || ''),
+  department: (a, b) => (a.DeptName || '').localeCompare(b.DeptName || ''),
+  duedate: (a, b) => new Date(a.PlannedDate) - new Date(b.PlannedDate),
+  priority: (a, b) => (a.Priority ?? 0) - (b.Priority ?? 0),
+  sequence: (a, b) => {
+    const stepA = a.StepOrder ?? 0;
+    const stepB = b.StepOrder ?? 0;
+    if (stepA !== stepB) return stepA - stepB;
+    return (a.TaskID ?? 0) - (b.TaskID ?? 0);
+  }
+};
 // DOM Content Loaded
 document.addEventListener('DOMContentLoaded', function() {
   // Initialize form validation
@@ -926,27 +960,29 @@ function loadTasks() {
 }
 
 function filterAndRenderTasks() {
-  const searchTerm = document.getElementById('task-search').value.toLowerCase();
-  const statusFilter = document.getElementById('status-filter').value;
-  
-  // Filter tasks
-  let filteredTasks = currentTasks;
-  
-  if (searchTerm) {
-    filteredTasks = filteredTasks.filter(task => 
-      (task.TaskName && task.TaskName.toLowerCase().includes(searchTerm)) ||
-      (task.TaskPlanned && task.TaskPlanned.toLowerCase().includes(searchTerm))
-    );
+    const searchTerm = document.getElementById('task-search').value.toLowerCase();
+    const statusFilter = document.getElementById('status-filter').value;
+    
+    // Filter tasks
+    let filteredTasks = [...currentTasks]; // Create a copy
+    
+    // Reverse the array to show newest first (original order is oldest first)
+    filteredTasks.reverse();
+    
+    if (searchTerm) {
+      filteredTasks = filteredTasks.filter(task => 
+        (task.TaskName && task.TaskName.toLowerCase().includes(searchTerm)) ||
+        (task.TaskPlanned && task.TaskPlanned.toLowerCase().includes(searchTerm))
+      );
+    }
+    
+    if (statusFilter) {
+      filteredTasks = filteredTasks.filter(task => getTaskStatus(task) === statusFilter);
+    }
+    
+    // Render paginated results
+    renderPaginatedTasks(filteredTasks);
   }
-  
-  if (statusFilter) {
-    filteredTasks = filteredTasks.filter(task => getTaskStatus(task) === statusFilter);
-  }
-  
-  // Render paginated results
-  renderPaginatedTasks(filteredTasks);
-}
-
 function renderPaginatedTasks(tasks) {
   const contentEl = document.getElementById('tasks-content');
   const loadingEl = document.getElementById('tasks-loading');
@@ -1037,33 +1073,26 @@ function renderTasks(tasks) {
             </thead>
             <tbody>`;
             
+    group.Tasks.sort(sortFunctions.sequence);
     group.Tasks.forEach(task => {
-      const status = getTaskStatus(task);
-      const statusBadge = getStatusBadge(status);
-      const isOverdue = status === 'delayed' || 
-                       (status === 'pending' && new Date(task.PlannedDate) < new Date());
-      
-      html += `
-        <tr class="${isOverdue ? 'overdue-task' : ''}">
-          <td>
-            ${task.TaskName || '-'}
-            ${task.TaskNote ? `<i class="fas fa-sticky-note" title="${task.TaskNote}"></i>` : ''}
-          </td>
-          <td>${task.TaskPlanned || '-'}</td>
-          <td>${task.PlannedDate ? formatDate(task.PlannedDate) : '-'}</td>
-          <td>${task.DaysRequired || '-'}</td>
-          <td>${statusBadge}</td>
-          <td>${task.TimeStarted ? formatDateTime(task.TimeStarted) : '-'}</td>
-          <td>${task.TimeFinished ? formatDateTime(task.TimeFinished) : '-'}</td>
-          <td>
-            ${task.Delay != null ? `
-              <span class="${task.Delay > 0 ? 'delay-warning' : ''}">
-                ${task.Delay} days
-              </span>
-            ` : '-'}
-          </td>
-        </tr>`;
-    });
+  const status = getTaskStatus(task);
+  const statusBadge = getStatusBadge(status);
+  const isOverdue = 
+    status === 'delayed' || 
+    (status === 'pending' && new Date(task.PlannedDate) < new Date());
+
+  html += `
+    <tr class="${isOverdue ? 'overdue-task' : ''}">
+      <td>${task.TaskName || '-'}</td>
+      <td>${task.TaskPlanned || '-'}</td>
+      <td>${task.PlannedDate ? formatDate(task.PlannedDate) : '-'}</td>
+      <td>${task.DaysRequired || '-'}</td>
+      <td>${statusBadge}</td>
+      <td>${task.TimeStarted ? formatDateTime(task.TimeStarted) : '-'}</td>
+      <td>${task.TimeFinished ? formatDateTime(task.TimeFinished) : '-'}</td>
+      <td>${task.Priority ?? '-'}</td>
+    </tr>`;
+});
     
     html += `</tbody></table></div></div>`;
   }

@@ -1,0 +1,172 @@
+<nav class="dashboard-nav">
+  <div class="nav-header">
+    <i class="fas fa-tasks"></i>
+    <h2>Workflow Dashboard</h2>
+  </div>
+  <ul class="nav-links">
+    <li class="nav-item ">
+      <a href="/workFlowDash">
+        <i class="fas fa-project-diagram"></i>
+        <span>Workflows</span>
+      </a>
+    </li>
+    <li class="nav-item ">
+      <a href="/addProcess">
+        <i class="fas fa-plus-circle"></i>
+        <span>Add Process</span>
+      </a>
+    </li>
+    <li class="nav-item">
+      <a href="/adminpage">
+        <i class="fas fa-user-cog"></i>
+        <span>Admin</span>
+      </a>
+    </li>
+  </ul>
+  <div class="nav-footer">
+    <a href="/logout" class="logout-btn">
+      <i class="fas fa-sign-out-alt"></i>
+      <span>Logout</span>
+    </a>
+  </div>
+</nav>
+
+<style>
+  .dashboard-nav {
+    background: #ffffff;
+    height: 100vh;
+    width: 250px;
+    position: fixed;
+    left: 0;
+    top: 0;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .nav-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .nav-header i {
+    font-size: 1.5rem;
+    color: #2563eb;
+  }
+
+  .nav-header h2 {
+    margin: 0;
+    font-size: 1.25rem;
+    color: #1e293b;
+  }
+
+  .nav-links {
+    list-style: none;
+    padding: 1rem 0;
+    flex-grow: 1;
+    overflow-y: auto;
+  }
+
+  .nav-item {
+    margin: 0.25rem 0;
+  }
+
+  .nav-item a {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1.5rem;
+    color: #64748b;
+    text-decoration: none;
+    transition: all 0.2s ease;
+  }
+
+  .nav-item a:hover {
+    background: #eff6ff;
+    color: #2563eb;
+  }
+
+  .nav-item a i {
+    margin-right: 0.75rem;
+    width: 20px;
+    text-align: center;
+  }
+
+  .nav-item.active a {
+    background: #eff6ff;
+    color: #2563eb;
+    border-right: 3px solid #2563eb;
+  }
+
+  .nav-footer {
+    padding: 1rem;
+    border-top: 1px solid #e2e8f0;
+  }
+
+  .logout-btn {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1.5rem;
+    color: #64748b;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    border-radius: 6px;
+  }
+
+  .logout-btn:hover {
+    background: #fee2e2;
+    color: #dc2626;
+  }
+
+  .logout-btn i {
+    margin-right: 0.75rem;
+    width: 20px;
+    text-align: center;
+  }
+
+  @media (max-width: 768px) {
+    .dashboard-nav {
+      width: 100%;
+      height: auto;
+      position: relative;
+      flex-direction: row;
+      flex-wrap: wrap;
+    }
+
+    .nav-header {
+      width: 100%;
+    }
+
+    .nav-links {
+      display: flex;
+      flex-wrap: wrap;
+      padding: 0;
+    }
+
+    .nav-item {
+      flex: 1;
+      min-width: 120px;
+    }
+
+    .nav-item a {
+      justify-content: center;
+      padding: 1rem;
+    }
+
+    .nav-item.active a {
+      border-right: none;
+      border-bottom: 3px solid #2563eb;
+    }
+
+    .nav-footer {
+      width: 100%;
+      text-align: center;
+    }
+
+    .logout-btn {
+      justify-content: center;
+    }
+  }
+</style>
