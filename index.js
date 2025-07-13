@@ -203,83 +203,68 @@ app.get('/api/users', async (req, res) => {
 
 
 
-app.get("/api/workFlowDashData", ensureAuthenticated, async (req, res) => {
+app.get("/api/workFlowDashData", async (req, res) => {
   const projectID = req.query.projectID;
-  const isAdmin = req.session.user.usrAdmin;
-  const userDeptId = req.session.user.DepartmentId;
 
   try {
-    // Update completed workflows
-    await pool.request().query(`
-      UPDATE hdr
-      SET hdr.completionDate = GETDATE(), hdr.status = 'Completed'
-      FROM tblWorkflowHdr hdr
-      WHERE EXISTS (
-          SELECT 1
-          FROM tblWorkflowDtl dtl
-          WHERE dtl.workFlowHdrId = hdr.workFlowID
-      )
-      AND NOT EXISTS (
-          SELECT 1
-          FROM tblWorkflowDtl dtl
-          WHERE dtl.workFlowHdrId = hdr.workFlowID
-            AND dtl.TimeFinished IS NULL
-      )
-      AND hdr.status != 'Completed'
-    `);
 
-    // Base query with extra join
-    let query = `
-      SELECT 
-        hdr.WorkFlowID AS HdrID,
-        p.ProcessName,
-        pk.PkgeName AS PackageName,
-        prj.projectID,
-        prj.ProjectName,
-        hdr.Status,
-        hdr.completionDate,
-        hdr.startDate,
-        hdr.createdDate
-      FROM tblWorkflowHdr hdr
-      LEFT JOIN tblProcess p ON hdr.ProcessID = p.NumberOfProccessID
-      LEFT JOIN tblProcessDepartment pd ON p.NumberOfProccessID = pd.ProcessID
-      LEFT JOIN tblPackages pk ON hdr.PackageID = pk.PkgeID
-      LEFT JOIN tblProject prj ON hdr.ProjectID = prj.ProjectID
-    `;
+      await pool.request().query(`
+  UPDATE hdr
+  SET hdr.completionDate = GETDATE(), hdr.status = 'Completed'
+  FROM tblWorkflowHdr hdr
+  WHERE EXISTS (
+      SELECT 1
+      FROM tblWorkflowDtl dtl
+      WHERE dtl.workFlowHdrId = hdr.workFlowID
+  )
+  AND NOT EXISTS (
+      SELECT 1
+      FROM tblWorkflowDtl dtl
+      WHERE dtl.workFlowHdrId = hdr.workFlowID
+        AND dtl.TimeFinished IS NULL
+  )
+  AND hdr.status != 'Completed'
+`);
+
 
     const request = pool.request();
-    const whereClauses = [];
+    let query = `
+  SELECT 
+    hdr.WorkFlowID AS HdrID,
+    p.ProcessName,
+    pk.PkgeName AS PackageName,
+    prj.projectID,
+    prj.ProjectName,
+    hdr.Status,
+    hdr.completionDate,
+    hdr.startDate,
+    hdr.createdDate
+  FROM tblWorkflowHdr hdr
+  LEFT JOIN tblProcess p ON hdr.ProcessID = p.NumberOfProccessID
+  LEFT JOIN tblPackages pk ON hdr.PackageID = pk.PkgeID
+  LEFT JOIN tblProject prj ON hdr.ProjectID = prj.ProjectID
+  ORDER BY 
+    CASE 
+      WHEN hdr.Status = 'Pending' THEN 0
+      ELSE 1
+    END,
+    hdr.Status ASC
+`;
 
-    // Project filter
+
     if (projectID) {
       request.input('ProjectID', sql.Int, projectID);
-      whereClauses.push(`hdr.ProjectID = @ProjectID`);
+      query += ` WHERE hdr.ProjectID = @ProjectID`;
     }
-
-    // Department filter if NOT admin
-    if (!isAdmin) {
-      request.input('UserDeptId', sql.Int, userDeptId);
-      whereClauses.push(`pd.DepartmentID = @UserDeptId`);
-    }
-
-    if (whereClauses.length > 0) {
-      query += ' WHERE ' + whereClauses.join(' AND ');
-    }
-
-    query += `
-      ORDER BY 
-        CASE WHEN hdr.Status = 'Pending' THEN 0 ELSE 1 END,
-        hdr.Status ASC
-    `;
-
+  console.log()
     const result = await request.query(query);
+    console.log(result.recordset)
     res.json(result.recordset);
   } catch (err) {
     console.error("Error fetching workflow dashboard data:", err);
     res.status(500).json({ error: "Failed to fetch workflow dashboard data" });
   }
 });
-
 
 
 
