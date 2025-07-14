@@ -1965,11 +1965,10 @@ groupedArray.forEach(group => {
             <td data-label="Status">${status}</td>
             <td data-label="Days Delay">${task.Delay !== null ? task.Delay : 0}</td>
             <td data-label="Delay Reason">${delayInput}</td>
-<td data-label="Assign Next Task">${
-  task.assignUserToTask
-    ? `<p class="assigned-user-text"><i class="fas fa-user-check"></i> Assigned to: ${task.assignUser}</p>`
-    : nextTaskSelect
-}</td>
+<td data-label="Assign Next Task">
+  ${nextTaskSelect}
+  ${task.assignUser ? task.assignUser : ''}
+</td>
             <td data-label="Actions"><div class="button-container">${actionButton}${extraButtons}</div></td>
           `;
         console.log("assigned",task.assignUser)

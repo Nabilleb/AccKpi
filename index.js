@@ -96,7 +96,7 @@ app.get("/login",checkIfInSession ,async(req,res) =>{
 })
 
 app.post("/login", async (req, res) => {
-  const { username, password, projectId } = req.body;
+  const { username, password } = req.body;
 
   try {
     const result = await pool.request()
@@ -788,7 +788,7 @@ app.get("/getWorkflow", async (req, res) => {
 
 app.get("/adminpage", ensureAuthenticated, async (req, res) => {
   const user = req.session.user;
-
+  const desc_user = req.session.user.name
   if (!user || !user.usrAdmin) {
     return res.status(403).send("Forbidden: Admins only");
   }
@@ -800,9 +800,9 @@ app.get("/adminpage", ensureAuthenticated, async (req, res) => {
       FROM tblProcess
       ORDER BY NumberOfProccessID
     `);
-
     res.render("homepage.ejs", {
       user,
+      desc_user,
       processes: result.recordset 
     });
   } catch (err) {
