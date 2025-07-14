@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>System Engineering Workflow Dashboard</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --primary: #2563eb;
@@ -15,6 +16,7 @@
             --success: #10b981;
             --danger: #ef4444;
             --warning: #f59e0b;
+            --info: #0ea5e9;
             --text: #1e293b;
             --text-light: #64748b;
             --border: #e2e8f0;
@@ -23,9 +25,11 @@
             --radius-sm: 6px;
             --radius-md: 10px;
             --radius-lg: 16px;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
             --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
             --shadow-lg: 0 10px 25px rgba(0,0,0,0.1);
             --gradient: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         * {
@@ -40,156 +44,194 @@
             color: var(--text);
             line-height: 1.5;
             padding: 1rem;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
-.container {
-      max-width: 800px;
-      margin: 0 auto;
-      background-color: var(--white);
-      border-radius: 8px;
-      box-shadow: var(--shadow);
-      padding: 2rem;
-    }
 
-    h1 {
-      color: var(--primary-dark);
-      margin-bottom: 1.5rem;
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-    }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: var(--white);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-md);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
 
-    h1 i {
-      color: var(--accent);
-    }
+        h1, h2, h3 {
+            color: var(--primary-dark);
+            font-weight: 600;
+        }
 
-    .form-group {
-      margin-bottom: 1.5rem;
-    }
+        h1 {
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
 
-    label {
-      display: block;
-      margin-bottom: 0.5rem;
-      font-weight: 500;
-      color: var(--text);
-    }
+        h1 i {
+            color: var(--primary);
+        }
 
-    .form-control {
-      width: 100%;
-      padding: 0.75rem;
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      font-size: 1rem;
-      transition: var(--transition);
-    }
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
 
-    .form-control:focus {
-      outline: none;
-      border-color: var(--accent);
-      box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.2);
-    }
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--text);
+            font-size: 0.875rem;
+        }
 
-    select.form-control {
-      appearance: none;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23333333' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
-      background-repeat: no-repeat;
-      background-position: right 0.75rem center;
-      background-size: 16px 12px;
-      padding-right: 2.5rem;
-    }
+        .form-control {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-size: 0.9375rem;
+            transition: var(--transition);
+            background-color: var(--white);
+        }
 
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.75rem 1.5rem;
-      border: none;
-      border-radius: 4px;
-      font-size: 1rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: var(--transition);
-    }
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+        }
 
-    .btn-primary {
-      background-color: var(--primary);
-      color: white;
-    }
+        select.form-control {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%2364748b' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.75rem center;
+            background-size: 16px 12px;
+            padding-right: 2.5rem;
+        }
 
-    .btn-primary:hover {
-      background-color: var(--primary-dark);
-      transform: translateY(-2px);
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-size: 0.9375rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            white-space: nowrap;
+        }
 
-    .btn-secondary {
-      background-color: var(--border);
-      color: var(--text);
-    }
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
 
-    .btn-secondary:hover {
-      background-color: #d1d5db;
-      transform: translateY(-2px);
-    }
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-sm);
+        }
 
-    .btn i {
-      font-size: 0.9em;
-    }
+        .btn-primary:active {
+            transform: translateY(0);
+        }
 
-    .button-group {
-      display: flex;
-      gap: 1rem;
-      margin-top: 2rem;
-    }
+        .btn-secondary {
+            background-color: var(--border);
+            color: var(--text);
+        }
 
-    .status-badge {
-      display: inline-flex;
-      align-items: center;
-      padding: 0.35rem 0.75rem;
-      border-radius: 999px;
-      font-size: 0.85rem;
-      font-weight: 600;
-      background-color: rgba(255, 193, 7, 0.15);
-      color: #ffc107;
-      gap: 0.35rem;
-    }
+        .btn-secondary:hover {
+            background-color: #d1d5db;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-sm);
+        }
 
-    .alert {
-      padding: 1rem;
-      border-radius: 4px;
-      margin-bottom: 1.5rem;
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-    }
+        .btn-secondary:active {
+            transform: translateY(0);
+        }
 
-    .alert-success {
-      background-color: rgba(40, 167, 69, 0.15);
-      color: var(--success);
-    }
+        .btn i {
+            font-size: 0.9em;
+        }
 
-    .alert-danger {
-      background-color: rgba(220, 53, 69, 0.15);
-      color: var(--danger);
-    }
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
 
-    @media (max-width: 768px) {
-      body {
-        padding: 1rem;
-      }
-      
-      .container {
-        padding: 1.5rem;
-      }
-      
-      .button-group {
-        flex-direction: column;
-      }
-      
-      .btn {
-        width: 100%;
-        justify-content: center;
-      }
-    }
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.35rem 0.75rem;
+            border-radius: 999px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            gap: 0.35rem;
+        }
+
+        .status-draft {
+            background-color: rgba(66, 66, 66, 0.1);
+            color: #424242;
+        }
+
+        .status-in-progress {
+            background-color: rgba(21, 101, 192, 0.1);
+            color: #1565c0;
+        }
+
+        .status-review {
+            background-color: rgba(255, 143, 0, 0.1);
+            color: #ff8f00;
+        }
+
+        .status-completed {
+            background-color: rgba(46, 125, 50, 0.1);
+            color: #2e7d32;
+        }
+
+        .status-blocked {
+            background-color: rgba(198, 40, 40, 0.1);
+            color: #c62828;
+        }
+
+        .status-pending {
+            background-color: rgba(245, 158, 11, 0.1);
+            color: var(--warning);
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: var(--radius-sm);
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 0.9375rem;
+        }
+
+        .alert-success {
+            background-color: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+        }
+
+        .alert-danger {
+            background-color: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+        }
+
+        .alert-info {
+            background-color: rgba(14, 165, 233, 0.1);
+            color: var(--info);
+        }
+
         .dashboard {
             max-width: 1400px;
             margin: 0 auto;
@@ -205,6 +247,10 @@
             display: flex;
             flex-direction: column;
             gap: 1.5rem;
+            background-color: var(--white);
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
 
         .header h1 {
@@ -223,39 +269,6 @@
             align-items: center;
         }
 
-        /* Enhanced status badges with icons */
-        .status-badge {
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 500;
-            text-transform: capitalize;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-        }
-        .status-draft {
-            background-color: #e0e0e0;
-            color: #424242;
-        }
-        .status-in-progress {
-            background-color: #bbdefb;
-            color: #1565c0;
-        }
-        .status-review {
-            background-color: #fff0c2;
-            color: #ff8f00;
-        }
-        .status-completed {
-            background-color: #c8e6c9;
-            color: #2e7d32;
-        }
-        .status-blocked {
-            background-color: #ffcdd2;
-            color: #c62828;
-        }
-
-        /* Enhanced buttons */
         .btn {
             padding: 0.5rem 1rem;
             border-radius: var(--radius-sm);
@@ -264,37 +277,54 @@
             gap: 0.5rem;
             cursor: pointer;
             font-weight: 500;
-            transition: all 0.2s ease;
+            transition: var(--transition);
             font-size: 0.875rem;
         }
+
         .btn-primary {
             background: var(--primary);
             color: white;
             border: 1px solid var(--primary);
         }
+
         .btn-primary:hover {
             background: var(--primary-dark);
             border-color: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-sm);
         }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
         .btn-outline {
             background: white;
             color: var(--primary);
             border: 1px solid var(--primary);
         }
+
         .btn-outline:hover {
             background: var(--primary-lighter);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-sm);
         }
+
+        .btn-outline:active {
+            transform: translateY(0);
+        }
+
         .btn-sm {
-            padding: 0.25rem 0.5rem;
+            padding: 0.375rem 0.75rem;
             font-size: 0.75rem;
         }
 
-        /* Enhanced search box */
         .search-box {
             position: relative;
             flex: 1;
             min-width: 240px;
         }
+
         .search-icon {
             position: absolute;
             left: 10px;
@@ -303,20 +333,22 @@
             pointer-events: none;
             color: var(--text-light);
         }
+
         .search-box input {
             padding: 0.5rem 1rem 0.5rem 2.25rem;
             border-radius: var(--radius-sm);
             border: 1px solid var(--border);
             width: 100%;
-            transition: all 0.2s ease;
+            transition: var(--transition);
+            font-size: 0.875rem;
         }
+
         .search-box input:focus {
             outline: none;
             border-color: var(--primary);
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
         }
 
-        /* Enhanced filters */
         .filters {
             display: flex;
             gap: 1rem;
@@ -325,43 +357,48 @@
             border-bottom: 1px solid var(--border);
             flex-wrap: wrap;
         }
+
         .filter-group {
             display: flex;
             flex-direction: column;
             gap: 0.25rem;
             min-width: 160px;
         }
+
         .filter-label {
             font-size: 0.75rem;
             color: var(--text-light);
             font-weight: 500;
         }
+
         .filter-group select {
             padding: 0.5rem;
             border-radius: var(--radius-sm);
             border: 1px solid var(--border);
             font-size: 0.875rem;
-            transition: all 0.2s ease;
+            transition: var(--transition);
+            background-color: var(--white);
         }
+
         .filter-group select:focus {
             outline: none;
             border-color: var(--primary);
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
         }
 
-        /* Enhanced table container */
         .table-container {
             position: relative;
             min-height: 300px;
             overflow-x: auto;
+            background-color: var(--white);
         }
 
-        /* Enhanced table */
         table {
             width: 100%;
             border-collapse: collapse;
             font-size: 0.875rem;
         }
+
         th {
             text-align: left;
             padding: 0.75rem 1rem;
@@ -371,57 +408,66 @@
             position: sticky;
             top: 0;
             z-index: 10;
+            white-space: nowrap;
         }
+
         td {
             padding: 0.75rem 1rem;
             border-bottom: 1px solid var(--border);
             vertical-align: middle;
+            white-space: nowrap;
         }
+
         tr:last-child td {
             border-bottom: none;
         }
+
         tr:hover td {
             background-color: var(--primary-lighter);
         }
 
-        /* Sort indicators */
         .th-inner {
             display: flex;
             align-items: center;
             gap: 0.25rem;
         }
+
         .sort-icon {
             color: var(--text-light);
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
         }
+
         .sort-icon:hover {
             color: var(--primary);
         }
+
         .sort-icon.active {
             color: var(--primary);
         }
+
         .sort-icon.asc svg {
             transform: rotate(180deg);
         }
 
-        /* Clickable rows */
         .clickable {
             cursor: pointer;
             transition: background-color 0.2s ease;
         }
-        .clickable:hover td {
-            background-color: var(--primary-lighter);
-        }
 
-        /* Loading state */
         .loading {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
             display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
         }
+
         .loading-spinner {
             width: 2.5rem;
             height: 2.5rem;
@@ -430,39 +476,48 @@
             border-radius: 50%;
             animation: spin 1s linear infinite;
         }
+
+        .loading-text {
+            color: var(--text-light);
+            font-size: 0.875rem;
+        }
+
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
 
-        /* No results message */
         .no-results {
             text-align: center;
             padding: 2rem;
             color: var(--text-light);
             display: none;
         }
+
         .no-results-icon {
             font-size: 2rem;
             margin-bottom: 0.5rem;
             color: var(--text-light);
         }
 
-        /* Enhanced pagination */
         .pagination {
             display: flex;
             justify-content: space-between;
             align-items: center;
             padding: 1rem 1.5rem;
             border-top: 1px solid var(--border);
+            background-color: var(--white);
         }
+
         .page-info {
             font-size: 0.875rem;
             color: var(--text-light);
         }
+
         .page-controls {
             display: flex;
             gap: 0.5rem;
         }
+
         .page-btn {
             padding: 0.375rem 0.75rem;
             border: 1px solid var(--border);
@@ -475,128 +530,373 @@
             min-width: 2rem;
             height: 2rem;
             font-size: 0.875rem;
-            transition: all 0.2s ease;
+            transition: var(--transition);
         }
+
         .page-btn:hover:not(:disabled) {
             background: var(--primary-lighter);
             border-color: var(--primary);
         }
+
         .page-btn:disabled {
             opacity: 0.5;
             cursor: not-allowed;
         }
+
         .page-btn.active {
             background: var(--primary);
             color: white;
             border-color: var(--primary);
         }
 
-        /* Badge icons */
         .badge-icon {
             width: 14px;
             height: 14px;
         }
 
-        /* Responsive improvements */
+        .action-btn {
+            transition: var(--transition);
+        }
+
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .action-btn:active {
+            transform: translateY(0);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: var(--white);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-lg);
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal-header {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        .modal-footer {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.25rem;
+            cursor: pointer;
+            color: var(--text-light);
+            transition: var(--transition);
+        }
+
+        .close-btn:hover {
+            color: var(--text);
+        }
+
+        .confirmation-text {
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
+        }
+
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-card {
+            background-color: var(--white);
+            border-radius: var(--radius-sm);
+            padding: 1rem;
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--primary-dark);
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            color: var(--text-light);
+        }
+
+        .progress-container {
+            margin-top: 1.5rem;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background-color: var(--border);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background-color: var(--primary);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        .progress-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: var(--text-light);
+        }
+
         @media (max-width: 768px) {
+            body {
+                padding: 0.5rem;
+            }
+            
+            .container {
+                padding: 1.5rem;
+            }
+            
+            .button-group {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+
             .toolbar {
                 flex-direction: column;
                 align-items: stretch;
             }
+
             .search-box {
                 min-width: 100%;
             }
+
             .filters {
                 flex-direction: column;
                 gap: 0.75rem;
             }
+
             .filter-group {
                 min-width: 100%;
             }
+
             .pagination {
                 flex-direction: column;
                 gap: 1rem;
                 align-items: stretch;
             }
+
             .page-controls {
                 justify-content: center;
             }
+
+            .stats-container {
+                grid-template-columns: 1fr;
+            }
         }
 
-        /* Animation for table rows */
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
+
         tr {
             animation: fadeIn 0.3s ease forwards;
+        }
+
+        /* Tooltip styles */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+
+        .tooltip .tooltip-text {
+            visibility: hidden;
+            width: 200px;
+            background-color: var(--text);
+            color: var(--white);
+            text-align: center;
+            border-radius: var(--radius-sm);
+            padding: 0.5rem;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.75rem;
+            font-weight: normal;
+        }
+
+        .tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        /* Toast notification */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: var(--text);
+            color: var(--white);
+            padding: 1rem;
+            border-radius: var(--radius-sm);
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            z-index: 1000;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .toast-success {
+            background-color: var(--success);
+        }
+
+        .toast-error {
+            background-color: var(--danger);
+        }
+
+        .toast-info {
+            background-color: var(--info);
         }
     </style>
 </head>
 <body>
- <div class="container">
-    <h1>
-      <i class="fas fa-plus-circle"></i>
-      Add New Workflow
-    </h1>
-    
-    <div id="alert-message" class="alert" style="display: none;">
-      <i class="fas fa-check-circle"></i>
-      <span id="alert-text"></span>
+    <!-- Toast Notification -->
+    <div id="toast" class="toast">
+        <i class="fas fa-check-circle"></i>
+        <span id="toast-message">Operation completed successfully</span>
     </div>
-    
-    <form id="workflow-form">
-      <div class="form-group">
-        <label for="process-id">Process</label>
-        <select id="process-id" class="form-control" required>
-          <option value="">Select Process</option>
-          <% processes.forEach(process => { %>
-            <option value="<%= process.ProcessID %>"><%= process.ProcessName %></option>
-          <% }) %>
-        </select>
-      </div>
 
-      <div class="form-group">
-        <label for="project-id">Project</label>
-        <select id="project-id" class="form-control" required>
-          <option value="">Select Project</option>
-          <% projects.forEach(project => { %>
-            <option value="<%= project.ProjectID %>"><%= project.ProjectName %></option>
-          <% }) %>
-        </select>
-      </div>
-
-      <div class="form-group">
-        <label for="package-id">Package</label>
-        <select id="package-id" class="form-control" required>
-          <option value="">Select Package</option>
-          <% packages.forEach(pkg => { %>
-            <option value="<%= pkg.PkgeID %>"><%= pkg.PkgeName %></option>
-          <% }) %>
-        </select>
-      </div>
-
-      <div class="form-group">
-        <label>Status</label>
-        <div class="status-badge">
-          <i class="fas fa-clock"></i>
-          Pending
+    <!-- Confirmation Modal -->
+    <div id="confirmationModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Confirm Action</h3>
+                <button class="close-btn" id="closeModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p class="confirmation-text" id="modalText">Are you sure you want to perform this action?</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelAction">Cancel</button>
+                <button class="btn btn-primary" id="confirmAction">Confirm</button>
+            </div>
         </div>
-        <input type="hidden" id="status" value="Pending">
-      </div>
+    </div>
 
-      <div class="button-group">
-        <button type="submit" class="btn btn-primary">
-          <i class="fas fa-save"></i>
-          Save Workflow
-        </button>
-        <button type="button" class="btn btn-secondary" onclick="window.location.href='/workflow'">
-          <i class="fas fa-times"></i>
-          Cancel
-        </button>
-      </div>
-    </form>
-  </div>
+    <div class="container">
+        <h1>
+            <i class="fas fa-plus-circle"></i>
+            Add New Workflow
+        </h1>
+        
+        <div id="alert-message" class="alert" style="display: none;">
+            <i class="fas fa-check-circle"></i>
+            <span id="alert-text"></span>
+        </div>
+        
+        <form id="workflow-form">
+            <div class="form-group">
+                <label for="process-id">Process</label>
+                <select id="process-id" class="form-control" required>
+                    <option value="">Select Process</option>
+                    <% processes.forEach(process => { %>
+                        <option value="<%= process.NumberOfProccessID %>"><%= process.ProcessName %></option>
+                    <% }) %>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="project-id">Project</label>
+                <select id="project-id" class="form-control" required>
+                    <option value="">Select Project</option>
+                    <% projects.forEach(project => { %>
+                        <option value="<%= project.projectID %>"><%= project.projectName %></option>
+                    <% }) %>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="package-id">Package</label>
+                <select id="package-id" class="form-control" required>
+                    <option value="">Select Package</option>
+                    <% packages.forEach(pkg => { %>
+                        <option value="<%= pkg.PkgeID %>"><%= pkg.PkgeName %></option>
+                    <% }) %>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Status</label>
+                <div class="status-badge status-pending">
+                    <i class="fas fa-clock"></i>
+                    Pending
+                </div>
+                <input type="hidden" id="status" value="Pending">
+            </div>
+
+            <div class="button-group">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i>
+                    Save Workflow
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="window.location.href='/workflow'">
+                    <i class="fas fa-times"></i>
+                    Cancel
+                </button>
+            </div>
+        </form>
+    </div>
 
     <div class="dashboard">
         <div class="header">
@@ -604,7 +904,7 @@
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M3 17V19H10V17H3ZM3 5V7H14V5H3ZM14 21V19H21V17H14V15H12V21H14ZM7 9V11H3V13H7V15H9V9H7ZM21 13V11H12V13H21ZM15 9H17V7H21V5H17V3H15V9Z" fill="currentColor"/>
                 </svg>
-                System Engineering Workflow
+                System Engineering Workflow Dashboard
             </h1>
             <div class="toolbar">
                 <div class="search-box">
@@ -634,6 +934,10 @@
                     Reset
                 </button>
             </div>
+        </div>
+
+        <div class="stats-container" id="statsContainer">
+            <!-- Stats will be populated by JavaScript -->
         </div>
 
         <div class="filters">
@@ -675,6 +979,7 @@
         <div class="table-container">
             <div class="loading" id="loadingIndicator">
                 <div class="loading-spinner"></div>
+                <div class="loading-text">Loading workflows...</div>
             </div>
 
             <table>
@@ -733,34 +1038,32 @@
                         <th>
                             <div class="th-inner">
                                 Finished Date
-                                <span class="sort-icon" data-sort="DueDate">
+                                <span class="sort-icon" data-sort="completionDate">
                                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                         <path d="M7 10L12 15L17 10H7Z" fill="currentColor"/>
                                     </svg>
                                 </span>
                             </div>
-                        
                         </th>
-                          <th>
+                        <th>
                             <div class="th-inner">
                                 Created Date
-                                <span class="sort-icon" data-sort="DueDate">
+                                <span class="sort-icon" data-sort="createdDate">
                                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                         <path d="M7 10L12 15L17 10H7Z" fill="currentColor"/>
                                     </svg>
                                 </span>
                             </div>
-                        
-                        </th>  <th>
+                        </th>
+                        <th>
                             <div class="th-inner">
                                 Start Date
-                                <span class="sort-icon" data-sort="DueDate">
+                                <span class="sort-icon" data-sort="startDate">
                                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                         <path d="M7 10L12 15L17 10H7Z" fill="currentColor"/>
                                     </svg>
                                 </span>
                             </div>
-                        
                         </th>
                         <th>Actions</th>
                     </tr>
@@ -798,9 +1101,8 @@ const rowsPerPage = 10;
 let sortColumn = 'HdrID';
 let sortDirection = 'asc';
 let debounceTimer;
-const form = document.getElementById('workflow-form');
-const alertMessage = document.getElementById('alert-message');
-const alertText = document.getElementById('alert-text');
+let pendingAction = null;
+
 // DOM elements
 const searchInput = document.getElementById('searchInput');
 const projectFilter = document.getElementById('projectFilter');
@@ -815,11 +1117,23 @@ const noResultsMessage = document.getElementById('noResultsMessage');
 const loadingIndicator = document.getElementById('loadingIndicator');
 const pageInfo = document.getElementById('pageInfo');
 const paginationControls = document.getElementById('paginationControls');
+const statsContainer = document.getElementById('statsContainer');
+const toast = document.getElementById('toast');
+const toastMessage = document.getElementById('toast-message');
+const confirmationModal = document.getElementById('confirmationModal');
+const closeModal = document.getElementById('closeModal');
+const cancelAction = document.getElementById('cancelAction');
+const confirmAction = document.getElementById('confirmAction');
+const modalText = document.getElementById('modalText');
+const form = document.getElementById('workflow-form');
+const alertMessage = document.getElementById('alert-message');
+const alertText = document.getElementById('alert-text');
 
 // Initialize the dashboard
 document.addEventListener("DOMContentLoaded", async () => {
     await loadWorkflowData();
     setupEventListeners();
+    updateStats();
     updateTable();
     updatePagination();
 });
@@ -832,7 +1146,7 @@ async function loadWorkflowData() {
         const response = await fetch("/api/workFlowDashData");
         if (!response.ok) throw new Error("Failed to fetch data");
         allWorkflows = await response.json();
-        console.log(allWorkflows)
+        console.log("Loaded workflows:", allWorkflows);
         filteredWorkflows = [...allWorkflows];
         
         hideLoading();
@@ -843,18 +1157,74 @@ async function loadWorkflowData() {
     }
 }
 
+// Calculate and display statistics
+function updateStats() {
+    if (!allWorkflows.length) return;
+
+    const totalWorkflows = allWorkflows.length;
+    const completedCount = allWorkflows.filter(w => w.Status === 'Completed').length;
+    const inProgressCount = allWorkflows.filter(w => w.Status === 'In Progress').length;
+    const reviewCount = allWorkflows.filter(w => w.Status === 'Review').length;
+    const blockedCount = allWorkflows.filter(w => w.Status === 'Blocked').length;
+    const completionRate = totalWorkflows > 0 ? Math.round((completedCount / totalWorkflows) * 100) : 0;
+
+    statsContainer.innerHTML = `
+        <div class="stat-card">
+            <div class="stat-value">${totalWorkflows}</div>
+            <div class="stat-label">Total Workflows</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">${completedCount}</div>
+            <div class="stat-label">Completed</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">${inProgressCount}</div>
+            <div class="stat-label">In Progress</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">${blockedCount}</div>
+            <div class="stat-label">Blocked</div>
+        </div>
+        <div class="stat-card">
+            <div class="progress-container">
+                <div class="stat-value">${completionRate}%</div>
+                <div class="stat-label">Completion Rate</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: ${completionRate}%"></div>
+                </div>
+                <div class="progress-labels">
+                    <span>0%</span>
+                    <span>100%</span>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
 // Set up event listeners
 function setupEventListeners() {
     // Search input with debounce
     searchInput.addEventListener('input', () => {
         clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(applyFilters, 300);
+        debounceTimer = setTimeout(() => {
+            applyFilters();
+            updateStats();
+        }, 300);
     });
     
     // Filter dropdowns
-    projectFilter.addEventListener('change', applyFilters);
-    processFilter.addEventListener('change', applyFilters);
-    statusFilter.addEventListener('change', applyFilters);
+    projectFilter.addEventListener('change', () => {
+        applyFilters();
+        updateStats();
+    });
+    processFilter.addEventListener('change', () => {
+        applyFilters();
+        updateStats();
+    });
+    statusFilter.addEventListener('change', () => {
+        applyFilters();
+        updateStats();
+    });
     
     // Reset filters button
     resetFiltersBtn.addEventListener('click', resetFilters);
@@ -866,7 +1236,13 @@ function setupEventListeners() {
     });
     
     // Export button
-    exportBtn.addEventListener('click', exportData);
+    exportBtn.addEventListener('click', () => {
+        showConfirmation(
+            "Export Workflows",
+            "Are you sure you want to export the current filtered workflows to CSV?",
+            exportData
+        );
+    });
     
     // Sort icons
     document.querySelectorAll('.sort-icon').forEach(icon => {
@@ -896,6 +1272,81 @@ function setupEventListeners() {
             updatePagination();
         });
     });
+
+    // Modal controls
+    closeModal.addEventListener('click', hideModal);
+    cancelAction.addEventListener('click', hideModal);
+    confirmAction.addEventListener('click', () => {
+        if (pendingAction) {
+            pendingAction();
+            pendingAction = null;
+        }
+        hideModal();
+    });
+
+    // Form submission
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const processId = document.getElementById('process-id').value;
+        const projectId = document.getElementById('project-id').value;
+        const packageId = document.getElementById('package-id').value;
+        const status = document.getElementById('status').value;
+
+        try {
+            showLoading();
+            const res = await fetch('/api/workflows', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    processID: processId,
+                    projectID: projectId,
+                    packageID: packageId,
+                    status
+                })
+            });
+
+            if (!res.ok) throw new Error('Server error');
+
+            showToast('Workflow added successfully!', 'success');
+            form.reset();
+            
+            // Refresh the data
+            await loadWorkflowData();
+            updateStats();
+            updateTable();
+            updatePagination();
+        } catch (error) {
+            console.error('Error adding workflow:', error);
+            showToast('Error adding workflow: ' + error.message, 'error');
+        } finally {
+            hideLoading();
+        }
+    });
+}
+
+// Show confirmation modal
+function showConfirmation(title, text, action) {
+    document.querySelector('.modal-header h3').textContent = title;
+    modalText.textContent = text;
+    pendingAction = action;
+    confirmationModal.style.display = 'flex';
+}
+
+// Hide modal
+function hideModal() {
+    confirmationModal.style.display = 'none';
+}
+
+// Show toast notification
+function showToast(message, type = 'success') {
+    toast.className = `toast toast-${type}`;
+    toastMessage.textContent = message;
+    toast.classList.add('show');
+    
+    setTimeout(() => {
+        toast.classList.remove('show');
+    }, 3000);
 }
 
 // Apply all filters
@@ -934,6 +1385,7 @@ function resetFilters() {
     statusFilter.value = '';
     
     applyFilters();
+    updateStats();
 }
 
 // Sort workflows based on current sort column and direction
@@ -951,8 +1403,8 @@ function sortWorkflows() {
             return sortDirection === 'asc' ? valueA - valueB : valueB - valueA;
         }
         
-        // Date sorting for DueDate
-        if (sortColumn === 'DueDate') {
+        // Date sorting for date fields
+        if (sortColumn.includes('Date')) {
             const dateA = valueA ? new Date(valueA) : new Date(0);
             const dateB = valueB ? new Date(valueB) : new Date(0);
             return sortDirection === 'asc' ? dateA - dateB : dateB - dateA;
@@ -966,14 +1418,18 @@ function sortWorkflows() {
 }
 
 function formatDate(dateStr) {
-  if (!dateStr) return '-';
-  const date = new Date(dateStr);
-  return date.toLocaleDateString('en-GB'); // 'en-US' for MM/DD/YYYY, 'en-GB' for DD/MM/YYYY
+    if (!dateStr) return '-';
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-GB', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+    });
 }
-
 
 // Update the table with filtered and sorted data
 function updateTable() {
+    sortWorkflows();
     
     const startIndex = (currentPage - 1) * rowsPerPage;
     const endIndex = startIndex + rowsPerPage;
@@ -996,11 +1452,11 @@ function updateTable() {
                         ${workflow.Status || '-'}
                     </span>
                 </td>
-        <td>${formatDate(workflow.completionDate)}</td>
-        <td>${formatDate(workflow.createdDate)}</td>
-        <td>${formatDate(workflow.startDate)}</td>
+                <td>${formatDate(workflow.completionDate)}</td>
+                <td>${formatDate(workflow.createdDate)}</td>
+                <td>${formatDate(workflow.startDate)}</td>
                 <td>
-                    <button class="btn btn-outline btn-sm action-btn" data-action="view">
+                    <button class="btn btn-outline btn-sm action-btn" data-action="view" title="View details">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M12 4.5C7 4.5 2.73 7.61 1 12C2.73 16.39 7 19.5 12 19.5C17 19.5 21.27 16.39 23 12C21.27 7.61 17 4.5 12 4.5ZM12 17C9.24 17 7 14.76 7 12C7 9.24 9.24 7 12 7C14.76 7 17 9.24 17 12C17 14.76 14.76 17 12 17ZM12 9C10.34 9 9 10.34 9 12C9 13.66 10.34 15 12 15C13.66 15 15 13.66 15 12C15 10.34 13.66 9 12 9Z" fill="currentColor"/>
                         </svg>
@@ -1051,17 +1507,6 @@ function getStatusIcon(status) {
     return icons[status] || '';
 }
 
-// Format date for display
-function formatDate(dateString) {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-        year: 'numeric', 
-        month: 'short', 
-        day: 'numeric' 
-    });
-}
-
 // Update pagination controls
 function updatePagination() {
     const totalPages = Math.ceil(filteredWorkflows.length / rowsPerPage);
@@ -1088,6 +1533,7 @@ function updatePagination() {
             currentPage--;
             updateTable();
             updatePagination();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     });
     paginationControls.appendChild(prevButton);
@@ -1111,6 +1557,7 @@ function updatePagination() {
             currentPage = 1;
             updateTable();
             updatePagination();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         });
         paginationControls.appendChild(firstPageButton);
         
@@ -1133,6 +1580,7 @@ function updatePagination() {
             currentPage = i;
             updateTable();
             updatePagination();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         });
         paginationControls.appendChild(pageButton);
     }
@@ -1155,6 +1603,7 @@ function updatePagination() {
             currentPage = totalPages;
             updateTable();
             updatePagination();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         });
         paginationControls.appendChild(lastPageButton);
     }
@@ -1173,6 +1622,7 @@ function updatePagination() {
             currentPage++;
             updateTable();
             updatePagination();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     });
     paginationControls.appendChild(nextButton);
@@ -1181,12 +1631,12 @@ function updatePagination() {
 // Export data to CSV
 function exportData() {
     if (filteredWorkflows.length === 0) {
-        alert('No data to export');
+        showToast('No data to export', 'error');
         return;
     }
     
     // Define CSV headers
-    const headers = ['HDR ID', 'Process', 'Package', 'Project', 'Status', 'Due Date'];
+    const headers = ['HDR ID', 'Process', 'Package', 'Project', 'Status', 'Created Date', 'Start Date', 'Finished Date'];
     
     // Create CSV rows
     const rows = filteredWorkflows.map(workflow => [
@@ -1195,7 +1645,9 @@ function exportData() {
         workflow.PackageName || '',
         workflow.ProjectName || '',
         workflow.Status || '',
-        workflow.DueDate ? formatDate(workflow.DueDate) : ''
+        workflow.createdDate || '',
+        workflow.startDate || '',
+        workflow.completionDate || ''
     ]);
     
     // Create CSV content
@@ -1216,6 +1668,8 @@ function exportData() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    
+    showToast('Export completed successfully', 'success');
 }
 
 // Show loading indicator
@@ -1234,7 +1688,7 @@ function hideLoading() {
 function showError(message) {
     workflowTableBody.innerHTML = `
         <tr>
-            <td colspan="7" style="text-align: center; padding: 2rem; color: var(--danger);">
+            <td colspan="9" style="text-align: center; padding: 2rem; color: var(--danger);">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-bottom: 0.5rem;">
                     <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM13 17H11V15H13V17ZM13 13H11V7H13V13Z" fill="currentColor"/>
                 </svg>
