@@ -4,7 +4,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const loginForm = document.getElementById('loginForm');
     const loginButton = document.getElementById('loginButton');
     const usernameInput = document.getElementById('username');
-    const projectSelect = document.getElementById('projectId');
 
     togglePassword.addEventListener('click', () => {
         const isPassword = passwordInput.type === 'password';
@@ -17,11 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         
         // Validate form before submission
-        if (!projectSelect.value) {
-            showToast('Please select a project', 'error');
-            projectSelect.focus();
-            return;
-        }
+     
 
         if (!usernameInput.value) {
             showToast('Please enter your username/email', 'error');

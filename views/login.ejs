@@ -17,18 +17,6 @@
         </div>
 
         <form id="loginForm" method="POST" action="/login">
-    <div class="input-group">
-    <label for="projectId">Select Project</label>
-    <div class="custom-select">
-        <select id="projectId" name="projectId" required>
-            <option value="" disabled selected>Select a project</option>
-            <% project.forEach(p => { %>
-                <option value="<%= p.projectID %>"><%= p.projectName %></option>
-            <% }); %>
-        </select>
-        <span class="select-arrow"><i class="fas fa-chevron-down"></i></span>
-    </div>
-</div>
             <div class="input-group">
                 <label for="username">Username / Email</label>
                 <input type="text" id="username" placeholder="e.g., john.doe@domain.com" name="username" required autocomplete="username">

@@ -91,9 +91,8 @@ app.use(session({
 
 
 app.get("/login",checkIfInSession ,async(req,res) =>{    
-  const result = await pool.request()
-                          .query("SELECT * FROM tblProject")
-  res.render("login.ejs", {project:result.recordset})
+ 
+  res.render("login.ejs")
 })
 
 app.post("/login", async (req, res) => {
@@ -109,22 +108,16 @@ app.post("/login", async (req, res) => {
         WHERE usrEmail = @username AND usrPWD = @password
       `);
       
-    const project = await pool.request()
-      .input('projectID', sql.Int, projectId)
-      .query("SELECT * FROM tblProject WHERE projectID = @projectID");
+   
       
     if (result.recordset.length === 1) {
       const user = result.recordset[0];
-      const projectName = project.recordset[0].projectName;
-      const proID = project.recordset[0].projectID;
 
       req.session.user = {
         id: user.usrID,
         name: user.usrDesc,
         usrAdmin: user.usrAdmin,
-        DepartmentId: user.DepartmentID,
-        projectName: projectName,
-        projectID: proID
+        DepartmentId: user.DepartmentID
       };
 
       return res.json({ success: true, redirect: user.usrAdmin ? "/adminpage" : "/workFlowDash" });
@@ -430,38 +423,37 @@ app.get("/addProcess", isAdmin, async (req, res) => {
 
 
 
-app.get('/api/tasks/by-department/:departmentID', async (req, res) => {
-  const { departmentID } = req.params;
-
+app.get('/api/tasks/by-department/:departmentID/by-process/:processID', async (req, res) => {
+  const { departmentID, processID } = req.params;
+console.log(departmentID)
+console.log(processID)
   const query = `
     SELECT 
-    T.TaskID,
+      T.TaskID,
       T.TaskName,
       T.PlannedDate,
-      T.DaysRequired,
-      W.TimeFinished AS DateFinished,
-      W.DelayReason,
-      W.Delay
+      T.TaskPlanned,
+      T.DaysRequired
     FROM tblTasks T
-    LEFT JOIN (
-      SELECT *, ROW_NUMBER() OVER (PARTITION BY TaskID ORDER BY TimeFinished DESC) AS rn
-      FROM tblWorkflowDtl
-    ) W ON T.TaskID = W.TaskID AND W.rn = 1
-    WHERE T.DepId = @departmentID
+    WHERE T.DepId = @departmentID AND T.proccessID = @processID
     ORDER BY T.Priority;
   `;
 
   try {
     const result = await pool.request()
       .input('departmentID', sql.Int, departmentID)
+      .input('processID', sql.Int, processID)
       .query(query);
 
+    console.log(result.recordset);
     res.json(result.recordset);
   } catch (err) {
     console.error('Error fetching tasks by department:', err);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
+
+
 
 
 app.get("/addWorkflow", isAdmin, async (req, res) => {
@@ -1379,7 +1371,22 @@ app.post('/api/workflows', async (req, res) => {
   try {
     const poolRequest = pool.request();
 
-    // 1️⃣ Insert workflow header with createdDate = GETDATE()
+    // 0️⃣ Check if a workflow already exists for this processID
+    const existingWorkflow = await poolRequest
+      .input('processID', sql.Int, processID)
+      .query(`
+        SELECT workFlowID
+        FROM tblWorkflowHdr
+        WHERE processID = @processID
+      `);
+
+    if (existingWorkflow.recordset.length > 0) {
+      return res.status(400).json({
+        error: 'A workflow already exists for this process.'
+      });
+    }
+
+    // 1️⃣ Insert workflow header
     const insertResult = await poolRequest
       .input('processID', sql.Int, processID)
       .input('projectID', sql.Int, projectID)
@@ -1404,7 +1411,6 @@ app.post('/api/workflows', async (req, res) => {
       `);
 
     const newWorkflowID = insertResult.recordset[0].workFlowID;
-
     console.log('✅ Inserted WorkflowHdrID:', newWorkflowID);
 
     // 2️⃣ Update tblTasks
@@ -1443,6 +1449,7 @@ app.post('/api/workflows', async (req, res) => {
     res.status(500).json({ error: 'Database error' });
   }
 });
+
 
 
 

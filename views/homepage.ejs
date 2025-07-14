@@ -678,11 +678,8 @@
         <thead>
           <tr>
             <th data-sort="task">Task Name</th>
-            <th data-sort="planned">Planned Date</th>
+            <th data-sort="planned">Task Description</th>
             <th data-sort="days">Days Required</th>
-            <th data-sort="finished">Finished Date</th>
-            <th data-sort="status">Status</th>
-            <th>Reason</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -791,8 +788,6 @@
           if (row.classList.contains('loading-row') || row.classList.contains('no-tasks')) return;
           
           const taskName = row.querySelector('td:first-child').textContent.toLowerCase();
-          const delayReason = row.querySelector('td:nth-child(6)').textContent.toLowerCase();
-          const status = row.querySelector('td:nth-child(5)').textContent.toLowerCase();
           
           const matchesSearch = taskName.includes(searchTerm) || delayReason.includes(searchTerm);
           const matchesStatus = statusValue === 'all' || 
@@ -917,8 +912,10 @@
       function fetchTasksForDepartment(pid, did) {
         const tbody = document.querySelector(".taskgrid");
         tbody.innerHTML = '<tr class="loading-row"><td colspan="7"><div class="loading-spinner"></div> Loading tasks...</td></tr>';
-        
-        fetch(`/api/tasks/by-department/${did}`)
+        const cleanPid = pid.trim();
+const cleanDid = did.trim();
+
+fetch(`/api/tasks/by-department/${cleanDid}/by-process/${cleanPid}`)
           .then(res => {
             if (!res.ok) throw new Error('Network response was not ok');
             return res.json();
@@ -952,11 +949,8 @@
               
               row.innerHTML = `
                 <td>${task.TaskName}</td>
-                <td>${plannedDate}</td>
+                <td>${task.TaskPlanned}</td>
                 <td>${task.DaysRequired}</td>
-                <td>${finishedDate}</td>
-                <td>${status}</td>
-                <td>${task.DelayReason || ""}</td>
                 <td class="action-buttons">
                   ${!task.DateFinished ? 
                     `<button class="edit-btn" data-task-id="${task.TaskID}">
