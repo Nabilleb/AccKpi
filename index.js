@@ -146,9 +146,14 @@ res.render("packagefrom.ejs");
 app.get("/workFlowDash",ensureAuthenticated ,async (req, res) => {
   try {
     const projects = await pool.request().query("SELECT projectID, projectName FROM tblProject");
+    const package1 = await pool.request().query("SELECT * FROM tblPackages");
+    const process = await pool.request().query("SELECT * FROM tblProcess")
     const isAdmin = req.session.user.usrAdmin
-    console.log(isAdmin)
-    res.render("workflowdashboard.ejs", { projects: projects.recordset, usrAdmin:isAdmin });
+    console.log(projects.recordset)
+    console.log(package1.recordset)
+    console.log(process.recordset)
+
+    res.render("workflowdashboard.ejs", { projects: projects.recordset, usrAdmin:isAdmin , packages: package1.recordset, processes:process.recordset });
   } catch (err) {
     console.error("Error loading projects:", err);
     res.status(500).send("Error loading dashboard");

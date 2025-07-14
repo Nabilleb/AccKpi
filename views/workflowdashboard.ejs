@@ -41,7 +41,155 @@
             line-height: 1.5;
             padding: 1rem;
         }
+.container {
+      max-width: 800px;
+      margin: 0 auto;
+      background-color: var(--white);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      padding: 2rem;
+    }
 
+    h1 {
+      color: var(--primary-dark);
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    h1 i {
+      color: var(--accent);
+    }
+
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-size: 1rem;
+      transition: var(--transition);
+    }
+
+    .form-control:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.2);
+    }
+
+    select.form-control {
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23333333' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 0.75rem center;
+      background-size: 16px 12px;
+      padding-right: 2.5rem;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.5rem;
+      border: none;
+      border-radius: 4px;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .btn-primary {
+      background-color: var(--primary);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background-color: var(--primary-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .btn-secondary {
+      background-color: var(--border);
+      color: var(--text);
+    }
+
+    .btn-secondary:hover {
+      background-color: #d1d5db;
+      transform: translateY(-2px);
+    }
+
+    .btn i {
+      font-size: 0.9em;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.35rem 0.75rem;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      background-color: rgba(255, 193, 7, 0.15);
+      color: #ffc107;
+      gap: 0.35rem;
+    }
+
+    .alert {
+      padding: 1rem;
+      border-radius: 4px;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .alert-success {
+      background-color: rgba(40, 167, 69, 0.15);
+      color: var(--success);
+    }
+
+    .alert-danger {
+      background-color: rgba(220, 53, 69, 0.15);
+      color: var(--danger);
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding: 1rem;
+      }
+      
+      .container {
+        padding: 1.5rem;
+      }
+      
+      .button-group {
+        flex-direction: column;
+      }
+      
+      .btn {
+        width: 100%;
+        justify-content: center;
+      }
+    }
         .dashboard {
             max-width: 1400px;
             margin: 0 auto;
@@ -386,6 +534,69 @@
     </style>
 </head>
 <body>
+ <div class="container">
+    <h1>
+      <i class="fas fa-plus-circle"></i>
+      Add New Workflow
+    </h1>
+    
+    <div id="alert-message" class="alert" style="display: none;">
+      <i class="fas fa-check-circle"></i>
+      <span id="alert-text"></span>
+    </div>
+    
+    <form id="workflow-form">
+      <div class="form-group">
+        <label for="process-id">Process</label>
+        <select id="process-id" class="form-control" required>
+          <option value="">Select Process</option>
+          <% processes.forEach(process => { %>
+            <option value="<%= process.ProcessID %>"><%= process.ProcessName %></option>
+          <% }) %>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="project-id">Project</label>
+        <select id="project-id" class="form-control" required>
+          <option value="">Select Project</option>
+          <% projects.forEach(project => { %>
+            <option value="<%= project.ProjectID %>"><%= project.ProjectName %></option>
+          <% }) %>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="package-id">Package</label>
+        <select id="package-id" class="form-control" required>
+          <option value="">Select Package</option>
+          <% packages.forEach(pkg => { %>
+            <option value="<%= pkg.PkgeID %>"><%= pkg.PkgeName %></option>
+          <% }) %>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Status</label>
+        <div class="status-badge">
+          <i class="fas fa-clock"></i>
+          Pending
+        </div>
+        <input type="hidden" id="status" value="Pending">
+      </div>
+
+      <div class="button-group">
+        <button type="submit" class="btn btn-primary">
+          <i class="fas fa-save"></i>
+          Save Workflow
+        </button>
+        <button type="button" class="btn btn-secondary" onclick="window.location.href='/workflow'">
+          <i class="fas fa-times"></i>
+          Cancel
+        </button>
+      </div>
+    </form>
+  </div>
 
     <div class="dashboard">
         <div class="header">
@@ -587,7 +798,9 @@ const rowsPerPage = 10;
 let sortColumn = 'HdrID';
 let sortDirection = 'asc';
 let debounceTimer;
-
+const form = document.getElementById('workflow-form');
+const alertMessage = document.getElementById('alert-message');
+const alertText = document.getElementById('alert-text');
 // DOM elements
 const searchInput = document.getElementById('searchInput');
 const projectFilter = document.getElementById('projectFilter');
