@@ -1345,7 +1345,13 @@
       <div class="sidebar-user-avatar">RK</div>
       <div class="sidebar-user-info">
         <h4><%=user.name %></h4>
-        <p><%=user.DeptName %> Department</p>
+<p>
+  <% if (user.DeptName) { %>
+    <%= user.DeptName %> Department
+  <% } else { %>
+    Admin
+  <% } %>
+</p>
       </div>
     </div>
     
@@ -1354,6 +1360,7 @@
         <i class="fas fa-tachometer-alt"></i>
         Dashboard
       </a>
+
       <a href="/task-selected">
         <i class="fas fa-tasks"></i>
         View Tasks
@@ -1393,6 +1400,7 @@
           <i class="fas fa-home"></i>
           Dashboard
         </a>
+        
         <span class="breadcrumb-separator">/</span>
         <span>My Tasks</span>
       </div>
@@ -1402,7 +1410,13 @@
           <i class="fas fa-arrow-left"></i>
           Back to Dashboard
         </button>
+         <a href="/logout">
+  <i class="fas fa-sign-out-alt"></i>
+  Logout
+</a>
+
       </div>
+      
     </header>
 
     <!-- Content Area -->
