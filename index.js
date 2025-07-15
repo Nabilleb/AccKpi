@@ -296,9 +296,14 @@ app.get("/userpage/:hdrId", async (req, res) => {
   const hdrId = req.params.hdrId;
   const sessionUser = req.session.user;
 
-  if (!sessionUser || !sessionUser.DepartmentId) {
-    return res.status(401).send("Unauthorized or session expired");
-  }
+ if (!sessionUser) {
+  return res.status(401).send("Unauthorized or session expired");
+}
+
+if (!sessionUser.usrAdmin && !sessionUser.DepartmentId) {
+  return res.status(401).send("Unauthorized: Department not set for non-admin user");
+}
+
 
   const DepId = sessionUser.DepartmentId;
   const usrId = sessionUser.id;
