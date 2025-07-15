@@ -1368,11 +1368,73 @@ app.get("/workflow/new", async (req, res) => {
 app.post('/api/workflows', async (req, res) => {
   const { processID, projectID, packageID, status } = req.body;
 
+  // Validate input
+  if (!processID || isNaN(processID)) {
+    return res.status(400).json({
+      error: 'Invalid processID: Must be a non-empty numeric value'
+    });
+  }
+
   try {
     const poolRequest = pool.request();
 
-    // 0️⃣ Check if a workflow already exists for this processID
-    const existingWorkflow = await poolRequest
+    // 1️⃣ Confirm the process exists in tblTasks at all
+    const processCheck = await poolRequest
+      .input('processID', sql.Int, processID)
+      .query(`
+        SELECT TOP 1 TaskID 
+        FROM tblTasks 
+        WHERE proccessID = @processID
+      `);
+
+    if (processCheck.recordset.length === 0) {
+      return res.status(400).json({
+        error: 'No tasks found for the specified processID'
+      });
+    }
+
+    // 2️⃣ Get ALL departments for the process from tblProcessDepartment (without filtering IsActive)
+    const depRes = await pool.request()
+      .input('processID', sql.Int, processID)
+      .query(`
+        SELECT DepartmentID
+        FROM tblProcessDepartment
+        WHERE ProcessID = @processID
+      `);
+
+    const expectedDeps = depRes.recordset.map(row => row.DepartmentID);
+
+    if (expectedDeps.length === 0) {
+      return res.status(400).json({
+        error: 'No departments are defined for this process in tblProcessDepartment'
+      });
+    }
+
+    // 3️⃣ For each DepartmentID, check that there is at least one task in tblTasks
+    const missingDeps = [];
+    for (const depId of expectedDeps) {
+      const taskCheck = await pool.request()
+        .input('processID', sql.Int, processID)
+        .input('depId', sql.Int, depId)
+        .query(`
+          SELECT TOP 1 TaskID
+          FROM tblTasks
+          WHERE proccessID = @processID AND DepId = @depId
+        `);
+      
+      if (taskCheck.recordset.length === 0) {
+        missingDeps.push(depId);
+      }
+    }
+
+    if (missingDeps.length > 0) {
+      return res.status(400).json({
+        error: `Cannot create workflow: No tasks found for department(s): ${missingDeps.join(', ')}`
+      });
+    }
+
+    // 4️⃣ Check if workflow already exists
+    const existingWorkflow = await pool.request()
       .input('processID', sql.Int, processID)
       .query(`
         SELECT workFlowID
@@ -1382,12 +1444,12 @@ app.post('/api/workflows', async (req, res) => {
 
     if (existingWorkflow.recordset.length > 0) {
       return res.status(400).json({
-        error: 'A workflow already exists for this process.'
+        error: 'A workflow already exists for this process'
       });
     }
 
-    // 1️⃣ Insert workflow header
-    const insertResult = await poolRequest
+    // 5️⃣ Insert workflow header
+    const insertResult = await pool.request()
       .input('processID', sql.Int, processID)
       .input('projectID', sql.Int, projectID)
       .input('packageID', sql.Int, packageID)
@@ -1411,9 +1473,8 @@ app.post('/api/workflows', async (req, res) => {
       `);
 
     const newWorkflowID = insertResult.recordset[0].workFlowID;
-    console.log('✅ Inserted WorkflowHdrID:', newWorkflowID);
 
-    // 2️⃣ Update tblTasks
+    // 6️⃣ Update tblTasks
     await pool.request()
       .input('workflowID', sql.Int, newWorkflowID)
       .input('processID', sql.Int, processID)
@@ -1423,9 +1484,7 @@ app.post('/api/workflows', async (req, res) => {
         WHERE proccessID = @processID
       `);
 
-    console.log('✅ Updated tblTasks');
-
-    // 3️⃣ Update tblWorkflowDtl
+    // 7️⃣ Update tblWorkflowDtl
     await pool.request()
       .input('workflowID', sql.Int, newWorkflowID)
       .input('processID', sql.Int, processID)
@@ -1437,18 +1496,24 @@ app.post('/api/workflows', async (req, res) => {
         WHERE t.proccessID = @processID
       `);
 
-    console.log('✅ Updated tblWorkflowDtl');
-
     res.status(201).json({
-      message: 'Workflow created and tasks updated',
+      message: 'Workflow created and tasks updated successfully',
       workflowID: newWorkflowID
     });
 
   } catch (err) {
     console.error('Error inserting workflow:', err);
-    res.status(500).json({ error: 'Database error' });
+    if (err.number === 547) {
+      res.status(400).json({ error: 'Data integrity violation: Invalid reference ID' });
+    } else {
+      res.status(500).json({ 
+        error: 'Database operation failed',
+        details: err.message 
+      });
+    }
   }
 });
+
 
 
 

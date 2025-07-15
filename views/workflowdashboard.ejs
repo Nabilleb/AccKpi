@@ -852,7 +852,7 @@
                 <select id="process-id" class="form-control" required>
                     <option value="">Select Process</option>
                     <% processes.forEach(process => { %>
-                        <option value="<%= process.ProcessID %>"><%= process.ProcessName %></option>
+                        <option value="<%= process.NumberOfProccessID %>"><%= process.ProcessName %></option>
                     <% }) %>
                 </select>
             </div>
@@ -917,14 +917,7 @@
                     </span>
                     <input type="text" id="searchInput" placeholder="Search workflows...">
                 </div>
-                <% if (usrAdmin) { %>
-                <button class="btn btn-primary" id="newItemBtn">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M19 13H13V19H11V13H5V11H11V5H13V11H19V13Z" fill="currentColor"/>
-                    </svg>
-                    New Workflow
-                </button>
-                <% } %>
+            
                 <button class="btn btn-outline" id="exportBtn">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M5 20H19V22H5V20ZM12 8C10.3431 8 9 6.65685 9 5C9 3.34315 10.3431 2 12 2C13.6569 2 15 3.34315 15 5C15 6.65685 13.6569 8 12 8ZM12 10C14.2091 10 16 8.20914 16 6C16 3.79086 14.2091 2 12 2C9.79086 2 8 3.79086 8 6C8 8.20914 9.79086 10 12 10ZM6.5 17.5C6.5 14.4624 8.96243 12 12 12C15.0376 12 17.5 14.4624 17.5 17.5H19.5C19.5 13.3579 16.1421 10 12 10C7.85786 10 4.5 13.3579 4.5 17.5H6.5Z" fill="currentColor"/>
@@ -1299,6 +1292,10 @@ function setupEventListeners() {
             const projectId = document.getElementById('project-id').value;
             const packageId = document.getElementById('package-id').value;
             const status = document.getElementById('status').value;
+console.log("process", processId)
+console.log("process", projectId)
+console.log("process", packageId)
+
 
             try {
                 showLoading();
