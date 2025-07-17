@@ -1881,24 +1881,32 @@ WHERE
 
 app.put('/save-task-updates', async (req, res) => {
   const { updates } = req.body;
+  console.log("updates: ", updates)
   try {
     for (const update of updates) {
       const { taskId, field, value, usrID } = update;
+      console.log(field)
       if (field === 'daysRequired') {
         const check = await pool
           .request()
           .input('taskId', sql.Int, taskId)
           .query('SELECT IsDateFixed FROM tblTasks WHERE TaskID = @taskId');
-
         const isFixed = check.recordset[0]?.IsDateFixed;
-        if (!isFixed) {
-          await pool
-            .request()
-            .input('taskId', sql.Int ,taskId)
-            .input('value',sql.Int ,value)
-            .query('UPDATE tblTasks SET DaysRequired = @value WHERE TaskID = @taskId');
-
-        } else {
+        console.log("is fixed ", isFixed)
+     if (!isFixed) {
+  await pool
+    .request()
+    .input('taskId', sql.Int, taskId)
+    .input('value', sql.Int, value)
+    .query(`
+      UPDATE tblTasks
+      SET 
+        DaysRequired = @value,
+        PlannedDate = DATEADD(DAY, @value, CAST(GETDATE() AS DATE))
+      WHERE TaskID = @taskId
+    `);
+}
+else {
         }
       }
 

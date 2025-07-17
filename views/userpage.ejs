@@ -1411,10 +1411,9 @@
           Back to Dashboard
         </button>
          <a href="/logout">
-  <i class="fas fa-sign-out-alt"></i>
-  Logout
-</a>
-
+          <i class="fas fa-home"></i>
+          logout
+        </a>
       </div>
       
     </header>
@@ -1928,25 +1927,27 @@ groupedArray.forEach(group => {
           `;
 
           // Days required cell (editable if conditions met)
-          const taskPlannedCell = task.IsDateFixed && isOwnDepartment
-            ? `<td><input type="number" min="1" value="${task.DaysRequired}" class="editable-days" data-task-id="${task.TaskID}"></td>`
-            : `<td>${task.DaysRequired}</td>`;
+         const taskPlannedCell = !task.IsDateFixed && isOwnDepartment
+  ? `<td><input type="number" min="1" value="${task.DaysRequired}" class="editable-days" data-task-id="${task.TaskID}"></td>`
+  : `<td>${task.DaysRequired}</td>`;
+
             
           // Action buttons
           let actionButton = '';
           if (isOwnDepartment && task.IsTaskSelected) {
             if (!task.TimeStarted) {
-              actionButton = `<button class="task-start-btn" data-task-id="${task.TaskID}"><i class="fas fa-play"></i> Start</button>`;
+              actionButton = `<button class="task-start-btn" data-task-id="${task.TaskID}"> Start</button>`;
             } else if (!task.TimeFinished) {
-              actionButton = `<button class="task-finish-btn" data-task-id="${task.TaskID}"><i class="fas fa-flag-checkered"></i> Finish</button>`;
+              actionButton = `<button class="task-finish-btn" data-task-id="${task.TaskID}"> Finish</button>`;
             }
           }
 
           // Save button for editable fields
           let extraButtons = '';
-          if (isOwnDepartment && (task.IsDateFixed || (task.TimeFinished && task.Delay > 0))) {
-            extraButtons = `<button class="row-save-btn" data-task-id="${task.TaskID}"><i class="fas fa-save"></i> Save</button>`;
-          }
+        if (isOwnDepartment && !task.IsDateFixed && !task.TimeFinished) {
+  extraButtons = `<button class="row-save-btn" data-task-id="${task.TaskID}"> Save</button>`;
+}
+
 
           // User assignment dropdown - only show for the last finished task
           let nextTaskSelect = '';
@@ -1998,6 +1999,7 @@ groupedArray.forEach(group => {
 
     // Save task updates
     async function saveTaskUpdates(taskId, updates) {
+      console.log("taskid: ",taskId , "updates", updates);
       try {
         const res = await fetch('/save-task-updates', {
           method: 'PUT',
