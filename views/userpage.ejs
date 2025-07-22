@@ -1566,6 +1566,7 @@
   </div>
 
 <script>
+    // Cache DOM elements and initial data
     const userId = "<%= user.id %>";
     const deptId = "<%= user.DepartmentId %>";
     const taskList = <%- JSON.stringify(tasks) %>; 
@@ -1579,697 +1580,603 @@
     const modalMessage = document.getElementById('modal-message');
     const modalConfirmBtn = document.getElementById('modal-confirm-btn');
     const modalCancelBtn = document.getElementById('modal-cancel-btn');
+    
+    // Predefined objects and variables
+    const sortFunctions = {
+        name: (a, b) => a.TaskName.localeCompare(b.TaskName),
+        description: (a, b) => (a.TaskPlanned || '').localeCompare(b.TaskPlanned || ''),
+        department: (a, b) => a.DeptName.localeCompare(b.DeptName),
+        duedate: (a, b) => new Date(a.PlannedDate) - new Date(b.PlannedDate),
+        priority: (a, b) => a.Priority - b.Priority,
+        sequence: (a, b) => a.StepOrder - b.StepOrder || a.TaskID - b.TaskID
+    };
+    
     let users = [];
     let currentAction = null;
     let currentTaskId = null;
     let nextTask = null;
 
-    const sortFunctions = {
-      name: (a, b) => a.TaskName.localeCompare(b.TaskName),
-      description: (a, b) => (a.TaskPlanned || '').localeCompare(b.TaskPlanned || ''),
-      department: (a, b) => a.DeptName.localeCompare(b.DeptName),
-      duedate: (a, b) => new Date(a.PlannedDate) - new Date(b.PlannedDate),
-      priority: (a, b) => a.Priority - b.Priority,
-      sequence: (a, b) => a.StepOrder - b.StepOrder || a.TaskID - b.TaskID
+    // Optimized helper functions
+    const showMessage = (element, textElement, message, duration) => {
+        textElement.textContent = message;
+        element.classList.add('show');
+        setTimeout(() => element.classList.remove('show'), duration);
     };
 
-    console.log("tasks: ", taskList);
+    const showError = (message) => showMessage(errorEl, errorText, message, 5000);
+    const showSuccess = (message) => showMessage(successEl, successText, message, 3000);
 
-    async function loadUsers(nextDepId) {
-      try {
+    const showConfirmation = (message, confirmCallback) => {
+        modalMessage.textContent = message;
+        currentAction = confirmCallback;
+        modal.classList.add('show');
+        modalCancelBtn.focus();
+    };
+
+    const closeModal = () => {
+        modal.classList.remove('show');
+        currentAction = null;
+        currentTaskId = null;
+    };
+
+    // Optimized data processing functions
+    const updateStatusCounts = (tasks) => {
+        const counts = { pending: 0, inprogress: 0, completed: 0, overdue: 0 };
+        const totalTasks = tasks.length;
+        
+        tasks.forEach(task => {
+            if (task.TimeFinished) {
+                task.Delay > 0 ? counts.overdue++ : counts.completed++;
+            } else if (task.TimeStarted) {
+                counts.inprogress++;
+            } else if (task.IsTaskSelected) {
+                counts.pending++;
+            }
+        });
+        
+        // Update DOM in one batch
+        document.getElementById('pending-count').textContent = counts.pending;
+        document.getElementById('inprogress-count').textContent = counts.inprogress;
+        document.getElementById('completed-count').textContent = counts.completed;
+        document.getElementById('overdue-count').textContent = counts.overdue;
+        document.getElementById('total-count').textContent = totalTasks;
+        
+        const completedPercentage = totalTasks > 0 ? Math.round((counts.completed / totalTasks) * 100) : 0;
+        const progressBar = document.getElementById('completion-progress');
+        progressBar.style.width = `${completedPercentage}%`;
+        document.getElementById('completion-percentage').textContent = `${completedPercentage}%`;
+    };
+
+    const renderTaskTimeline = (tasks) => {
+        if (!timelineContainer) return;
+        
+        // Use document fragment for batch DOM updates
+        const fragment = document.createDocumentFragment();
+        [...tasks]
+            .sort((a, b) => (a.DepId - b.DepId) || (a.TaskID - b.TaskID))
+            .forEach(task => {
+                const timelineItem = document.createElement('div');
+                timelineItem.className = 'timeline-item';
+                
+                if (task.TimeFinished) timelineItem.classList.add('completed');
+                if (task.IsTaskSelected) timelineItem.classList.add('current');
+                
+                timelineItem.innerHTML = `
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-label">${task.DeptName}</div>
+                `;
+                
+                fragment.appendChild(timelineItem);
+            });
+        
+        // Clear and append in one operation
+        timelineContainer.innerHTML = '';
+        timelineContainer.appendChild(fragment);
+    };
+
+    const filterTasks = (status) => {
+        const rows = document.querySelectorAll('.department-table tbody tr');
+        const statusItems = document.querySelectorAll('.status-item');
+        
+        statusItems.forEach(item => {
+            item.classList.toggle('active-filter', item.dataset.filter === status);
+        });
+        
+        rows.forEach(row => {
+            const displayStyle = 
+                (status === 'pending' && row.querySelector('.status-pending')) ||
+                (status === 'inprogress' && row.querySelector('.status-inprogress')) ||
+                (status === 'completed' && row.querySelector('.status-completed')) ||
+                (status === 'overdue' && row.querySelector('.status-overdue')) ||
+                !status ? '' : 'none';
+            
+            row.style.display = displayStyle;
+        });
+    };
+
+    // Optimized async functions
+    const loadUsers = async (nextDepId) => {
         if (!nextDepId) return;
         
-        const res = await fetch(`/api/users?depId=${nextDepId}`);
-        if (!res.ok) throw new Error("Failed to load users");
-        
-        const data = await res.json();
-        users = data.users || [];
-      } catch (err) {
-        console.error("Error loading users:", err);
-        showError("Failed to load users for assignment");
-      }
-    }
-
-    function showError(message) {
-      errorText.textContent = message;
-      errorEl.classList.add('show');
-      setTimeout(() => errorEl.classList.remove('show'), 5000);
-    }
-
-    function showSuccess(message) {
-      successText.textContent = message;
-      successEl.classList.add('show');
-      setTimeout(() => successEl.classList.remove('show'), 3000);
-    }
-
-    function showConfirmation(message, confirmCallback) {
-      modalMessage.textContent = message;
-      currentAction = confirmCallback;
-      modal.classList.add('show');
-      modalCancelBtn.focus();
-    }
-
-    function closeModal() {
-      modal.classList.remove('show');
-      currentAction = null;
-      currentTaskId = null;
-    }
-
-    function updateStatusCounts(tasks) {
-      let pending = 0, inprogress = 0, completed = 0, overdue = 0;
-      const totalTasks = tasks.length;
-      
-      tasks.forEach(task => {
-        if (task.TimeFinished) {
-          if (task.Delay > 0) {
-            overdue++;
-          } else {
-            completed++;
-          }
-        } else if (task.TimeStarted) {
-          inprogress++;
-        } else if (task.IsTaskSelected) {
-          pending++;
+        try {
+            const res = await fetch(`/api/users?depId=${nextDepId}`);
+            if (!res.ok) throw new Error("Failed to load users");
+            users = (await res.json()).users || [];
+        } catch (err) {
+            console.error("Error loading users:", err);
+            showError("Failed to load users for assignment");
         }
-      });
-      
-      document.getElementById('pending-count').textContent = pending;
-      document.getElementById('inprogress-count').textContent = inprogress;
-      document.getElementById('completed-count').textContent = completed;
-      document.getElementById('overdue-count').textContent = overdue;
-      document.getElementById('total-count').textContent = totalTasks;
-      
-      const completedPercentage = totalTasks > 0 ? Math.round((completed / totalTasks) * 100) : 0;
-      document.getElementById('completion-progress').style.width = `${completedPercentage}%`;
-      document.getElementById('completion-percentage').textContent = `${completedPercentage}%`;
-    }
+    };
 
-    function renderTaskTimeline(tasks) {
-      if (!timelineContainer) return;
-      
-      timelineContainer.innerHTML = '';
-      const sortedTasks = [...tasks].sort((a, b) => {
-        if (a.DepId !== b.DepId) return a.DepId - b.DepId;
-        return a.TaskID - b.TaskID;
-      });
-      
-      sortedTasks.forEach(task => {
-        const timelineItem = document.createElement('div');
-        timelineItem.className = 'timeline-item';
-        
-        if (task.TimeFinished) timelineItem.classList.add('completed');
-        if (task.IsTaskSelected) timelineItem.classList.add('current');
-        
-        timelineItem.innerHTML = `
-          <div class="timeline-dot"></div>
-          <div class="timeline-label">${task.DeptName}</div>
-        `;
-        
-        timelineContainer.appendChild(timelineItem);
-      });
-    }
-
-    function filterTasks(status) {
-      const rows = document.querySelectorAll('.department-table tbody tr');
-      const statusItems = document.querySelectorAll('.status-item');
-      
-      statusItems.forEach(item => {
-        item.classList.toggle('active-filter', item.dataset.filter === status);
-      });
-      
-      rows.forEach(row => {
-        const isPending = row.querySelector('.status-pending');
-        const isInProgress = row.querySelector('.status-inprogress');
-        const isCompleted = row.querySelector('.status-completed');
-        const isOverdue = row.querySelector('.status-overdue');
-        
-        switch(status) {
-          case 'pending': row.style.display = isPending ? '' : 'none'; break;
-          case 'inprogress': row.style.display = isInProgress ? '' : 'none'; break;
-          case 'completed': row.style.display = isCompleted ? '' : 'none'; break;
-          case 'overdue': row.style.display = isOverdue ? '' : 'none'; break;
-          default: row.style.display = '';
+    const saveTaskUpdates = async (taskId, updates) => {
+        try {
+            const res = await fetch('/save-task-updates', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ updates })
+            });
+           
+            const data = await res.json(); 
+            if (!res.ok) throw new Error(data.error || 'Save failed');
+            showSuccess('Changes saved successfully');
+            return data.updatedTask || data;
+        } catch (err) {
+            showError(err.message);
+            return null;
         }
-      });
-    }
+    };
 
-    function sortTasks(sortBy) {
-      renderTasks(taskList, sortBy);
-    }
+    const startTask = async (taskId) => {
+        try {
+            const res = await fetch(`/start-task/${taskId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ startTime: new Date().toISOString() })
+            });
 
-    function searchTasks(term) {
-      const rows = document.querySelectorAll('.department-table tbody tr');
-      term = term.toLowerCase().trim();
-      
-      if (!term) {
-        rows.forEach(row => row.style.display = '');
-        return;
-      }
-      
-      rows.forEach(row => {
-        const taskName = row.cells[0].textContent.toLowerCase();
-        const taskDesc = row.cells[1].textContent.toLowerCase();
-        const deptName = row.closest('.department-section')?.querySelector('.department-label')?.textContent.toLowerCase() || '';
-        const shouldShow = taskName.includes(term) || taskDesc.includes(term) || deptName.includes(term);
-        row.style.display = shouldShow ? '' : 'none';
-      });
-    }
-
-    async function renderTasks(tasks) {
-      if (!container) return;
-      
-      container.innerHTML = '';
-      const sortedTasks = [...tasks].sort((a, b) => {
-        if (a.StepOrder !== b.StepOrder) return a.StepOrder - b.StepOrder;
-        if (a.Priority !== b.Priority) return a.Priority - b.Priority;
-        return a.TaskID - b.TaskID;
-      });
-
-      const activeIndex = sortedTasks.findIndex(t => t.IsTaskSelected);
-      if (activeIndex !== -1) {
-        for (let i = activeIndex + 1; i < sortedTasks.length; i++) {
-          const candidate = sortedTasks[i];
-          if (!candidate.IsTaskSelected && !candidate.TimeFinished) {
-            nextTask = candidate;
-            break;
-          }
+            if (!res.ok) throw new Error("Failed to start task");
+            showSuccess('Task started successfully');
+            window.location.reload();
+        } catch (err) {
+            showError(err.message);
         }
-      }
-      
-      if (!nextTask) {
-        nextTask = sortedTasks.find(t => !t.IsTaskSelected && !t.TimeFinished);
-      }
+    };
 
-      if (activeIndex !== -1 && activeIndex !== sortedTasks.length - 1) {
-        await loadUsers(nextTask?.DepId);
-      }
+    const finishTask = async (taskId) => {
+        try {
+            const task = taskList.find(t => t.TaskID === Number(taskId));
+            if (!task) return showError('Task not found');
+            
+            const res = await fetch(`/finish-task/${taskId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    finishTime: new Date().toISOString(),
+                    workFlowHdrId: task.WorkFlowHdrID,
+                    processID: task.NumberOfProccessID
+                })
+            });
 
-      if (tasks.length === 0) {
-        container.innerHTML = `
-          <div class="empty-message">
-            <i class="fas fa-tasks"></i>
-            <p>No tasks found for this process.</p>
-          </div>
-        `;
-        return;
-      }
-
-      const grouped = {};
-      taskList.forEach(task => {
-        if (!grouped[task.DepId]) {
-          grouped[task.DepId] = {
-            deptName: task.DeptName || `Department ${task.DepId}`,
-            stepOrder: task.StepOrder || 9999,
-            tasks: []
-          };
+            if (!res.ok) throw new Error("Failed to finish task");
+            showSuccess('Task marked as finished');
+            window.location.reload();
+        } catch (err) {
+            showError(err.message);
         }
-        grouped[task.DepId].tasks.push(task);
-      });
+    };
 
-      const groupedArray = Object.values(grouped).sort((a, b) => a.stepOrder - b.stepOrder);
+    const assignUserToTask = async (taskId, userId) => {
+        try {
+            const res = await fetch(`/assign-user-to-task/${taskId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId })
+            });
 
-      groupedArray.forEach(group => {
-        const section = document.createElement('div');
-        section.className = 'department-section';
-        
-        const deptLabel = document.createElement('div');
-        deptLabel.className = 'department-label';
-        deptLabel.innerHTML = `
-          <i class="fas fa-building"></i> 
-          ${group.deptName}
-          <span class="badge">${group.tasks.length} tasks</span>
-          <i class="fas fa-chevron-down toggle-icon"></i>
-        `;
-        
-        section.appendChild(deptLabel);
-        
-        const tableContainer = document.createElement('div');
-        tableContainer.className = 'table-container';
-        
-        const table = document.createElement('table');
-        table.className = 'department-table';
-        
-        const thead = document.createElement('thead');
-        thead.innerHTML = `
-          <tr>
-            <th>Task Name</th>
-            <th>Description</th>
-            <th>Planned Date</th>
-            <th>Days Required</th>
-            <th>Date Finished</th>
-            <th>Status</th>
-            <th>Days Delay</th>
-            <th>Delay Reason</th>
-            <th>Assign Next Task</th>
-            <th>Actions</th>
-          </tr>
-        `;
-        table.appendChild(thead);
-        
-        const tbody = document.createElement('tbody');
-        
-        group.tasks.forEach(task => {
-          const tr = document.createElement('tr');
-          const isOwnDepartment = task.DepId == deptId;
+            if (!res.ok) throw new Error("Assignment failed");
+            showSuccess("User assigned successfully!");
+            return true;
+        } catch (err) {
+            showError("Failed to assign user: " + err.message);
+            return false;
+        }
+    };
 
-          if (task.IsTaskSelected) {
-            tr.classList.add('active-task-row');
-          }
+    // Optimized render function with document fragments
+    const renderTasks = async (tasks) => {
+        if (!container) return;
+        
+        // Clear container once
+        container.innerHTML = '';
+        
+        // Find next task
+        const sortedTasks = [...tasks].sort((a, b) => 
+            (a.StepOrder - b.StepOrder) || (a.Priority - b.Priority) || (a.TaskID - b.TaskID));
+        
+        const activeIndex = sortedTasks.findIndex(t => t.IsTaskSelected);
+        if (activeIndex !== -1) {
+            for (let i = activeIndex + 1; i < sortedTasks.length; i++) {
+                const candidate = sortedTasks[i];
+                if (!candidate.IsTaskSelected && !candidate.TimeFinished) {
+                    nextTask = candidate;
+                    break;
+                }
+            }
+        }
+        
+        if (!nextTask) nextTask = sortedTasks.find(t => !t.IsTaskSelected && !t.TimeFinished);
+        if (activeIndex !== -1 && activeIndex !== sortedTasks.length - 1) await loadUsers(nextTask?.DepId);
 
-          let status = '';
-          if (task.TimeStarted && !task.TimeFinished) {
+        // Handle empty tasks
+        if (tasks.length === 0) {
+            container.innerHTML = `
+                <div class="empty-message">
+                    <i class="fas fa-tasks"></i>
+                    <p>No tasks found for this process.</p>
+                </div>
+            `;
+            return;
+        }
+
+        // Group tasks by department
+        const grouped = {};
+        tasks.forEach(task => {
+            if (!grouped[task.DepId]) {
+                grouped[task.DepId] = {
+                    deptName: task.DeptName || `Department ${task.DepId}`,
+                    stepOrder: task.StepOrder || 9999,
+                    tasks: []
+                };
+            }
+            grouped[task.DepId].tasks.push(task);
+        });
+
+        // Create and append sections in batch
+        const fragment = document.createDocumentFragment();
+        Object.values(grouped)
+            .sort((a, b) => a.stepOrder - b.stepOrder)
+            .forEach(group => {
+                const section = document.createElement('div');
+                section.className = 'department-section';
+                
+                section.innerHTML = `
+                    <div class="department-label">
+                        <i class="fas fa-building"></i> 
+                        ${group.deptName}
+                        <span class="badge">${group.tasks.length} tasks</span>
+                        <i class="fas fa-chevron-down toggle-icon"></i>
+                    </div>
+                    <div class="table-container">
+                        <table class="department-table">
+                            <thead>
+                                <tr>
+                                    <th>Task Name</th>
+                                    <th>Description</th>
+                                    <th>Planned Date</th>
+                                    <th>Days Required</th>
+                                    <th>Date Finished</th>
+                                    <th>Status</th>
+                                    <th>Days Delay</th>
+                                    <th>Delay Reason</th>
+                                    <th>Assign Next Task</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${group.tasks.map(task => renderTaskRow(task)).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+                
+                fragment.appendChild(section);
+            });
+        
+        container.appendChild(fragment);
+    };
+
+    // Optimized task row rendering
+    const renderTaskRow = (task) => {
+        const isOwnDepartment = task.DepId == deptId;
+        const plannedDate = task.PlannedDate ? new Date(task.PlannedDate).toLocaleDateString() : '';
+        const finishDate = task.TimeFinished ? new Date(task.TimeFinished).toLocaleDateString() : '';
+        const delayReason = task.DelayReason || '';
+        const delayInputDisabled = !isOwnDepartment || !(task.TimeFinished && task.Delay > 0) ? 'disabled' : '';
+        
+        let status = '';
+        if (task.TimeStarted && !task.TimeFinished) {
             status = '<span class="status-badge status-inprogress"><i class="fas fa-spinner"></i> In Progress</span>';
-          } else if (!task.TimeFinished && task.IsTaskSelected) {
+        } else if (!task.TimeFinished && task.IsTaskSelected) {
             status = '<span class="status-badge status-pending"><i class="fas fa-clock"></i> Pending</span>';
-          } else if (task.TimeFinished && task.Delay > 0) {
+        } else if (task.TimeFinished && task.Delay > 0) {
             status = '<span class="status-badge status-overdue"><i class="fas fa-exclamation-triangle"></i> Overdue</span>';
-          } else if (task.TimeFinished) {
+        } else if (task.TimeFinished) {
             status = '<span class="status-badge status-completed"><i class="fas fa-check-circle"></i> Completed</span>';
-          }
+        }
 
-          const plannedDate = task.PlannedDate ? new Date(task.PlannedDate).toLocaleDateString() : '';
-          const finishDate = task.TimeFinished ? new Date(task.TimeFinished).toLocaleDateString() : '';
-          const delayReason = task.DelayReason || '';
-          
-          const delayInputDisabled = !isOwnDepartment || !(task.TimeFinished && task.Delay > 0) ? 'disabled' : '';
-          const delayInput = `
-            <input type="text" value="${delayReason}" class="delay-reason-input" data-task-id="${task.TaskID}" 
-              ${delayInputDisabled} placeholder="${delayInputDisabled ? '' : 'Enter delay reason...'}">
-          `;
-
-          const taskPlannedCell = `
+        const taskPlannedCell = `
             <td data-label="Days Required">
-              <span class="days-display">${task.DaysRequired}</span>
-              ${(!task.IsDateFixed && isOwnDepartment && !task.TimeFinished) ? 
-                `<i class="fas fa-pencil-alt edit-days-icon" title="Edit days required" style="cursor:pointer; margin-left: 6px;"></i>` 
-                : ''
-              }
+                <span class="days-display">${task.DaysRequired}</span>
+                ${(!task.IsDateFixed && isOwnDepartment && !task.TimeFinished) ? 
+                    `<i class="fas fa-pencil-alt edit-days-icon" title="Edit days required" style="cursor:pointer; margin-left: 6px;"></i>` 
+                    : ''
+                }
             </td>`;
 
-          let actionButton = '';
-          if (isOwnDepartment && task.IsTaskSelected) {
+        let actionButton = '';
+        if (isOwnDepartment && task.IsTaskSelected) {
             if (!task.TimeStarted) {
-              actionButton = `<button class="task-start-btn" data-task-id="${task.TaskID}"> Start</button>`;
+                actionButton = `<button class="task-start-btn" data-task-id="${task.TaskID}"> Start</button>`;
             } else if (!task.TimeFinished) {
-              actionButton = `<button class="task-finish-btn" data-task-id="${task.TaskID}"> Finish</button>`;
+                actionButton = `<button class="task-finish-btn" data-task-id="${task.TaskID}"> Finish</button>`;
             }
-          }
+        }
 
-          let extraButtons = '';
-          if (isOwnDepartment && (!task.TimeFinished || task.Delay > 0)) {
-            extraButtons = `<button class="row-save-btn" data-task-id="${task.TaskID}"> Save</button>`;
-          }
-
-          let nextTaskSelect = '';
-          if (task.IsTaskSelected && task.TimeStarted && !task.TimeFinished && isOwnDepartment && users.length > 0) {
-            nextTaskSelect = `
-              <div class="assign-user-container">
-                <select class="assign-user-select" data-task-id="${task.TaskID}">
-                  <option value="">Select user to assign on finish</option>
-                  ${users.map(u => `<option value="${u.usrID}">${u.usrDesc}</option>`).join('')}
-                </select>
-              </div>
-            `;
-          }
-
-          tr.innerHTML = `
-            <td data-label="Task Name">${task.TaskName || ''}</td>
-            <td data-label="Description">${task.TaskPlanned || ''}</td>
-            <td data-label="Planned Date">${plannedDate}</td>
-            ${taskPlannedCell}
-            <td data-label="Date Finished">${finishDate}</td>
-            <td data-label="Status">${status}</td>
-            <td data-label="Days Delay">${task.Delay !== null ? task.Delay : 0}</td>
-            <td data-label="Delay Reason">${delayInput}</td>
-            <td data-label="Assign Next Task">
-              ${nextTaskSelect}
-              ${task.assignUser ? task.assignUser : ''}
-            </td>
-            <td data-label="Actions"><div class="button-container">${actionButton}${extraButtons}</div></td>
-          `;
-
-          tbody.appendChild(tr);
-        });
-        
-        table.appendChild(tbody);
-        tableContainer.appendChild(table);
-        section.appendChild(tableContainer);
-        container.appendChild(section);
-      });
-    }
-
-  async function saveTaskUpdates(taskId, updates) {
-  try {
-    const res = await fetch('/save-task-updates', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ updates })
-    });
-   
-    const data = await res.json(); 
-    console.log("Backend response:", data);
-
-    if (!res.ok) throw new Error(data.error || 'Save failed');
-
-    showSuccess('Changes saved successfully');
-
-    return data.updatedTask || data;
-
-  } catch (err) {
-    showError(err.message);
-    return null;
-  }
+let extraButtons = '';
+if (task.Delay > 0 || (isOwnDepartment && !task.TimeFinished && !task.IsDateFixed)) {
+    extraButtons = `<button class="row-save-btn" data-task-id="${task.TaskID}"> Save</button>`;
 }
 
-
-    async function startTask(taskId) {
-      try {
-        const now = new Date().toISOString();
-        const res = await fetch(`/start-task/${taskId}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ startTime: now })
-        });
-
-        if (!res.ok) throw new Error("Failed to start task");
-        showSuccess('Task started successfully');
-        window.location.reload();
-      } catch (err) {
-        showError(err.message);
-      }
-    }
-
-    async function finishTask(taskId) {
-      try {
-        const task = taskList.find(t => t.TaskID === Number(taskId));
-        if (!task) {
-          showError('Task not found');
-          return;
+        let nextTaskSelect = '';
+        if (task.IsTaskSelected && task.TimeStarted && !task.TimeFinished && isOwnDepartment && users.length > 0) {
+            nextTaskSelect = `
+                <div class="assign-user-container">
+                    <select class="assign-user-select" data-task-id="${task.TaskID}">
+                        <option value="">Select user to assign on finish</option>
+                        ${users.map(u => `<option value="${u.usrID}">${u.usrDesc}</option>`).join('')}
+                    </select>
+                </div>
+            `;
         }
+
+        return `
+            <tr ${task.IsTaskSelected ? 'class="active-task-row"' : ''}>
+                <td data-label="Task Name">${task.TaskName || ''}</td>
+                <td data-label="Description">${task.TaskPlanned || ''}</td>
+                <td data-label="Planned Date">${plannedDate}</td>
+                ${taskPlannedCell}
+                <td data-label="Date Finished">${finishDate}</td>
+                <td data-label="Status">${status}</td>
+                <td data-label="Days Delay">${task.Delay !== null ? task.Delay : 0}</td>
+                <td data-label="Delay Reason">
+                    <input type="text" value="${delayReason}" class="delay-reason-input" data-task-id="${task.TaskID}" 
+                        ${delayInputDisabled} placeholder="${delayInputDisabled ? '' : 'Enter delay reason...'}">
+                </td>
+                <td data-label="Assign Next Task">
+                    ${nextTaskSelect}
+                    ${task.assignUser ? task.assignUser : ''}
+                </td>
+                <td data-label="Actions"><div class="button-container">${actionButton}${extraButtons}</div></td>
+            </tr>
+        `;
+    };
+
+    // Initialize the page with optimized event delegation
+    document.addEventListener('DOMContentLoaded', () => {
+        // Initial render
+        renderTasks(taskList);
+        renderTaskTimeline(taskList);
+        updateStatusCounts(taskList);
         
-        const workflowHdrId = task.WorkFlowHdrID;
-        const NumberOfProccessID = task.NumberOfProccessID;
-        const now = new Date().toISOString();
+        // Optimized event listeners
+        document.addEventListener('click', handleClickEvents);
+        document.addEventListener('keydown', handleKeyEvents);
+        document.addEventListener('focusin', handleFocusEvents);
+        document.addEventListener('focusout', handleFocusEvents);
         
-        const res = await fetch(`/finish-task/${taskId}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            finishTime: now,
-            workFlowHdrId: workflowHdrId,
-            processID: NumberOfProccessID
-          })
+        // Modal event handlers
+        modalConfirmBtn?.addEventListener('click', async () => {
+            if (currentAction) await currentAction();
+            closeModal();
         });
 
-        if (!res.ok) throw new Error("Failed to finish task");
-        showSuccess('Task marked as finished');
-        window.location.reload();
-      } catch (err) {
-        showError(err.message);
-      }
-    }
+        modalCancelBtn?.addEventListener('click', closeModal);
+        modal?.addEventListener('click', (e) => e.target === modal && closeModal());
+        
+        // Filter and search events
+        const statusFilter = document.getElementById('status-filter');
+        const sortFilter = document.getElementById('sort-filter');
+        const searchBtn = document.getElementById('search-btn');
+        const taskSearch = document.getElementById('task-search');
+        
+        statusFilter?.addEventListener('change', (e) => filterTasks(e.target.value));
+        sortFilter?.addEventListener('change', (e) => sortTasks(e.target.value));
+        searchBtn?.addEventListener('click', () => searchTasks(taskSearch?.value));
+        taskSearch?.addEventListener('keyup', (e) => e.key === 'Enter' && searchTasks(e.target.value));
+    });
 
-    async function assignUserToTask(taskId, userId) {
-      try {
-        const res = await fetch(`/assign-user-to-task/${taskId}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId })
-        });
-
-        if (!res.ok) throw new Error("Assignment failed");
-        showSuccess("User assigned successfully!");
-        return true;
-      } catch (err) {
-        showError("Failed to assign user: " + err.message);
-        return false;
-      }
-    }
-
-    // Initialize the page
-    document.addEventListener('DOMContentLoaded', async () => {
-      // Initial render
-      renderTasks(taskList);
-      renderTaskTimeline(taskList);
-      updateStatusCounts(taskList);
-      
-      // Department section toggling
-      document.addEventListener('click', (e) => {
+    // Optimized event handlers
+    const handleClickEvents = async (e) => {
+        // Department section toggling
         if (e.target.closest('.department-label')) {
-          const label = e.target.closest('.department-label');
-          label.classList.toggle('collapsed');
-          label.parentElement.classList.toggle('collapsed');
+            const label = e.target.closest('.department-label');
+            label.classList.toggle('collapsed');
+            label.parentElement.classList.toggle('collapsed');
+            return;
         }
-      });
-      
-      // Filter events
-      const statusFilter = document.getElementById('status-filter');
-      if (statusFilter) {
-        statusFilter.addEventListener('change', (e) => {
-          filterTasks(e.target.value);
-        });
-      }
-      
-      // Sort events
-      const sortFilter = document.getElementById('sort-filter');
-      if (sortFilter) {
-        sortFilter.addEventListener('change', (e) => {
-          sortTasks(e.target.value);
-        });
-      }
-      
-      // Search events
-      const searchBtn = document.getElementById('search-btn');
-      if (searchBtn) {
-        searchBtn.addEventListener('click', () => {
-          const term = document.getElementById('task-search').value;
-          searchTasks(term);
-        });
-      }
-      
-      const taskSearch = document.getElementById('task-search');
-      if (taskSearch) {
-        taskSearch.addEventListener('keyup', (e) => {
-          if (e.key === 'Enter') {
-            searchTasks(e.target.value);
-          }
-        });
-      }
-      
-      // Event delegation for all interactive elements
-      document.addEventListener('click', async (e) => {
+        
         // Edit days icon
         if (e.target.classList.contains('edit-days-icon')) {
-          const cell = e.target.closest('td');
-          if (!cell) return;
-          
-          const span = cell.querySelector('.days-display');
-          const currentValue = parseInt(span?.textContent.trim() || '1', 10);
-          
-          cell.innerHTML = `
+            handleEditDaysClick(e);
+            return;
+        }
+        
+        // Save button
+        if (e.target.classList.contains('row-save-btn')) {
+            await handleSaveClick(e);
+            return;
+        }
+        
+        // Start task button
+        if (e.target.classList.contains('task-start-btn')) {
+            const taskId = e.target.dataset.taskId;
+            showConfirmation('Are you sure you want to start this task?', async () => {
+                const originalHTML = e.target.innerHTML;
+                e.target.innerHTML = '<i class="fas fa-spinner spinner"></i> Starting...';
+                e.target.disabled = true;
+                await startTask(taskId);
+                e.target.innerHTML = originalHTML;
+                e.target.disabled = false;
+            });
+            return;
+        }
+        
+        // Finish task button
+        if (e.target.classList.contains('task-finish-btn')) {
+            const row = e.target.closest('tr');
+            const taskId = e.target.dataset.taskId;
+            const select = row?.querySelector('.assign-user-select');
+            const selectedUserId = select?.value;
+
+            if (select && !selectedUserId) {
+                showError("Please select a user to assign before finishing.");
+                return;
+            }
+
+            showConfirmation('Are you sure you want to mark this task as finished and assign the selected user?', async () => {
+                const originalHTML = e.target.innerHTML;
+                e.target.innerHTML = '<i class="fas fa-spinner spinner"></i> Finishing...';
+                e.target.disabled = true;
+
+                if (selectedUserId) await assignUserToTask(taskId, selectedUserId);
+                await finishTask(taskId);
+                
+                e.target.innerHTML = originalHTML;
+                e.target.disabled = false;
+            });
+        }
+    };
+
+    const handleEditDaysClick = (e) => {
+        const cell = e.target.closest('td');
+        if (!cell) return;
+        
+        const span = cell.querySelector('.days-display');
+        const currentValue = parseInt(span?.textContent.trim() || '1', 10);
+        
+        cell.innerHTML = `
             <input type="number" class="editable-days" 
                    value="${currentValue}" 
                    min="1" 
                    style="width: 60px;"
                    data-task-id="${e.target.closest('tr')?.querySelector('.row-save-btn')?.dataset.taskId || ''}">
-          `;
-          
-          const input = cell.querySelector('.editable-days');
-          input?.focus();
-          
-          input?.addEventListener('blur', () => {
+        `;
+        
+        const input = cell.querySelector('.editable-days');
+        input?.focus();
+        
+        input?.addEventListener('blur', () => {
             if (!input.value || parseInt(input.value) <= 0) {
-              showError("Invalid days value");
-              return;
+                showError("Invalid days value");
+                return;
             }
             
             cell.innerHTML = `
-              <span class="days-display">${input.value}</span>
-              <i class="fas fa-pencil-alt edit-days-icon" title="Edit days required" style="cursor:pointer; margin-left: 6px;"></i>
+                <span class="days-display">${input.value}</span>
+                <i class="fas fa-pencil-alt edit-days-icon" title="Edit days required" style="cursor:pointer; margin-left: 6px;"></i>
             `;
-          });
-          
-          input?.addEventListener('keydown', (event) => {
-            if (event.key === 'Enter') {
-              input.blur();
-              const saveBtn = e.target.closest('tr')?.querySelector('.row-save-btn');
-              if (saveBtn) saveBtn.click();
-            }
-          });
-        }
-        
-        // Save button
-       // Inside your save button click handler
-if (e.target.classList.contains('row-save-btn')) {
-  const button = e.target;
-  const originalHTML = button.innerHTML;
-  const row = button.closest('tr');
-  const taskId = button.dataset.taskId;
-  const updates = [];
-  
-  try {
-    button.innerHTML = '<i class="fas fa-spinner spinner"></i> Saving...';
-    
-    // Collect all updates
-    const delayInput = row?.querySelector('.delay-reason-input');
-    const daysCell = row?.querySelector('td[data-label="Days Required"]');
-    const daysDisplay = daysCell?.querySelector('.days-display');
-    
-    // Delay reason update
-    if (delayInput && !delayInput.disabled && delayInput.value.trim() !== '') {
-      updates.push({
-        taskId,
-        field: 'delayReason',
-        value: delayInput.value.trim(),
-        usrID: userId,
-      });
-    }
-    
-    // Days required update
-    if (daysDisplay) {
-      const newDays = parseInt(daysDisplay.textContent.trim());
-      if (!isNaN(newDays) && newDays > 0) {
-        updates.push({
-          taskId,
-          field: 'daysRequired',
-          value: newDays,
-          usrID: userId,
         });
-      }
-    }
-
-    if (updates.length === 0) {
-      showError("No changes to save");
-      return;
-    }
-
-    // Save updates
-    const updatedTask = await saveTaskUpdates(taskId, updates);
-    console.log("updated tasks", updatedTask.updatedTasks[0].PlannedDate);
-    
-    if (updatedTask && updatedTask.updatedTasks && updatedTask.updatedTasks[0].PlannedDate) {
-      const plannedDate = new Date(updatedTask.updatedTasks[0].PlannedDate);
-      
-      // Format date as dd/mm/yyyy
-      const day = String(plannedDate.getDate()).padStart(2, '0');
-      const month = String(plannedDate.getMonth() + 1).padStart(2, '0'); // Months are 0-based
-      const year = plannedDate.getFullYear();
-      const formattedDate = `${day}/${month}/${year}`;
-      
-      const plannedDateCell = row.querySelector('td[data-label="Planned Date"]');
-      if (plannedDateCell) {
-        plannedDateCell.textContent = formattedDate;
-      }
-      
-      // Update the delay reason input if it was saved
-      if (delayInput && delayInput.value.trim() !== '') {
-        delayInput.disabled = true;
-      }
-      
-      showSuccess('Changes saved successfully');
-    }
-
-  } catch (err) {
-    showError("Error saving changes: " + err.message);
-  } finally {
-    button.innerHTML = originalHTML;
-  }
-}
         
-        // Start task button
-        if (e.target.classList.contains('task-start-btn')) {
-          const taskId = e.target.dataset.taskId;
-          showConfirmation('Are you sure you want to start this task?', async () => {
-            const originalHTML = e.target.innerHTML;
-            try {
-              e.target.innerHTML = '<i class="fas fa-spinner spinner"></i> Starting...';
-              e.target.disabled = true;
-              await startTask(taskId);
-            } catch (err) {
-              e.target.innerHTML = originalHTML;
-              e.target.disabled = false;
+        input?.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                input.blur();
+                const saveBtn = e.target.closest('tr')?.querySelector('.row-save-btn');
+                if (saveBtn) saveBtn.click();
             }
-          });
-        }
+        });
+    };
+
+    const handleSaveClick = async (e) => {
+        const button = e.target;
+        const originalHTML = button.innerHTML;
+        const row = button.closest('tr');
+        const taskId = button.dataset.taskId;
+        const updates = [];
         
-        // Finish task button
-        if (e.target.classList.contains('task-finish-btn')) {
-          const row = e.target.closest('tr');
-          const taskId = e.target.dataset.taskId;
-          const select = row?.querySelector('.assign-user-select');
-          let selectedUserId = null;
-
-          if (select) {
-            selectedUserId = select.value;
-            if (!selectedUserId) {
-              showError("Please select a user to assign before finishing.");
-              return;
+        try {
+            button.innerHTML = '<i class="fas fa-spinner spinner"></i> Saving...';
+            
+            // Collect all updates
+            const delayInput = row?.querySelector('.delay-reason-input');
+            const daysCell = row?.querySelector('td[data-label="Days Required"]');
+            const daysDisplay = daysCell?.querySelector('.days-display');
+            
+            // Delay reason update
+            if (delayInput && !delayInput.disabled && delayInput.value.trim() !== '') {
+                updates.push({
+                    taskId,
+                    field: 'delayReason',
+                    value: delayInput.value.trim(),
+                    usrID: userId,
+                });
             }
-          }
-
-          showConfirmation('Are you sure you want to mark this task as finished and assign the selected user?', async () => {
-            const originalHTML = e.target.innerHTML;
-            try {
-              e.target.innerHTML = '<i class="fas fa-spinner spinner"></i> Finishing...';
-              e.target.disabled = true;
-
-              if (selectedUserId) {
-                await assignUserToTask(taskId, selectedUserId);
-              }
-
-              await finishTask(taskId);
-              window.location.reload();
-            } catch (err) {
-              e.target.innerHTML = originalHTML;
-              e.target.disabled = false;
+            
+            // Days required update
+            if (daysDisplay) {
+                const newDays = parseInt(daysDisplay.textContent.trim());
+                if (!isNaN(newDays) && newDays > 0) {
+                    updates.push({
+                        taskId,
+                        field: 'daysRequired',
+                        value: newDays,
+                        usrID: userId,
+                    });
+                }
             }
-          });
+
+            if (updates.length === 0) {
+                showError("No changes to save");
+                return;
+            }
+
+            // Save updates
+            const updatedTask = await saveTaskUpdates(taskId, updates);
+            
+            if (updatedTask && updatedTask.updatedTasks && updatedTask.updatedTasks[0].PlannedDate) {
+                const plannedDate = new Date(updatedTask.updatedTasks[0].PlannedDate);
+                const day = String(plannedDate.getDate()).padStart(2, '0');
+                const month = String(plannedDate.getMonth() + 1).padStart(2, '0');
+                const year = plannedDate.getFullYear();
+                const formattedDate = `${day}/${month}/${year}`;
+                
+                const plannedDateCell = row.querySelector('td[data-label="Planned Date"]');
+                if (plannedDateCell) plannedDateCell.textContent = formattedDate;
+                
+                if (delayInput && delayInput.value.trim() !== '') {
+                    delayInput.disabled = true;
+                }
+                
+                showSuccess('Changes saved successfully');
+            }
+        } catch (err) {
+            showError("Error saving changes: " + err.message);
+        } finally {
+            button.innerHTML = originalHTML;
         }
-      });
+    };
 
-      // Modal event handlers
-      modalConfirmBtn?.addEventListener('click', async () => {
-        if (currentAction) {
-          await currentAction();
-        }
-        closeModal();
-      });
-
-      modalCancelBtn?.addEventListener('click', closeModal);
-
-      // Close modal when clicking outside
-      modal?.addEventListener('click', (e) => {
-        if (e.target === modal) {
-          closeModal();
-        }
-      });
-
-      // Keyboard navigation for inputs
-      document.addEventListener('keydown', (e) => {
+    const handleKeyEvents = (e) => {
         if (e.key === 'Enter' && e.target.classList.contains('editable-days')) {
-          e.target.closest('tr')?.querySelector('.row-save-btn')?.click();
+            e.target.closest('tr')?.querySelector('.row-save-btn')?.click();
         }
         
         if (e.key === 'Escape') {
-          closeModal();
+            closeModal();
         }
-      });
-      
-      // Focus management for accessibility
-      document.addEventListener('focusin', (e) => {
-        if (e.target.classList.contains('editable-days') || 
-            e.target.classList.contains('delay-reason-input')) {
-          e.target.closest('tr')?.classList.add('keyboard-focus');
+    };
+
+    const handleFocusEvents = (e) => {
+        const row = e.target.closest('tr');
+        if (!row) return;
+        
+        if (e.type === 'focusin' && 
+            (e.target.classList.contains('editable-days') || 
+             e.target.classList.contains('delay-reason-input'))) {
+            row.classList.add('keyboard-focus');
+        } else if (e.type === 'focusout') {
+            row.classList.remove('keyboard-focus');
         }
-      });
-      
-      document.addEventListener('focusout', (e) => {
-        if (e.target.classList.contains('editable-days') || 
-            e.target.classList.contains('delay-reason-input')) {
-          e.target.closest('tr')?.classList.remove('keyboard-focus');
-        }
-      });
-    });
+    };
 </script>
 </body>
 </html>
