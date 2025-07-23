@@ -78,7 +78,6 @@
       height: 40px;
       margin-bottom: 0.5rem;
       transition: var(--transition);
-      filter: brightness(0) invert(1);
     }
 
     .sidebar-logo:hover {
@@ -1410,10 +1409,11 @@
           <i class="fas fa-arrow-left"></i>
           Back to Dashboard
         </button>
-         <a href="/logout">
-          <i class="fas fa-home"></i>
-          logout
-        </a>
+        <a href="/logout">
+  <i class="fas fa-sign-out-alt"></i>
+  Logout
+</a>
+
       </div>
       
     </header>
@@ -1454,15 +1454,7 @@
             </select>
           </div>
           
-          <div class="filter-group">
-            <label class="filter-label">Sort by:</label>
-            <select id="sort-filter" class="filter-select">
-              <option value="priority">Priority</option>
-              <option value="duedate">Due Date</option>
-              <option value="department">Department</option>
-            </select>
-          </div>
-          
+        
           <div class="search-container">
             <input type="text" id="task-search" class="search-input" placeholder="Search tasks...">
             <button id="search-btn" class="search-btn">
@@ -1569,7 +1561,8 @@
     // Cache DOM elements and initial data
     const userId = "<%= user.id %>";
     const deptId = "<%= user.DepartmentId %>";
-    const taskList = <%- JSON.stringify(tasks) %>; 
+    const taskList = <%- JSON.stringify(tasks) %>;
+    const isAdmin = <%= user.usrAdmin || false %>; 
     const container = document.getElementById('department-tables-container');
     const timelineContainer = document.getElementById('task-timeline');
     const errorEl = document.getElementById('error-message');
@@ -1580,6 +1573,7 @@
     const modalMessage = document.getElementById('modal-message');
     const modalConfirmBtn = document.getElementById('modal-confirm-btn');
     const modalCancelBtn = document.getElementById('modal-cancel-btn');
+    
     
     // Predefined objects and variables
     const sortFunctions = {
@@ -1647,32 +1641,36 @@
         document.getElementById('completion-percentage').textContent = `${completedPercentage}%`;
     };
 
-    const renderTaskTimeline = (tasks) => {
-        if (!timelineContainer) return;
-        
-        // Use document fragment for batch DOM updates
-        const fragment = document.createDocumentFragment();
-        [...tasks]
-            .sort((a, b) => (a.DepId - b.DepId) || (a.TaskID - b.TaskID))
-            .forEach(task => {
-                const timelineItem = document.createElement('div');
-                timelineItem.className = 'timeline-item';
-                
-                if (task.TimeFinished) timelineItem.classList.add('completed');
-                if (task.IsTaskSelected) timelineItem.classList.add('current');
-                
-                timelineItem.innerHTML = `
-                    <div class="timeline-dot"></div>
-                    <div class="timeline-label">${task.DeptName}</div>
-                `;
-                
-                fragment.appendChild(timelineItem);
-            });
-        
-        // Clear and append in one operation
-        timelineContainer.innerHTML = '';
-        timelineContainer.appendChild(fragment);
-    };
+   const renderTaskTimeline = (tasks) => {
+    if (!timelineContainer) return;
+
+    const fragment = document.createDocumentFragment();
+
+    [...tasks]
+        .sort((a, b) =>
+            (a.StepOrder - b.StepOrder) ||
+            (a.Priority - b.Priority) ||
+            (a.TaskID - b.TaskID)
+        )
+        .forEach(task => {
+            const timelineItem = document.createElement('div');
+            timelineItem.className = 'timeline-item';
+
+            if (task.TimeFinished) timelineItem.classList.add('completed');
+            if (task.IsTaskSelected) timelineItem.classList.add('current');
+
+            timelineItem.innerHTML = `
+                <div class="timeline-dot"></div>
+                <div class="timeline-label">${task.DeptName}</div>
+            `;
+
+            fragment.appendChild(timelineItem);
+        });
+
+    timelineContainer.innerHTML = '';
+    timelineContainer.appendChild(fragment);
+};
+
 
     const filterTasks = (status) => {
         const rows = document.querySelectorAll('.department-table tbody tr');
@@ -1913,7 +1911,7 @@
         }
 
 let extraButtons = '';
-if (task.Delay > 0 || (isOwnDepartment && !task.TimeFinished && !task.IsDateFixed)) {
+if (!isAdmin && (task.Delay > 0 || (isOwnDepartment && !task.TimeFinished && !task.IsDateFixed))) {
     extraButtons = `<button class="row-save-btn" data-task-id="${task.TaskID}"> Save</button>`;
 }
 

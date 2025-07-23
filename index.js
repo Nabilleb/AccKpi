@@ -1,4 +1,5 @@
 import express from "express";
+import { Resend } from "resend";
 import bodyParser from "body-parser";
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
@@ -8,6 +9,7 @@ import session from 'express-session';
 import { isDate } from "util/types";
 import nodemailer from 'nodemailer';
 import { Console } from "console";
+import flash from 'connect-flash';
 
 dotenv.config();
 
@@ -29,6 +31,7 @@ const config = {
 
 
 const app = express();
+const resend = new Resend('re_HTN7cQoQ_8vgyNq3wX2zCMZTQxmL3g5nb');
 
 let pool;
 
@@ -63,6 +66,7 @@ function ensureAuthenticated(req, res, next) {
   res.redirect('/login'); 
 }
 
+
 function checkIfInSession(req, res, next){
   if(req.session && req.session.user){
     return res.redirect(req.session.user.usrAdmin ? "/adminpage":`/userpage?id=${req.session.user.id}`);
@@ -88,6 +92,8 @@ app.use(session({
   resave: false,
   saveUninitialized: true,
 }));
+
+app.use(flash());
 
 
 app.get("/login",checkIfInSession ,async(req,res) =>{    
@@ -142,9 +148,7 @@ app.get("/workFlowDash",ensureAuthenticated ,async (req, res) => {
     const package1 = await pool.request().query("SELECT * FROM tblPackages");
     const process = await pool.request().query("SELECT * FROM tblProcess")
     const isAdmin = req.session.user.usrAdmin
-    console.log(projects.recordset)
-    console.log(package1.recordset)
-    console.log(process.recordset)
+ 
 
     res.render("workflowdashboard.ejs", { projects: projects.recordset, usrAdmin:isAdmin , packages: package1.recordset, processes:process.recordset });
   } catch (err) {
@@ -156,7 +160,6 @@ app.get("/workFlowDash",ensureAuthenticated ,async (req, res) => {
 app.post('/workflow/:id/activation', async (req, res) => {
   const workflowId = parseInt(req.params.id);
   const { activate } = req.body;
-  console.log("active backend",activate)
 
   try {
     await pool.request()
@@ -352,7 +355,6 @@ WHERE d.workFLowHdrId = @HdrID
 ORDER BY pd.StepOrder ASC, t.Priority ASC
 
 `);
-console.log(tasksResult.recordset)
 
     const request2 = pool.request();
     request2.input('DepartmentID', sql.Int, DepId);
@@ -363,7 +365,7 @@ console.log(tasksResult.recordset)
       WHERE DepartmentID = @DepartmentID
     `);
 
-    const department = departmentResult.recordset[0] || { DeptName: 'Unknown' };
+    const department = departmentResult.recordset[0] || { DeptName: 'Admin' };
 
     const user = {
       id: usrId,
@@ -411,27 +413,42 @@ app.get("/addProcess", isAdmin, async (req, res) => {
       stepsByProcess[step.ProcessID].push(step);
     });
 
-    const departmentsResult = await pool.request().query(`SELECT DepartmentID, DeptName FROM tblDepartments`);
+    const departmentsResult = await pool.request().query(`
+      SELECT DepartmentID, DeptName FROM tblDepartments
+    `);
 
     res.render("process", {
       processes,
       stepsByProcess,
       departments: departmentsResult.recordset,
       isAdmin: req.session.user.usrAdmin,
-      departmentId: req.session.user.DepartmentID
+      departmentId: req.session.user.DepartmentID,
+      errorMessage: null,
+      successMessage:null
+      
     });
   } catch (err) {
     console.error("Error loading processes:", err);
-    res.status(500).send("Error loading processes.");
+
+  res.render("process", {
+  processes,
+  stepsByProcess,
+  departments: departmentsResult.recordset,
+  isAdmin: req.session.user.usrAdmin,
+  departmentId: req.session.user.DepartmentID,
+  errorMessage: req.flash("error"),
+  successMessage: req.flash("success")
+});
+
   }
 });
 
 
 
+
 app.get('/api/tasks/by-department/:departmentID/by-process/:processID', async (req, res) => {
   const { departmentID, processID } = req.params;
-console.log(departmentID)
-console.log(processID)
+
   const query = `
     SELECT 
       T.TaskID,
@@ -450,7 +467,6 @@ console.log(processID)
       .input('processID', sql.Int, processID)
       .query(query);
 
-    console.log(result.recordset);
     res.json(result.recordset);
   } catch (err) {
     console.error('Error fetching tasks by department:', err);
@@ -635,8 +651,6 @@ app.get('/add-task',ensureAuthenticated ,async (req, res) => {
   const processId = req.query.processId;
   const isActive = req.query.active
   const processName = req.query.process
-  console.log(req.query)
-  console.log("isactive", isActive)
   let workflowDetails = null;
   let processSteps = [];
   let departments = [];
@@ -863,7 +877,6 @@ app.post('/assign-user-to-task/:taskId', async (req, res) => {
   const { userId } = req.body;
 
   try {
-    // Get user email by userId (not by task)
     const userEmailResult = await pool.request()
       .input('userId', userId)
       .query(`
@@ -872,50 +885,38 @@ app.post('/assign-user-to-task/:taskId', async (req, res) => {
         WHERE usrID = @userId
       `);
 
-
     if (userEmailResult.recordset.length > 0) {
       const assignedUser = userEmailResult.recordset[0];
-             await pool.request()
-                .input("taskID", sql.Int, taskId)
-                .input("userDesc",assignedUser.usrDesc)
-                .query(`UPDATE tblWorkflowDtl
-                        SET assignUser = @userDesc
-                        WHERE TaskID = @taskID `)
 
-      const transporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: {
-          user: 'Nabilgreen500@gmail.com',
-          pass: 'ruoh nygp ewxd slad'
-        }
-      });
+      await pool.request()
+        .input("taskID", sql.Int, taskId)
+        .input("userDesc", assignedUser.usrDesc)
+        .query(`
+          UPDATE tblWorkflowDtl
+          SET assignUser = @userDesc
+          WHERE TaskID = @taskID
+        `);
 
-      const mailOptions = {
-        from: 'Nabilgreen500@gmail.com',
-        to: assignedUser.usrEmail,
+      //  Only works if "to" is your own Resend account email
+      const emailResponse = await resend.emails.send({
+        from: 'onboarding@resend.dev',
+        to: "nabilgreen500@gmail.com",  // need to buy a domain 
         subject: 'Task Assigned to You',
-        text: `Hello ${assignedUser.usrDesc},
-
-A task with ID ${taskId} has been assigned to you.
-
-Please log in to the Engineering Portal to begin your task.
-
-Regards,
-Engineering Project Dashboard`
-      };
-
-      transporter.sendMail(mailOptions, (err, info) => {
-        if (err) {
-          console.error('Error sending email to assigned user:', err);
-          return res.status(500).json({ error: 'Failed to send email' });
-        } else {
-          console.log('Notification email sent to assigned user:', info.response);
-          return res.status(200).json({ message: 'Email sent successfully' });
-        }
+        html: `
+          <p>Hello ${assignedUser.usrDesc},</p>
+          <p>A task with ID <strong>${taskId}</strong> has been assigned to you.</p>
+          <p>Please log in to the Engineering Portal to begin your task.</p>
+          <p>Regards,<br>Engineering Project Dashboard</p>
+        `
       });
+
+      console.log('Email sent:', emailResponse);
+      return res.status(200).json({ message: 'Email sent successfully' });
+
     } else {
       return res.status(404).json({ error: 'User not found' });
     }
+
   } catch (error) {
     console.error('Error assigning user to task:', error);
     return res.status(500).json({ error: 'Internal server error' });
@@ -1120,7 +1121,6 @@ app.post('/add-task', ensureAuthenticated, async (req, res) => {
     `);
 
     const newTaskId = insertResult.recordset[0].TaskID;
-    console.log('✅ Task inserted with ID:', newTaskId);
 
     // 9. Insert into tblWorkflowDtl
     const workflowDtlRequest = pool.request()
@@ -1140,7 +1140,6 @@ app.post('/add-task', ensureAuthenticated, async (req, res) => {
       )
     `);
 
-    console.log('✅ WorkflowDtl inserted');
 
     // ✅ Done
     res.redirect(`/add-task?processId=${ProcessID}`);
@@ -1525,30 +1524,27 @@ app.post("/postProcess", async (req, res) => {
   const { ProcessName, Steps } = req.body;
 
   if (!Steps || Steps.length === 0) {
-    return res.status(400).send({ error: "No departments selected." });
+    req.flash("error", "No departments selected.");
+    return res.redirect("/addProcess");
   }
 
-  // Ensure Steps is always an array
   const departmentIDs = Array.isArray(Steps)
     ? Steps.map(id => parseInt(id))
     : [parseInt(Steps)];
 
-  // Check for duplicates within the Steps array
   const seenCombinations = new Set();
   let stepNumber = 1;
   for (const deptID of departmentIDs) {
     const key = `${deptID}-${stepNumber}`;
     if (seenCombinations.has(key)) {
-      return res.status(400).send({
-        error: `Duplicate department-step combination: DepartmentID ${deptID} at Step ${stepNumber}`,
-      });
+      req.flash("error", `Duplicate department-step combination: DepartmentID ${deptID} at Step ${stepNumber}`);
+      return res.redirect("/addProcess");
     }
     seenCombinations.add(key);
     stepNumber++;
   }
 
   try {
-    // 1️⃣ Duplicate name check - ignoring case and spaces
     const duplicateCheck = await pool.request()
       .input("ProcessName", sql.NVarChar, ProcessName.trim())
       .query(`
@@ -1558,12 +1554,10 @@ app.post("/postProcess", async (req, res) => {
       `);
 
     if (duplicateCheck.recordset[0].DuplicateCount > 0) {
-      return res.status(400).send({
-        error: "A process with this name already exists.",
-      });
+      req.flash("error", "A process with this name already exists.");
+      return res.redirect("/addProcess");
     }
 
-    // 2️⃣ Insert Process
     const processResult = await pool.request()
       .input("ProcessName", sql.VarChar(100), ProcessName.trim())
       .query(`
@@ -1574,7 +1568,6 @@ app.post("/postProcess", async (req, res) => {
 
     const ProcessID = processResult.recordset[0].ProcessID;
 
-    // 3️⃣ Insert Departments with Steps
     stepNumber = 1;
     for (const deptID of departmentIDs) {
       const IsActive = stepNumber === 1 ? 1 : 0;
@@ -1592,10 +1585,12 @@ app.post("/postProcess", async (req, res) => {
       stepNumber++;
     }
 
+    req.flash("success", "Process added successfully.");
     res.redirect("/addProcess");
   } catch (err) {
     console.error("Error assigning process:", err);
-    res.status(500).send({ error: "Failed to assign process." });
+    req.flash("error", "Failed to assign process.");
+    res.redirect("/addProcess");
   }
 });
 
@@ -2127,10 +2122,16 @@ console.log(req.body)
     if (taskResult.recordset.length === 0) {
       return res.status(404).json({ error: 'Task not found' });
     }
+const { PlannedDate, DepId, DaysRequired } = taskResult.recordset[0];
+const planned = new Date(PlannedDate);
 
-    const { PlannedDate, DepId, DaysRequired } = taskResult.recordset[0];
-    const planned = new Date(PlannedDate);
-    const delay = Math.max(0, Math.ceil((finished - planned) / (1000 * 60 * 60 * 24)));
+const plannedDateOnly = new Date(planned);
+const finishedDateOnly = new Date(finished);
+plannedDateOnly.setHours(0, 0, 0, 0);
+finishedDateOnly.setHours(0, 0, 0, 0);
+
+const delay = Math.max(0, Math.ceil((finishedDateOnly - plannedDateOnly) / (1000 * 60 * 60 * 24)));
+
 
     // Mark workflow detail as finished
     await pool.request()
@@ -2222,7 +2223,6 @@ console.log(req.body)
           AND w.workFlowHdrId = @workFlowHdrId
           AND w.TimeFinished IS NULL
       `);
- console.log("remaining", remaining.recordset)
  
     if (remaining.recordset[0].Remaining === 0) {
       // All tasks in this department are finished—activate the next department
@@ -2234,12 +2234,10 @@ console.log(req.body)
           FROM tblProcessDepartment
           WHERE DepartmentID = @depId AND ProcessID = @processID
         `);
-console.log('DEBUG DepId:', DepId);
-console.log('DEBUG processID:', processID);
+
       if (processInfo.recordset.length > 0) {
         const { ProcessID, StepOrder } = processInfo.recordset[0];
- console.log(StepOrder)
- console.log("process id", ProcessID)
+
         const nextDeptResult = await pool.request()
           .input('processId', ProcessID)
           .input('nextStep', StepOrder + 1)

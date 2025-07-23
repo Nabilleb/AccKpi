@@ -261,7 +261,57 @@
       display: block;
       margin-bottom: var(--spacing-sm);
     }
-
+ .alert {
+      padding: 0.75rem 1.25rem;
+      margin-bottom: 1rem;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      animation: fadeIn 0.3s ease-out;
+    }
+    
+    .alert-danger {
+      background-color: rgba(239, 68, 68, 0.1);
+      border-left: 4px solid var(--error);
+      color: var(--error);
+    }
+    
+    .alert-success {
+      background-color: rgba(16, 185, 129, 0.1);
+      border-left: 4px solid var(--success);
+      color: var(--success);
+    }
+    
+    .alert-icon {
+      font-size: 1.25rem;
+      flex-shrink: 0;
+    }
+    
+    .validation-error {
+      color: var(--error);
+      font-size: 0.85rem;
+      margin-top: 0.25rem;
+      display: none;
+    }
+    
+    .is-invalid {
+      border-color: var(--error) !important;
+      background-color: rgba(239, 68, 68, 0.05) !important;
+    }
+    
+    .steps-error {
+      animation: shake 0.5s ease;
+      border-color: var(--error) !important;
+      background-color: rgba(239, 68, 68, 0.05) !important;
+    }
+    
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-5px); }
+      40%, 80% { transform: translateX(5px); }
+    }
+    
     .step-item {
       display: flex;
       align-items: center;
@@ -707,25 +757,49 @@
 </head>
 <body>
   <div class="container">
- <div class="flex items-center gap-2 mb-6">
-    <a href="/adminpage" class="btn btn-secondary btn-sm" style="padding-left: 0.75rem;">
-      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="mr-1">
-        <path d="M19 12H5M12 19l-7-7 7-7"/>
-      </svg>
-      Admin Dashboard
-    </a>
-    <div class="flex-1 border-t border-gray-200"></div>
-  </div>
+    <div class="flex items-center gap-2 mb-6">
+      <a href="/adminpage" class="btn btn-secondary btn-sm" style="padding-left: 0.75rem;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="mr-1">
+          <path d="M19 12H5M12 19l-7-7 7-7"/>
+        </svg>
+        Admin Dashboard
+      </a>
+      <div class="flex-1 border-t border-gray-200"></div>
+    </div>
     <h1>Process Management</h1>
     
+    <!-- Improved error message display -->
+    <% if (errorMessage) { %>
+      <div class="alert alert-danger">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="alert-icon">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="8" x2="12" y2="12"></line>
+          <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+        <div><%= errorMessage %></div>
+      </div>
+    <% } %>
+    
+    <% if (successMessage) { %>
+      <div class="alert alert-success">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="alert-icon">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+          <polyline points="22 4 12 14.01 9 11.01"></polyline>
+        </svg>
+        <div><%= successMessage %></div>
+      </div>
+    <% } %>
+
     <div class="card animate-in">
       <h2>Create New Process</h2>
+      
       <form id="processForm" action="/postProcess" method="POST">
         <div class="form-group">
           <label for="ProcessName">Process Name</label>
           <input type="text" name="ProcessName" id="ProcessName" required 
                  placeholder="e.g. Employee Onboarding, Purchase Approval">
           <span class="help-text">Give your process a clear, descriptive name that identifies its purpose.</span>
+          <div class="validation-error" id="ProcessName-error">Please enter a process name</div>
         </div>
 
         <div class="form-group">
@@ -745,10 +819,19 @@
             Hold Ctrl/Cmd to select multiple departments. The order you select them will determine the workflow steps.
             Drag to reorder steps after selection.
           </span>
+          <div class="validation-error" id="Departments-error">Please select at least one department</div>
         </div>
 
         <div id="steps-list" class="empty">No departments selected yet. Selected departments will appear here as workflow steps.</div>
         <div id="hiddenInputs"></div>
+        <div id="stepsError" class="validation-error" style="display: none;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem;">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+          Please select at least one department for the workflow
+        </div>
 
         <div class="flex justify-between mt-4">
           <button type="reset" class="btn btn-secondary">Clear Form</button>
@@ -819,74 +902,8 @@
     <% }) %>
   </tbody>
 </table>
-
       <% } %>
- <div id="addTaskContainer" style="display: none; margin-top: 2rem;">
-  <div class="form-container">
-    <div class="form-header">
-      <h1>
-        <i class="fas fa-tasks"></i>
-        Create New Task for <span id="processNameTitle"></span>
-      </h1>
     </div>
-
-    <form action="/add-task" method="POST" class="form-grid">
-      <input type="hidden" name="ProcessID" id="ProcessID" />
-
-      <div id="processStepsList"></div>
-
-      <div class="form-group">
-        <label for="TaskName" class="required-field">Task Name</label>
-        <input type="text" name="TaskName" id="TaskName" required maxlength="100" placeholder="e.g., Review Design Mockups"/>
-        <div class="char-counter" id="TaskName-counter">0/100</div>
-        <div class="validation-error" id="TaskName-error">Task name is required</div>
-      </div>
-
-      <div class="form-group">
-        <label for="TaskPlanned" class="required-field">Task Description</label>
-        <input type="text" name="TaskPlanned" id="TaskPlanned" required maxlength="255" placeholder="Describe what needs to be done"/>
-        <div class="char-counter" id="TaskPlanned-counter">0/255</div>
-        <div class="validation-error" id="TaskPlanned-error">Description is required</div>
-      </div>
-
-      <div class="form-group">
-        <label for="IsDateFixed">Fixed Deadline?</label>
-        <select name="IsDateFixed" id="IsDateFixed">
-          <option value="1">Yes</option>
-          <option value="0" selected>No</option>
-        </select>
-      </div>
-
-      <div class="form-group">
-        <label for="DaysRequired" class="required-field">Estimated Days</label>
-        <input type="number" name="DaysRequired" id="DaysRequired" min="1" required placeholder="3"/>
-        <div class="validation-error" id="DaysRequired-error">Please enter a valid number of days</div>
-      </div>
-
-      <div class="form-group">
-        <label for="DepId" class="required-field">Responsible Department</label>
-        <select name="DepId" id="DepId" required>
-          <option value="">Select a department</option>
-          <% departments.forEach(d => { %>
-            <option value="<%= d.DepartmentID %>"><%= d.DeptName %></option>
-          <% }) %>
-        </select>
-        <div class="validation-error" id="DepId-error">Please select a department</div>
-      </div>
-
-      <div class="form-actions">
-        <button type="button" class="btn btn-secondary" id="cancelAddTask">
-          <i class="fas fa-arrow-left"></i> Cancel
-        </button>
-        <button type="submit" class="btn btn-primary" id="submit-btn">
-          <i class="fas fa-plus-circle"></i> Create Task
-        </button>
-      </div>
-    </form>
-  </div>
-</div>
-
-
   </div>
 
   <script>
@@ -895,12 +912,76 @@
     const stepsList = document.getElementById('steps-list');
     const hiddenInputs = document.getElementById('hiddenInputs');
     const selectedOrder = [];
+    const processForm = document.getElementById('processForm');
+    const stepsError = document.getElementById('stepsError');
 
     // Update styles and display on change
     deptSelect.addEventListener('change', (event) => {
       updateSelectedOrder();
       updateDisplay();
       styleSelectedOptions();
+      validateSteps();
+    });
+
+    function validateSteps() {
+      if (selectedOrder.length === 0) {
+        stepsList.classList.add('steps-error');
+        stepsError.style.display = 'flex';
+        return false;
+      } else {
+        stepsList.classList.remove('steps-error');
+        stepsError.style.display = 'none';
+        return true;
+      }
+    }
+
+    function validateForm() {
+      let isValid = true;
+      
+      // Validate process name
+      const processName = document.getElementById('ProcessName');
+      if (!processName.value.trim()) {
+        processName.classList.add('is-invalid');
+        document.getElementById('ProcessName-error').style.display = 'block';
+        isValid = false;
+      } else {
+        processName.classList.remove('is-invalid');
+        document.getElementById('ProcessName-error').style.display = 'none';
+      }
+      
+      // Validate departments
+      if (!validateSteps()) {
+        document.getElementById('Departments-error').style.display = 'block';
+        isValid = false;
+      } else {
+        document.getElementById('Departments-error').style.display = 'none';
+      }
+      
+      return isValid;
+    }
+
+    // Form submission validation
+    processForm.addEventListener('submit', function(e) {
+      if (!validateForm()) {
+        e.preventDefault();
+        
+        // Scroll to first error
+        const firstError = document.querySelector('.is-invalid, .steps-error');
+        if (firstError) {
+          firstError.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center'
+          });
+        }
+      }
+    });
+
+    // Real-time validation for process name
+    document.getElementById('ProcessName').addEventListener('input', function() {
+      if (this.value.trim()) {
+        this.classList.remove('is-invalid');
+        document.getElementById('ProcessName-error').style.display = 'none';
+      }
     });
 
     function updateSelectedOrder() {
@@ -944,7 +1025,6 @@
           </div>
         `;
         
-        // Create hidden inputs like Steps[0], Steps[1], etc.
         const input = document.createElement('input');
         input.type = 'hidden';
         input.name = `Steps[${idx}]`;
@@ -955,7 +1035,6 @@
       stepsList.innerHTML = html;
       stepsList.className = '';
       
-      // Initialize drag and drop functionality
       initDragAndDrop();
     }
 
@@ -1040,41 +1119,13 @@
       });
     }
 
-    // Form submission validation
-    document.getElementById('processForm').addEventListener('submit', function(e) {
-      if (selectedOrder.length === 0) {
-        e.preventDefault();
-        stepsList.style.border = '1px solid var(--error)';
-        stepsList.style.backgroundColor = 'rgba(239, 68, 68, 0.05)';
-        setTimeout(() => {
-          stepsList.style.border = '';
-          stepsList.style.backgroundColor = '';
-        }, 2000);
-        
-        // Create and show error message
-        const errorMsg = document.createElement('div');
-        errorMsg.textContent = 'Please select at least one department for the workflow.';
-        errorMsg.style.color = 'var(--error)';
-        errorMsg.style.marginTop = '0.5rem';
-        errorMsg.style.fontSize = '0.875rem';
-        
-        const existingError = stepsList.querySelector('.error-msg');
-        if (existingError) existingError.remove();
-        
-        stepsList.appendChild(errorMsg);
-        errorMsg.className = 'error-msg';
-        
-        deptSelect.focus();
-      }
-    });
     document.querySelectorAll('.add-task-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const processId = btn.dataset.processId;
-    const processName = encodeURIComponent(btn.dataset.processName);
-    window.location.href = `/add-task?processId=${processId}&process=${processName}`;
-  });
-});
-
+      btn.addEventListener('click', () => {
+        const processId = btn.dataset.processId;
+        const processName = encodeURIComponent(btn.dataset.processName);
+        window.location.href = `/add-task?processId=${processId}&process=${processName}`;
+      });
+    });
   });
   </script>
 </body>

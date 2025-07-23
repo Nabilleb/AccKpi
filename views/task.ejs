@@ -1222,9 +1222,6 @@ function renderTasks(tasks) {
                 <th>Description</th>
                 <th>Planned Date</th>
                 <th>Days</th>
-                <th>Status</th>
-                <th>Started</th>
-                <th>Finished</th>
                 <th>Priority</th>
               </tr>
             </thead>
@@ -1242,9 +1239,6 @@ function renderTasks(tasks) {
           <td>${task.TaskPlanned || '-'}</td>
           <td>${task.PlannedDate ? formatDate(task.PlannedDate) : '-'}</td>
           <td>${task.DaysRequired || '-'}</td>
-          <td>${statusBadge}</td>
-          <td>${task.TimeStarted ? formatDateTime(task.TimeStarted) : '-'}</td>
-          <td>${task.TimeFinished ? formatDateTime(task.TimeFinished) : '-'}</td>
           <td>${task.Priority ?? '-'}</td>
         </tr>`;
     });
