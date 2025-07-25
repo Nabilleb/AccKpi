@@ -1559,6 +1559,8 @@
 
 <script>
     // Cache DOM elements and initial data
+      console.log("Inline script running");
+
     const userId = "<%= user.id %>";
     const deptId = "<%= user.DepartmentId %>";
     const taskList = <%- JSON.stringify(tasks) %>;

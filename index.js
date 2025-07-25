@@ -6,10 +6,12 @@ import { dirname } from 'path';
 import sql from 'mssql';
 import dotenv from 'dotenv';
 import session from 'express-session';
-import { isDate } from "util/types";
 import nodemailer from 'nodemailer';
-import { Console } from "console";
 import flash from 'connect-flash';
+import helmet from 'helmet';
+import cors from 'cors';
+import rateLimit from "express-rate-limit";
+
 
 dotenv.config();
 
@@ -28,10 +30,8 @@ const config = {
   }
 };
 
-
-
 const app = express();
-const resend = new Resend('re_HTN7cQoQ_8vgyNq3wX2zCMZTQxmL3g5nb');
+const resend = new Resend(process.env.API_RESEND);
 
 let pool;
 
@@ -40,36 +40,47 @@ app.set('views', __dirname + '/views');
 
 app.use(express.static("public"));
 app.use(express.json());
-
 app.use(bodyParser.urlencoded({ extended: true }));
 
-async function initializeDatabase() {
-  try {
-    pool = await sql.connect(config);
-    console.log('Connected to database');
-    
-    app.listen(port, () => {
-      console.log("Listening on port", port);
-    });
-  } catch (err) {
-    console.error("SQL connection error", err);
-    process.exit(1); 
-  }
-}
+app.use(helmet());
 
-initializeDatabase();
+app.use(cors({
+  origin: 'http://localhost:3000',
+  credentials: true
+}));
+
+app.use(session({
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: true,
+  cookie: {
+    httpOnly: true,
+    secure: false,
+    sameSite: 'lax'
+  }
+}));
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrcAttr: ["'self'", "'unsafe-inline'"]  // this allows inline event handlers
+    }
+  }
+}));
+
+app.use(flash());
 
 function ensureAuthenticated(req, res, next) {
   if (req.session && req.session.user) {
     return next();
   }
-  res.redirect('/login'); 
+  res.redirect('/login');
 }
-
 
 function checkIfInSession(req, res, next){
   if(req.session && req.session.user){
-    return res.redirect(req.session.user.usrAdmin ? "/adminpage":`/userpage?id=${req.session.user.id}`);
+    return res.redirect(req.session.user.usrAdmin ? "/adminpage" : `/userpage?id=${req.session.user.id}`);
   }
   next();
 }
@@ -78,44 +89,59 @@ function isAdmin(req, res, next) {
   if (!req.session || !req.session.user) {
     return res.status(401).send("Unauthorized: Please log in.");
   }
-
   if (!req.session.user.usrAdmin) {
     return res.status(403).send("Forbidden: Admins only.");
   }
-
   next();
 }
 
+async function initializeDatabase() {
+  try {
+    pool = await sql.connect(config);
+    console.log('Connected to database');
+    app.listen(port, () => {
+      console.log("Listening on port", port);
+    });
+  } catch (err) {
+    console.error("SQL connection error", err);
+    process.exit(1);
+  }
+}
 
-app.use(session({
-  secret: 'cat keyboard 10',
-  resave: false,
-  saveUninitialized: true,
-}));
+initializeDatabase();
 
-app.use(flash());
+const loginLimiter = rateLimit({
+  windowMs: 5 * 60 * 1000, 
+  max: 10,
+  message: "Too many login attempts. Please try again later."
+});
 
 
-app.get("/login",checkIfInSession ,async(req,res) =>{    
- 
-  res.render("login.ejs")
-})
+app.get("/login", checkIfInSession, (req, res) => {
+  res.render("login.ejs");
+});
 
-app.post("/login", async (req, res) => {
-  const { username, password } = req.body;
+app.post("/login", loginLimiter, async (req, res) => {
+  let { username, password } = req.body;
+
+  // Simple sanitization
+  if (typeof username !== "string" || typeof password !== "string") {
+    return res.status(400).json({ success: false, message: "Invalid input." });
+  }
+
+  username = username.trim().toLowerCase();
+  password = password.trim();
 
   try {
     const result = await pool.request()
       .input('username', sql.VarChar, username)
-      .input('password', sql.VarChar, password) 
+      .input('password', sql.VarChar, password)
       .query(`
         SELECT usrID, usrDesc, DepartmentID, usrAdmin 
         FROM tblUsers 
-        WHERE usrEmail = @username AND usrPWD = @password
+        WHERE LOWER(usrEmail) = @username AND usrPWD = @password
       `);
-      
-   
-      
+
     if (result.recordset.length === 1) {
       const user = result.recordset[0];
 
@@ -126,7 +152,10 @@ app.post("/login", async (req, res) => {
         DepartmentId: user.DepartmentID
       };
 
-      return res.json({ success: true, redirect: user.usrAdmin ? "/adminpage" : "/workFlowDash" });
+      return res.json({
+        success: true,
+        redirect: user.usrAdmin ? "/adminpage" : "/workFlowDash"
+      });
     } else {
       return res.json({ success: false, message: "Invalid username or password" });
     }
@@ -157,26 +186,6 @@ app.get("/workFlowDash",ensureAuthenticated ,async (req, res) => {
   }
 });
 
-app.post('/workflow/:id/activation', async (req, res) => {
-  const workflowId = parseInt(req.params.id);
-  const { activate } = req.body;
-
-  try {
-    await pool.request()
-      .input('activate', sql.Bit, activate ? 1 : 0)
-      .input('workflowId', sql.Int, workflowId)
-      .query(`
-        UPDATE tblWorkflowHdr
-        SET activate = @activate
-        WHERE workFlowID = @workflowId
-      `);
-
-    res.json({ success: true });
-  } catch (err) {
-    console.error('Error updating workflow activation:', err);
-    res.status(500).json({ error: 'Failed to update workflow activation.' });
-  }
-});
 
 app.get('/api/users', async (req, res) => {
   const depId = req.query.depId;
@@ -210,26 +219,23 @@ app.get("/api/workFlowDashData", ensureAuthenticated, async (req, res) => {
   const userDeptId = req.session.user.DepartmentId;
 
   try {
-    // ✅ Update completed workflows
+    // ✅ Mark workflows as completed if all tasks are done
     await pool.request().query(`
       UPDATE hdr
       SET hdr.completionDate = GETDATE(), hdr.status = 'Completed'
       FROM tblWorkflowHdr hdr
       WHERE EXISTS (
-          SELECT 1
-          FROM tblWorkflowDtl dtl
+          SELECT 1 FROM tblWorkflowDtl dtl
           WHERE dtl.workFlowHdrId = hdr.workFlowID
       )
       AND NOT EXISTS (
-          SELECT 1
-          FROM tblWorkflowDtl dtl
+          SELECT 1 FROM tblWorkflowDtl dtl
           WHERE dtl.workFlowHdrId = hdr.workFlowID
             AND dtl.TimeFinished IS NULL
       )
       AND hdr.status != 'Completed'
     `);
 
-    // ✅ Build base query without joining tblProcessDepartment
     let query = `
       SELECT 
         hdr.WorkFlowID AS HdrID,
@@ -259,8 +265,7 @@ app.get("/api/workFlowDashData", ensureAuthenticated, async (req, res) => {
       request.input('UserDeptId', sql.Int, userDeptId);
       whereClauses.push(`
         EXISTS (
-          SELECT 1
-          FROM tblProcessDepartment pd
+          SELECT 1 FROM tblProcessDepartment pd
           WHERE pd.ProcessID = hdr.ProcessID
             AND pd.DepartmentID = @UserDeptId
         )
@@ -273,10 +278,7 @@ app.get("/api/workFlowDashData", ensureAuthenticated, async (req, res) => {
 
     query += `
       ORDER BY 
-        CASE 
-          WHEN hdr.Status = 'Pending' THEN 0
-          ELSE 1
-        END,
+        CASE WHEN hdr.Status = 'Pending' THEN 0 ELSE 1 END,
         hdr.Status ASC
     `;
 
@@ -288,6 +290,7 @@ app.get("/api/workFlowDashData", ensureAuthenticated, async (req, res) => {
     res.status(500).json({ error: "Failed to fetch workflow dashboard data" });
   }
 });
+
 
 
 
@@ -1918,7 +1921,7 @@ app.put('/save-task-updates', async (req, res) => {
         await pool
           .request()
           .input('taskId', sql.Int, taskId)
-          .input('usrID', sql.Int, usrID)
+          .input('usrID',  usrID)
           .input('value', sql.NVarChar, value)
           .query(`
             UPDATE tblWorkflowDtl
