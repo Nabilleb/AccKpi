@@ -11,7 +11,8 @@ import flash from 'connect-flash';
 import helmet from 'helmet';
 import cors from 'cors';
 import rateLimit from "express-rate-limit";
-
+import cookieParser from 'cookie-parser';
+import csrf from 'csurf';
 
 dotenv.config();
 
@@ -57,8 +58,12 @@ app.use(session({
     httpOnly: true,
     secure: false,
     sameSite: 'lax'
+
+    
   }
+  
 }));
+
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
@@ -117,9 +122,10 @@ const loginLimiter = rateLimit({
 });
 
 
-app.get("/login", checkIfInSession, (req, res) => {
-  res.render("login.ejs");
+app.get('/login', checkIfInSession, (req, res) => {
+  res.render('login.ejs');
 });
+
 
 app.post("/login", loginLimiter, async (req, res) => {
   let { username, password } = req.body;
