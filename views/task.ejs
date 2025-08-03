@@ -823,14 +823,6 @@
     </div>
 
     <div class="form-group">
-      <label for="IsDateFixed">Fixed Deadline?</label>
-      <select name="IsDateFixed" id="IsDateFixed">
-        <option value="1">Yes</option>
-        <option value="0" selected>No</option>
-      </select>
-    </div>
-
-    <div class="form-group">
       <label for="DaysRequired" class="required-field">Estimated Days</label>
       <input type="number" name="DaysRequired" id="DaysRequired" min="1" required placeholder="3"/>
       <div class="validation-error" id="DaysRequired-error">Please enter a valid number of days</div>
@@ -904,7 +896,6 @@ document.addEventListener('DOMContentLoaded', function() {
   setupFormValidation();
   
   // Initialize department selection logic
-  setupDepartmentSelection();
   
   // Load tasks for this process
   loadTasks();
@@ -1027,50 +1018,6 @@ function clearError(field, errorElement) {
   }
   
   return true;
-}
-
-// Department Selection Logic
-function setupDepartmentSelection() {
-  const depSelect = document.getElementById('DepId');
-  if (!depSelect) return;
-  
-  let debounceTimer;
-  
-  depSelect.addEventListener('change', function() {
-    clearTimeout(debounceTimer);
-    
-    // Show loading state
-    const daysInput = document.getElementById('DaysRequired');
-    daysInput.disabled = true;
-    daysInput.placeholder = 'Checking department...';
-    
-    debounceTimer = setTimeout(() => {
-      const selectedDepId = this.value;
-      if (!processId || !selectedDepId) return;
-      
-      fetch(`/api/check-department-step?processId=${processId}&depId=${selectedDepId}`)
-        .then(response => {
-          if (!response.ok) throw new Error('Network response was not ok.');
-          return response.json();
-        })
-        .then(data => {
-          if (data.isFirstStep && !data.hasTasks) {
-            daysInput.value = 1;
-            daysInput.disabled = true;
-            showToast('This is the first step with no existing tasks. Day set to 1.');
-          } else {
-            daysInput.disabled = false;
-            daysInput.value = '';
-            daysInput.placeholder = 'Enter estimated days';
-          }
-        })
-        .catch(err => {
-          console.error('Error:', err);
-          daysInput.disabled = false;
-          showToast('Error checking department status', true);
-        });
-    }, 500); // 500ms debounce
-  });
 }
 
 // Task Loading and Rendering

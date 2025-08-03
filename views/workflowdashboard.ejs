@@ -1183,16 +1183,6 @@
                             </th>
                             <th>
                                 <div class="th-inner">
-                                    Finished Date
-                                    <span class="sort-icon" data-sort="completionDate" title="Sort by Finished Date">
-                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                            <path d="M7 10L12 15L17 10H7Z" fill="currentColor"/>
-                                        </svg>
-                                    </span>
-                                </div>
-                            </th>
-                            <th>
-                                <div class="th-inner">
                                     Created Date
                                     <span class="sort-icon" data-sort="createdDate" title="Sort by Created Date">
                                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1201,6 +1191,7 @@
                                     </span>
                                 </div>
                             </th>
+  
                             <th>
                                 <div class="th-inner">
                                     Start Date
@@ -1211,6 +1202,29 @@
                                     </span>
                                 </div>
                             </th>
+
+                            <th>
+                                <div class="th-inner">
+                                    Finished Date
+                                    <span class="sort-icon" data-sort="completionDate" title="Sort by Finished Date">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M7 10L12 15L17 10H7Z" fill="currentColor"/>
+                                        </svg>
+                                    </span>
+                                </div>
+                            </th>
+
+                                <th>
+                                <div class="th-inner">
+                                    Days Taken
+                                    <span class="sort-icon" data-sort="startDate" title="Sort by Start Date">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M7 10L12 15L17 10H7Z" fill="currentColor"/>
+                                        </svg>
+                                    </span>
+                                </div>
+                            </th>
+                          
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -1654,9 +1668,10 @@ function updateTable() {
                         ${workflow.Status || '-'}
                     </span>
                 </td>
-                <td>${formatDate(workflow.completionDate)}</td>
                 <td>${formatDate(workflow.createdDate)}</td>
                 <td>${formatDate(workflow.startDate)}</td>
+                <td>${formatDate(workflow.completionDate)}</td>
+                <td>${workflow.DaysDone || '-'}</td>
                 <td>
                     <button class="btn btn-outline btn-sm action-btn" data-action="view" title="View details">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">

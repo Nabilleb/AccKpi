@@ -226,21 +226,26 @@ app.get("/api/workFlowDashData", ensureAuthenticated, async (req, res) => {
 
   try {
     // ✅ Mark workflows as completed if all tasks are done
-    await pool.request().query(`
-      UPDATE hdr
-      SET hdr.completionDate = GETDATE(), hdr.status = 'Completed'
-      FROM tblWorkflowHdr hdr
-      WHERE EXISTS (
-          SELECT 1 FROM tblWorkflowDtl dtl
-          WHERE dtl.workFlowHdrId = hdr.workFlowID
-      )
-      AND NOT EXISTS (
-          SELECT 1 FROM tblWorkflowDtl dtl
-          WHERE dtl.workFlowHdrId = hdr.workFlowID
-            AND dtl.TimeFinished IS NULL
-      )
-      AND hdr.status != 'Completed'
-    `);
+   await pool.request().query(`
+  UPDATE hdr
+  SET 
+    hdr.completionDate = GETDATE(),
+    hdr.status = 'Completed',
+    hdr.DaysDone = DATEDIFF(DAY, hdr.startDate, GETDATE())
+  FROM tblWorkflowHdr hdr
+  WHERE EXISTS (
+      SELECT 1 FROM tblWorkflowDtl dtl
+      WHERE dtl.workFlowHdrId = hdr.workFlowID
+  )
+  AND NOT EXISTS (
+      SELECT 1 FROM tblWorkflowDtl dtl
+      WHERE dtl.workFlowHdrId = hdr.workFlowID
+        AND dtl.TimeFinished IS NULL
+  )
+  AND hdr.status != 'Completed'
+  AND hdr.startDate IS NOT NULL
+`);
+
 
     let query = `
       SELECT 
@@ -252,6 +257,7 @@ app.get("/api/workFlowDashData", ensureAuthenticated, async (req, res) => {
         hdr.Status,
         hdr.completionDate,
         hdr.startDate,
+        hdr.DaysDone,
         hdr.createdDate
       FROM tblWorkflowHdr hdr
       LEFT JOIN tblProcess p ON hdr.ProcessID = p.NumberOfProccessID
@@ -330,7 +336,6 @@ const tasksResult = await request1.query(`
   t.TaskName,
   t.TaskPlanned,
   t.IsTaskSelected,
-  t.IsDateFixed,
   t.PlannedDate,
   t.DepId,
   t.Priority,
@@ -680,7 +685,8 @@ app.get('/add-task',ensureAuthenticated ,async (req, res) => {
 
       processSteps = stepsResult.recordset;
 
-      // Only departments for this process
+      // Only departments for
+      //  this process
       departments = processSteps.map(step => ({
         DepartmentID: step.DepartmentID,
         DeptName: step.DeptName
@@ -729,7 +735,6 @@ app.get('/api/tasks', ensureAuthenticated, async (req, res) => {
           t.TaskName,
           t.TaskPlanned,
           t.IsTaskSelected,
-          t.IsDateFixed,
           t.PlannedDate,
           t.DaysRequired,
           t.DepId,
@@ -1006,8 +1011,6 @@ app.post('/add-task', ensureAuthenticated, async (req, res) => {
     ProcessID
   } = req.body;
 
-  const IsDateFixed = req.body.IsDateFixed === '1' ? 1 : 0;
-
   try {
     // 1. Check for duplicate
     const duplicateCheck = await pool.request()
@@ -1034,7 +1037,7 @@ app.post('/add-task', ensureAuthenticated, async (req, res) => {
         WHERE DepId = @DepId AND proccessID = @ProcessID
       `);
     const isFirstTask = taskCountResult.recordset[0].TaskCount === 0;
-
+console.log("is first task", isFirstTask)
     // 3. Get StepOrder
     const stepOrderResult = await pool.request()
       .input('DepId', sql.Int, DepId)
@@ -1046,17 +1049,45 @@ app.post('/add-task', ensureAuthenticated, async (req, res) => {
       `);
     const StepOrder = stepOrderResult.recordset[0]?.StepOrder ?? null;
 
-    // 4. Determine IsTaskSelected and PlannedDate
+    // 4. Determine IsTaskSelected
     let IsTaskSelected = 0;
     let PlannedDateToInsert = PlannedDate;
-    let DaysRequiredInserted = DaysRequired;
+    let DaysRequiredInserted = parseInt(DaysRequired, 10);
 
-    if (isFirstTask && StepOrder === 1) {
-      IsTaskSelected = 1;
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      PlannedDateToInsert = tomorrow.toISOString().split('T')[0];
-      DaysRequiredInserted = 1;
+  if (isFirstTask && StepOrder === 1) {
+  IsTaskSelected = 1;
+
+  const now = new Date();
+  const daysRequired = Number(DaysRequired); 
+
+  const plannedDate = new Date(now);
+  console.log(plannedDate)
+  plannedDate.setDate(now.getDate() + daysRequired);
+console.log(plannedDate)
+  PlannedDateToInsert = plannedDate.toISOString().split('T')[0]; // format YYYY-MM-DD
+  DaysRequiredInserted = daysRequired;
+}
+
+ else {
+      // Get last task's PlannedDate and DaysRequired
+    const lastTaskResult = await pool.request()
+  .input('ProcessID', sql.Int, ProcessID)
+  .query(`
+    SELECT TOP 1 PlannedDate, DaysRequired
+    FROM tblTasks
+    WHERE proccessID = @ProcessID AND PlannedDate IS NOT NULL
+    ORDER BY PlannedDate DESC
+  `);
+
+
+      const lastPlannedDateStr = lastTaskResult.recordset[0]?.PlannedDate;
+      const lastDaysRequired = lastTaskResult.recordset[0]?.DaysRequired ?? 0;
+
+      if (lastPlannedDateStr) {
+        const lastPlannedDate = new Date(lastPlannedDateStr);
+        lastPlannedDate.setDate(lastPlannedDate.getDate() + lastDaysRequired);
+        PlannedDateToInsert = lastPlannedDate.toISOString().split('T')[0];
+      }
     }
 
     // 5. Get next Priority
@@ -1093,7 +1124,6 @@ app.post('/add-task', ensureAuthenticated, async (req, res) => {
         FROM tblWorkflowHdr
         WHERE ProcessID = @ProcessID
       `);
-
     const workflowHdrId = hdrResult.recordset.length > 0
       ? hdrResult.recordset[0].WorkFlowID
       : null;
@@ -1103,7 +1133,6 @@ app.post('/add-task', ensureAuthenticated, async (req, res) => {
       .input('TaskName', sql.NVarChar, TaskName)
       .input('TaskPlanned', sql.NVarChar, TaskPlanned)
       .input('IsTaskSelected', sql.Bit, IsTaskSelected)
-      .input('IsDateFixed', sql.Bit, IsDateFixed)
       .input('PlannedDate', sql.Date, PlannedDateToInsert)
       .input('DepId', sql.Int, DepId)
       .input('Priority', sql.Int, newPriority)
@@ -1117,13 +1146,13 @@ app.post('/add-task', ensureAuthenticated, async (req, res) => {
 
     const insertResult = await taskInsertRequest.query(`
       INSERT INTO tblTasks (
-        TaskName, TaskPlanned, IsTaskSelected, IsDateFixed, PlannedDate,
+        TaskName, TaskPlanned, IsTaskSelected, PlannedDate,
         DepId, Priority, PredecessorID, DaysRequired, proccessID
         ${workflowHdrId ? ', WorkFlowHdrID' : ''}
       )
       OUTPUT INSERTED.TaskID
       VALUES (
-        @TaskName, @TaskPlanned, @IsTaskSelected, @IsDateFixed, @PlannedDate,
+        @TaskName, @TaskPlanned, @IsTaskSelected, @PlannedDate,
         @DepId, @Priority, @PredecessorID, @DaysRequired, @ProcessID
         ${workflowHdrId ? ', @WorkFlowHdrID' : ''}
       )
@@ -1149,7 +1178,6 @@ app.post('/add-task', ensureAuthenticated, async (req, res) => {
       )
     `);
 
-
     // ✅ Done
     res.redirect(`/add-task?processId=${ProcessID}`);
   } catch (err) {
@@ -1157,51 +1185,6 @@ app.post('/add-task', ensureAuthenticated, async (req, res) => {
     res.status(500).send('Failed to add task');
   }
 });
-
-
-
-
-app.get('/api/check-department-step', async (req, res) => {
-  const { depId, processId } = req.query;
-
-  if ( !depId || !processId) {
-    return res.status(400).json({ error: 'Missing parameters' });
-  }
-
-  try {
-    const request = pool.request();
-    request.input('ProcessID', processId);
-    request.input('DepID', depId);
-
-    // Check if this department is first step in the process
-    const processResult = await request.query(`
-      SELECT TOP 1 StepOrder
-      FROM tblProcessDepartment
-      WHERE ProcessID = @ProcessID AND DepartmentID = @DepID
-    `);
-
-    const isFirstStep = processResult.recordset.length > 0 && processResult.recordset[0].StepOrder === 1;
-
-    // Check if there are tasks for this workflow and department
-    const taskResult = await request.query(`
-      SELECT TOP 1 TaskID
-      FROM tblTasks
-      WHERE proccessID = @processId AND DepId = @DepID
-    `);
-
-    const hasTasks = taskResult.recordset.length > 0;
-
-    return res.json({
-      isFirstStep,
-      hasTasks
-    });
-
-  } catch (err) {
-    console.error('Error in /api/check-department-step:', err);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
 
 app.get('/task-selected', async (req, res) => {
   try {
@@ -2181,10 +2164,6 @@ const delay = Math.max(0, Math.ceil((finishedDateOnly - plannedDateOnly) / (1000
       const nextPlanned = new Date(finished);
       nextPlanned.setDate(nextPlanned.getDate() + 1 + nextTaskDays);
 
-      await pool.request()
-        .input('plannedDate', nextPlanned.toISOString().split('T')[0])
-        .input('nextTaskId', nextTaskId)
-        .query(`UPDATE tblTasks SET PlannedDate = @plannedDate WHERE TaskID = @nextTaskId`);
 
       // Update any linked tasks
       const linkedTasks = await pool.request()
@@ -2331,11 +2310,6 @@ const delay = Math.max(0, Math.ceil((finishedDateOnly - plannedDateOnly) / (1000
 
             const plannedDate = new Date(finished);
             plannedDate.setDate(plannedDate.getDate() + 1 + nextDeptDays);
-
-            await pool.request()
-              .input('plannedDate', plannedDate.toISOString().split('T')[0])
-              .input('taskId', nextDeptTaskId)
-              .query(`UPDATE tblTasks SET PlannedDate = @plannedDate WHERE TaskID = @taskId`);
 
             // Update linked tasks
             const linked = await pool.request()

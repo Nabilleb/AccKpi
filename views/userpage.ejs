@@ -1559,7 +1559,6 @@
 
 <script>
     // Cache DOM elements and initial data
-      console.log("Inline script running");
 
     const userId = "<%= user.id %>";
     const deptId = "<%= user.DepartmentId %>";
@@ -1852,13 +1851,12 @@
                                 <tr>
                                     <th>Task Name</th>
                                     <th>Description</th>
-                                    <th>Planned Date</th>
-                                    <th>Days Required</th>
+                                    <th>Planned Starting Date</th>
+                                    <th>Start Date</th>
                                     <th>Date Finished</th>
                                     <th>Status</th>
                                     <th>Days Delay</th>
                                     <th>Delay Reason</th>
-                                    <th>Assign Next Task</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
@@ -1880,6 +1878,7 @@
         const isOwnDepartment = task.DepId == deptId;
         const plannedDate = task.PlannedDate ? new Date(task.PlannedDate).toLocaleDateString() : '';
         const finishDate = task.TimeFinished ? new Date(task.TimeFinished).toLocaleDateString() : '';
+        const startDate = task.TimeStarted ? new Date(task.TimeStarted).toLocaleDateString() : '';
         const delayReason = task.DelayReason || '';
         const delayInputDisabled = !isOwnDepartment || !(task.TimeFinished && task.Delay > 0) ? 'disabled' : '';
         
@@ -1894,14 +1893,6 @@
             status = '<span class="status-badge status-completed"><i class="fas fa-check-circle"></i> Completed</span>';
         }
 
-        const taskPlannedCell = `
-            <td data-label="Days Required">
-                <span class="days-display">${task.DaysRequired}</span>
-                ${(!task.IsDateFixed && isOwnDepartment && !task.TimeFinished) ? 
-                    `<i class="fas fa-pencil-alt edit-days-icon" title="Edit days required" style="cursor:pointer; margin-left: 6px;"></i>` 
-                    : ''
-                }
-            </td>`;
 
         let actionButton = '';
         if (isOwnDepartment && task.IsTaskSelected) {
@@ -1913,7 +1904,7 @@
         }
 
 let extraButtons = '';
-if (!isAdmin && (task.Delay > 0 || (isOwnDepartment && !task.TimeFinished && !task.IsDateFixed))) {
+if (!isAdmin && (task.Delay > 0 && isOwnDepartment )){
     extraButtons = `<button class="row-save-btn" data-task-id="${task.TaskID}"> Save</button>`;
 }
 
@@ -1930,24 +1921,21 @@ if (!isAdmin && (task.Delay > 0 || (isOwnDepartment && !task.TimeFinished && !ta
         }
 
         return `
-            <tr ${task.IsTaskSelected ? 'class="active-task-row"' : ''}>
-                <td data-label="Task Name">${task.TaskName || ''}</td>
-                <td data-label="Description">${task.TaskPlanned || ''}</td>
-                <td data-label="Planned Date">${plannedDate}</td>
-                ${taskPlannedCell}
-                <td data-label="Date Finished">${finishDate}</td>
-                <td data-label="Status">${status}</td>
-                <td data-label="Days Delay">${task.Delay !== null ? task.Delay : 0}</td>
-                <td data-label="Delay Reason">
-                    <input type="text" value="${delayReason}" class="delay-reason-input" data-task-id="${task.TaskID}" 
-                        ${delayInputDisabled} placeholder="${delayInputDisabled ? '' : 'Enter delay reason...'}">
-                </td>
-                <td data-label="Assign Next Task">
-                    ${nextTaskSelect}
-                    ${task.assignUser ? task.assignUser : ''}
-                </td>
-                <td data-label="Actions"><div class="button-container">${actionButton}${extraButtons}</div></td>
-            </tr>
+          <tr ${task.IsTaskSelected ? 'class="active-task-row"' : ''}>
+    <td data-label="Task Name">${task.TaskName || ''}</td>
+    <td data-label="Description">${task.TaskPlanned || ''}</td>
+    <td data-label="Planned Date">${plannedDate}</td>
+    <td data-label="Start Date">${startDate}</td> <!-- ✅ Added -->
+    <td data-label="Date Finished">${finishDate}</td>
+    <td data-label="Status">${status}</td>
+    <td data-label="Days Delay">${task.Delay !== null ? task.Delay : 0}</td>
+    <td data-label="Delay Reason">
+        <input type="text" value="${delayReason}" class="delay-reason-input" data-task-id="${task.TaskID}" 
+            ${delayInputDisabled} placeholder="${delayInputDisabled ? '' : 'Enter delay reason...'}">
+    </td>
+    <td data-label="Actions"><div class="button-container">${actionButton}${extraButtons}</div></td>
+</tr>
+
         `;
     };
 
@@ -2025,20 +2013,12 @@ if (!isAdmin && (task.Delay > 0 || (isOwnDepartment && !task.TimeFinished && !ta
         if (e.target.classList.contains('task-finish-btn')) {
             const row = e.target.closest('tr');
             const taskId = e.target.dataset.taskId;
-            const select = row?.querySelector('.assign-user-select');
-            const selectedUserId = select?.value;
-
-            if (select && !selectedUserId) {
-                showError("Please select a user to assign before finishing.");
-                return;
-            }
-
+          
             showConfirmation('Are you sure you want to mark this task as finished and assign the selected user?', async () => {
                 const originalHTML = e.target.innerHTML;
                 e.target.innerHTML = '<i class="fas fa-spinner spinner"></i> Finishing...';
                 e.target.disabled = true;
 
-                if (selectedUserId) await assignUserToTask(taskId, selectedUserId);
                 await finishTask(taskId);
                 
                 e.target.innerHTML = originalHTML;
