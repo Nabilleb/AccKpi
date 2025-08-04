@@ -1671,7 +1671,7 @@ function updateTable() {
                 <td>${formatDate(workflow.createdDate)}</td>
                 <td>${formatDate(workflow.startDate)}</td>
                 <td>${formatDate(workflow.completionDate)}</td>
-                <td>${workflow.DaysDone || '-'}</td>
+                <td>${workflow.DaysDone === 0 ? 1 : (workflow.DaysDone || '-')}</td>
                 <td>
                     <button class="btn btn-outline btn-sm action-btn" data-action="view" title="View details">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
