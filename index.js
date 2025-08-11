@@ -13,6 +13,8 @@ import cors from 'cors';
 import rateLimit from "express-rate-limit";
 import cookieParser from 'cookie-parser';
 import csrf from 'csurf';
+import { Queue } from 'bullmq';
+
 
 dotenv.config();
 
@@ -909,6 +911,7 @@ app.post('/assign-user-to-task/:taskId', async (req, res) => {
           UPDATE tblWorkflowDtl
           SET assignUser = @userDesc
           WHERE TaskID = @taskID
+
         `);
 
       //  Only works if "to" is your own Resend account email
@@ -1185,6 +1188,8 @@ console.log(plannedDate)
     res.status(500).send('Failed to add task');
   }
 });
+
+
 
 app.get('/task-selected', async (req, res) => {
   try {
@@ -2239,37 +2244,30 @@ const delay = Math.max(0, Math.ceil((finishedDateOnly - plannedDateOnly) / (1000
         if (nextDeptResult.recordset.length > 0) {
           const nextDepId = nextDeptResult.recordset[0].DepartmentID;
 
-          // Notify the next department by email
-          const deptEmailResult = await pool.request()
-            .input('depId', nextDepId)
-            .query(`SELECT DeptEmail FROM tblDepartments WHERE DepartmentID = @depId`);
+         const usersEmailResult = await pool.request()
+  .input('depId', nextDepId)
+  .query(`
+    SELECT usrEmail 
+    FROM tblUsers 
+    WHERE DepartmentID = @depId AND usrEmail IS NOT NULL
+  `);
 
-          const departmentEmail = deptEmailResult.recordset[0]?.DeptEmail;
-
-          if (departmentEmail) {
-            const transporter = nodemailer.createTransport({
-              service: 'gmail',
-              auth: {
-                user: 'Nabilgreen500@gmail.com',
-                pass: 'ruoh nygp ewxd slad'
-              }
-            });
-
-            const mailOptions = {
-              from: 'Nabilgreen500@gmail.com',
-              to: departmentEmail,
-              subject: 'New Process Activated for Your Department',
-              text: `Hello,\n\nYour department has been activated for the next step in the project workflow.\n\nRegards,\nEngineering Project Dashboard`
-            };
-
-            transporter.sendMail(mailOptions, (err, info) => {
-              if (err) console.error('Email error:', err);
-              else console.log('Email sent:', info.response);
-            });
-          }
-
-          // Select the first task in the new department for this workflow
-          await pool.request()
+const userEmails = usersEmailResult.recordset.map(row => row.usrEmail);
+console.log("emails", userEmails)
+// Send to each email via Resend
+    try {
+      await resend.emails.send({
+        from: 'onboarding@resend.dev',
+        to: 'Nabilgreen500@gmail.com',
+        subject: 'New Process Activated for Your Department',
+        text: `Hello,\n\nYour department has been activated for the next step in the project workflow.\n\nRegards,\nEngineering Project Dashboard`
+      });
+      console.log(`Email sent to via Resend`);
+    } catch (err) {
+      console.error(`Resend email error for :`, err);
+    }
+  
+     await pool.request()
             .input('nextDepId', nextDepId)
             .input('workFlowHdrId', workFlowHdrId)
             .query(`

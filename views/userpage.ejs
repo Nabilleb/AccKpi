@@ -1575,7 +1575,7 @@
     const modalConfirmBtn = document.getElementById('modal-confirm-btn');
     const modalCancelBtn = document.getElementById('modal-cancel-btn');
     
-    
+    console.log(taskList)
     // Predefined objects and variables
     const sortFunctions = {
         name: (a, b) => a.TaskName.localeCompare(b.TaskName),
@@ -1852,8 +1852,9 @@
                                     <th>Task Name</th>
                                     <th>Description</th>
                                     <th>Planned Starting Date</th>
+                                    <th> Days required</th>
                                     <th>Start Date</th>
-                                    <th>Date Finished</th>
+                                    <th>Finished Date</th>
                                     <th>Status</th>
                                     <th>Days Delay</th>
                                     <th>Delay Reason</th>
@@ -1925,6 +1926,7 @@ if (!isAdmin && (task.Delay > 0 && isOwnDepartment )){
     <td data-label="Task Name">${task.TaskName || ''}</td>
     <td data-label="Description">${task.TaskPlanned || ''}</td>
     <td data-label="Planned Date">${plannedDate}</td>
+        <td data-label="Days-Required">${task.DaysRequired}</td>
     <td data-label="Start Date">${startDate}</td> <!-- ✅ Added -->
     <td data-label="Date Finished">${finishDate}</td>
     <td data-label="Status">${status}</td>
@@ -1941,12 +1943,10 @@ if (!isAdmin && (task.Delay > 0 && isOwnDepartment )){
 
     // Initialize the page with optimized event delegation
     document.addEventListener('DOMContentLoaded', () => {
-        // Initial render
         renderTasks(taskList);
         renderTaskTimeline(taskList);
         updateStatusCounts(taskList);
         
-        // Optimized event listeners
         document.addEventListener('click', handleClickEvents);
         document.addEventListener('keydown', handleKeyEvents);
         document.addEventListener('focusin', handleFocusEvents);
