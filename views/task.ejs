@@ -877,6 +877,7 @@ const tasksPerPage = 10;
 const processId = "<%= workflowDetails.ProcessID %>";
 const processSteps = <%- JSON.stringify(processSteps) %>;
 
+
 const sortFunctions = {
   name: (a, b) => (a.TaskName || '').localeCompare(b.TaskName || ''),
   description: (a, b) => (a.TaskPlanned || '').localeCompare(b.TaskPlanned || ''),
@@ -892,6 +893,9 @@ const sortFunctions = {
 };
 // DOM Content Loaded
 document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(() => {
+    window.location.href = "/login";
+  }, 5 * 60 * 1000);
   // Initialize form validation
   setupFormValidation();
   

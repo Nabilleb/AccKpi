@@ -915,6 +915,9 @@
     const processForm = document.getElementById('processForm');
     const stepsError = document.getElementById('stepsError');
 
+      setTimeout(() => {
+    window.location.href = "/login";
+  }, 5 * 60 * 1000);
     // Update styles and display on change
     deptSelect.addEventListener('change', (event) => {
       updateSelectedOrder();
