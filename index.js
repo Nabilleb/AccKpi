@@ -663,63 +663,91 @@ if (!isActive) {
   }
 });
 
-app.get('/add-task',ensureAuthenticated ,async (req, res) => {
-  const processId = req.query.processId;
-  const isActive = req.query.active
-  const processName = req.query.process
+app.get('/add-task', ensureAuthenticated, async (req, res) => {
+  const processId = parseInt(req.query.processId, 10);
+  const processName = req.query.process;
+
   let workflowDetails = null;
   let processSteps = [];
   let departments = [];
+  let hasWorkflow = false; 
 
-    // Get processID from tblWorkflowHdr
-  
+  try {
 
-      // Get the steps for this process
-      const stepsResult = await pool.request()
-        .input('processId', sql.Int, processId)
-        .query(`
-          SELECT d.StepOrder, dp.DeptName, dp.DepartmentID
-          FROM tblProcessDepartment d
-          JOIN tblDepartments dp ON d.DepartmentID = dp.DepartmentID
-          WHERE d.ProcessID = @processId
-          ORDER BY d.StepOrder
-        `);
+    let processName = req.query.process;
 
-      processSteps = stepsResult.recordset;
+if (!processName) {
+  const processNameResult = await pool.request()
+    .input('processId', sql.Int, processId)
+    .query(`
+      SELECT ProcessName
+      FROM tblProcess
+      WHERE NumberOfProccessID = @processId
+    `);
 
-      // Only departments for
-      //  this process
-      departments = processSteps.map(step => ({
-        DepartmentID: step.DepartmentID,
-        DeptName: step.DeptName
-      }));
-
-      workflowDetails = {
-        ProcessName: processName,
-        ProcessID: processId,
-      };
-    
-  
-
-  // If no workflow selected, fallback to all departments
-  if (departments.length === 0) {
-    const departmentsResult = await pool.request().query(`SELECT * FROM tblDepartments`);
-    departments = departmentsResult.recordset;
+  if (processNameResult.recordset.length > 0) {
+    processName = processNameResult.recordset[0].ProcessName;
   }
+}
 
-  const workflowHdrResult = await pool.request().query(`SELECT * FROM tblWorkflowHdr`);
-  
-console.log(processSteps)
-  res.render('task.ejs', {
-    workflowDetails,
-    workflow: workflowHdrResult.recordset,
-    departments,
-    processSteps,
-    isAdmin: req.session.user.usrAdmin,
-    departmentId: req.session.user.DepartmentID,
-    success: null
-  });
+    // Check if process has workflow
+    const workflowCheck = await pool.request()
+      .input('processId', sql.Int, processId)
+      .query(`
+        SELECT TOP 1 processID
+        FROM tblWorkflowHdr
+        WHERE processID = @processId
+      `);
+
+    hasWorkflow = workflowCheck.recordset.length > 0;
+
+    // Get process steps
+    const stepsResult = await pool.request()
+      .input('processId', sql.Int, processId)
+      .query(`
+        SELECT d.StepOrder, dp.DeptName, dp.DepartmentID
+        FROM tblProcessDepartment d
+        JOIN tblDepartments dp ON d.DepartmentID = dp.DepartmentID
+        WHERE d.ProcessID = @processId
+        ORDER BY d.StepOrder
+      `);
+
+    processSteps = stepsResult.recordset;
+
+    departments = processSteps.map(step => ({
+      DepartmentID: step.DepartmentID,
+      DeptName: step.DeptName
+    }));
+
+    workflowDetails = {
+      ProcessName: processName,
+      ProcessID: processId,
+    };
+
+    if (departments.length === 0) {
+      const departmentsResult = await pool.request().query(`SELECT * FROM tblDepartments`);
+      departments = departmentsResult.recordset;
+    }
+
+    const workflowHdrResult = await pool.request().query(`SELECT * FROM tblWorkflowHdr`);
+
+    res.render('task.ejs', {
+      workflowDetails,
+      workflow: workflowHdrResult.recordset,
+      departments,
+      processSteps,
+      isAdmin: req.session.user.usrAdmin,
+      departmentId: req.session.user.DepartmentID,
+      success: null,
+      hasWorkflow 
+    });
+
+  } catch (err) {
+    console.error("Error in /add-task:", err);
+    res.status(500).send("Server error");
+  }
 });
+
 
 
 app.get('/api/tasks', ensureAuthenticated, async (req, res) => {

@@ -828,11 +828,16 @@
       <div class="validation-error" id="DaysRequired-error">Please enter a valid number of days</div>
     </div>
 
-    <div class="form-actions">
-      <button type="submit" class="btn btn-primary" id="submit-btn">
-        <i class="fas fa-plus-circle"></i> Create Task
-      </button>
-    </div>
+    <% if (!hasWorkflow) { %>
+  <div class="form-actions">
+    <button type="submit" class="btn btn-primary" id="submit-btn">
+      <i class="fas fa-plus-circle"></i> Create Task
+    </button>
+  </div>
+<% } else { %>
+  <p class="text-danger">This process already has a workflow. You cannot create a new task.</p>
+<% } %>
+
   </form>
   
   <div id="tasks-container">
