@@ -4,8 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Process Management</title>
-<link rel="stylesheet" href="/fonts/inter/inter.css">
+  <link rel="stylesheet" href="/fonts/inter/inter.css">
   <style>
+    /* Existing styles remain unchanged */
     :root {
       --primary: #3b82f6;
       --primary-light: #eff6ff;
@@ -87,26 +88,26 @@
     }
 
     /* Add to your existing styles */
-.btn-sm {
-  padding: 0.5rem 1rem;
-  font-size: 0.875rem;
-}
+    .btn-sm {
+      padding: 0.5rem 1rem;
+      font-size: 0.875rem;
+    }
 
-.flex-1 {
-  flex: 1 1 0%;
-}
+    .flex-1 {
+      flex: 1 1 0%;
+    }
 
-.mb-6 {
-  margin-bottom: 1.5rem;
-}
+    .mb-6 {
+      margin-bottom: 1.5rem;
+    }
 
-.mr-1 {
-  margin-right: 0.25rem;
-}
+    .mr-1 {
+      margin-right: 0.25rem;
+    }
 
-.border-gray-200 {
-  border-color: var(--border);
-}
+    .border-gray-200 {
+      border-color: var(--border);
+    }
 
     .card {
       background-color: var(--white);
@@ -261,7 +262,8 @@
       display: block;
       margin-bottom: var(--spacing-sm);
     }
- .alert {
+    
+    .alert {
       padding: 0.75rem 1.25rem;
       margin-bottom: 1rem;
       border-radius: var(--radius-sm);
@@ -505,7 +507,7 @@
       gap: var(--spacing-sm);
     }
 
-       .form-container {
+    .form-container {
       max-width: 900px;
       margin: 2rem auto;
       background: var(--white);
@@ -753,10 +755,285 @@
       color: var(--primary);
       font-weight: 600;
     }
+
+    /* Toast notification styles */
+    .toast-container {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .toast {
+      padding: 16px 20px;
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-lg);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      max-width: 350px;
+      animation: slideIn 0.3s ease-out forwards;
+      transition: all 0.3s ease;
+      transform: translateX(100%);
+      opacity: 0;
+    }
+
+    .toast.success {
+      background-color: var(--white);
+      border-left: 4px solid var(--success);
+      color: var(--text);
+    }
+
+    .toast.error {
+      background-color: var(--white);
+      border-left: 4px solid var(--error);
+      color: var(--text);
+    }
+
+    .toast.warning {
+      background-color: var(--white);
+      border-left: 4px solid var(--warning);
+      color: var(--text);
+    }
+
+    .toast.info {
+      background-color: var(--white);
+      border-left: 4px solid var(--primary);
+      color: var(--text);
+    }
+
+    .toast-icon {
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+
+    .toast.success .toast-icon {
+      color: var(--success);
+    }
+
+    .toast.error .toast-icon {
+      color: var(--error);
+    }
+
+    .toast.warning .toast-icon {
+      color: var(--warning);
+    }
+
+    .toast.info .toast-icon {
+      color: var(--primary);
+    }
+
+    .toast-content {
+      flex: 1;
+    }
+
+    .toast-title {
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .toast-message {
+      font-size: 14px;
+      color: var(--text-light);
+    }
+
+    .toast-close {
+      background: none;
+      border: none;
+      font-size: 18px;
+      cursor: pointer;
+      color: var(--text-light);
+      padding: 0;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+      transition: var(--transition);
+    }
+
+    .toast-close:hover {
+      background-color: rgba(0, 0, 0, 0.05);
+      color: var(--text);
+    }
+
+    @keyframes slideIn {
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    @keyframes slideOut {
+      to {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+    }
+
+    .toast.hiding {
+      animation: slideOut 0.3s ease-out forwards;
+    }
+
+    /* Confirmation modal styles */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .modal {
+      background-color: var(--white);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      width: 90%;
+      max-width: 500px;
+      padding: 0;
+      overflow: hidden;
+      transform: translateY(20px);
+      transition: transform 0.3s ease;
+    }
+
+    .modal-overlay.active .modal {
+      transform: translateY(0);
+    }
+
+    .modal-header {
+      padding: 1.5rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .modal-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--text);
+      margin: 0;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: var(--text-light);
+      padding: 0;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+      transition: var(--transition);
+    }
+
+    .modal-close:hover {
+      background-color: var(--background);
+      color: var(--text);
+    }
+
+    .modal-body {
+      padding: 1.5rem;
+    }
+
+    .modal-message {
+      margin-bottom: 1.5rem;
+      line-height: 1.6;
+    }
+
+    .modal-footer {
+      padding: 1rem 1.5rem;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.75rem;
+    }
+
+    /* Loading indicator */
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(255, 255, 255, 0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10001;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .loading-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .loading-spinner {
+      width: 48px;
+      height: 48px;
+      border: 4px solid var(--primary-light);
+      border-top: 4px solid var(--primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
   </style>
 </head>
 <body>
   <div class="container">
+    <!-- Toast container -->
+    <div class="toast-container" id="toastContainer"></div>
+    
+    <!-- Confirmation modal -->
+    <div class="modal-overlay" id="confirmationModal">
+      <div class="modal">
+        <div class="modal-header">
+          <h3 class="modal-title">Confirm Action</h3>
+          <button class="modal-close" id="modalClose">&times;</button>
+        </div>
+        <div class="modal-body">
+          <p class="modal-message" id="modalMessage">Are you sure you want to perform this action?</p>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" id="modalCancel">Cancel</button>
+          <button class="btn btn-primary" id="modalConfirm">Confirm</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Loading overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+      <div class="loading-spinner"></div>
+    </div>
+    
     <div class="flex items-center gap-2 mb-6">
       <a href="/adminpage" class="btn btn-secondary btn-sm" style="padding-left: 0.75rem;">
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="mr-1">
@@ -834,7 +1111,7 @@
         </div>
 
         <div class="flex justify-between mt-4">
-          <button type="reset" class="btn btn-secondary">Clear Form</button>
+          <button type="reset" class="btn btn-secondary" id="resetButton">Clear Form</button>
           <button type="submit" class="btn">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
@@ -914,16 +1191,131 @@
     const selectedOrder = [];
     const processForm = document.getElementById('processForm');
     const stepsError = document.getElementById('stepsError');
+    const resetButton = document.getElementById('resetButton');
+    const toastContainer = document.getElementById('toastContainer');
+    const confirmationModal = document.getElementById('confirmationModal');
+    const modalMessage = document.getElementById('modalMessage');
+    const modalConfirm = document.getElementById('modalConfirm');
+    const modalCancel = document.getElementById('modalCancel');
+    const modalClose = document.getElementById('modalClose');
+    const loadingOverlay = document.getElementById('loadingOverlay');
 
+    // Auto-redirect after 5 minutes
+    setTimeout(() => {
+      showToast('info', 'Session Timeout', 'You will be redirected to login page for security reasons.');
       setTimeout(() => {
-    window.location.href = "/login";
-  }, 5 * 60 * 1000);
+        window.location.href = "/login";
+      }, 3000);
+    }, 5 * 60 * 1000);
+
+    // Toast notification function
+    function showToast(type, title, message, duration = 5000) {
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      
+      let iconSvg = '';
+      switch(type) {
+        case 'success':
+          iconSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>';
+          break;
+        case 'error':
+          iconSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>';
+          break;
+        case 'warning':
+          iconSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>';
+          break;
+        case 'info':
+          iconSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>';
+          break;
+      }
+      
+      toast.innerHTML = `
+        <div class="toast-icon">${iconSvg}</div>
+        <div class="toast-content">
+          <div class="toast-title">${title}</div>
+          <div class="toast-message">${message}</div>
+        </div>
+        <button class="toast-close">&times;</button>
+      `;
+      
+      toastContainer.appendChild(toast);
+      
+      // Trigger reflow to enable animation
+      void toast.offsetWidth;
+      
+      // Add event listener for close button
+      const closeBtn = toast.querySelector('.toast-close');
+      closeBtn.addEventListener('click', () => {
+        hideToast(toast);
+      });
+      
+      // Auto hide after duration
+      if (duration > 0) {
+        setTimeout(() => {
+          hideToast(toast);
+        }, duration);
+      }
+      
+      return toast;
+    }
+    
+    function hideToast(toast) {
+      toast.classList.add('hiding');
+      setTimeout(() => {
+        if (toast.parentNode) {
+          toastContainer.removeChild(toast);
+        }
+      }, 300);
+    }
+    
+    // Show confirmation modal
+    function showConfirmation(message, confirmCallback) {
+      modalMessage.textContent = message;
+      confirmationModal.classList.add('active');
+      
+      const handleConfirm = () => {
+        confirmationModal.classList.remove('active');
+        if (typeof confirmCallback === 'function') {
+          confirmCallback();
+        }
+        modalConfirm.removeEventListener('click', handleConfirm);
+        modalCancel.removeEventListener('click', handleCancel);
+        modalClose.removeEventListener('click', handleCancel);
+      };
+      
+      const handleCancel = () => {
+        confirmationModal.classList.remove('active');
+        modalConfirm.removeEventListener('click', handleConfirm);
+        modalCancel.removeEventListener('click', handleCancel);
+        modalClose.removeEventListener('click', handleCancel);
+      };
+      
+      modalConfirm.addEventListener('click', handleConfirm);
+      modalCancel.addEventListener('click', handleCancel);
+      modalClose.addEventListener('click', handleCancel);
+    }
+    
+    // Show loading indicator
+    function showLoading() {
+      loadingOverlay.classList.add('active');
+    }
+    
+    // Hide loading indicator
+    function hideLoading() {
+      loadingOverlay.classList.remove('active');
+    }
+
     // Update styles and display on change
     deptSelect.addEventListener('change', (event) => {
       updateSelectedOrder();
       updateDisplay();
       styleSelectedOptions();
       validateSteps();
+      
+      // Show toast notification when departments are selected
+      if (selectedOrder.length > 0) {
+        showToast('info', 'Workflow Updated', `${selectedOrder.length} department(s) selected. Drag to reorder steps.`, 3000);
+      }
     });
 
     function validateSteps() {
@@ -968,6 +1360,9 @@
       if (!validateForm()) {
         e.preventDefault();
         
+        // Show error toast
+        showToast('error', 'Validation Error', 'Please fill all required fields correctly.');
+        
         // Scroll to first error
         const firstError = document.querySelector('.is-invalid, .steps-error');
         if (firstError) {
@@ -976,6 +1371,14 @@
             block: 'center'
           });
         }
+      } else {
+        // Show loading indicator on form submission
+        showLoading();
+        
+        // Show success toast after a short delay to simulate processing
+        setTimeout(() => {
+          showToast('success', 'Process Created', 'Your process has been successfully created.');
+        }, 1000);
       }
     });
 
@@ -984,6 +1387,24 @@
       if (this.value.trim()) {
         this.classList.remove('is-invalid');
         document.getElementById('ProcessName-error').style.display = 'none';
+      }
+    });
+
+    // Reset button with confirmation
+    resetButton.addEventListener('click', function(e) {
+      e.preventDefault();
+      
+      if (processFormProcessName.value || processDesc.value || selectedOrder.length > 0) {
+        showConfirmation('Are you sure you want to clear the form? All entered data will be lost.', () => {
+          processForm.reset();
+          selectedOrder.length = 0;
+          updateDisplay();
+          showToast('info', 'Form Cleared', 'All form fields have been reset.');
+        });
+      } else {
+        processForm.reset();
+        selectedOrder.length = 0;
+        updateDisplay();
       }
     });
 
@@ -1058,6 +1479,9 @@
             el.classList.remove('dragging', 'drag-over');
           });
           updateOrderFromDOM();
+          
+          // Show notification when reordering is complete
+          showToast('success', 'Steps Reordered', 'Workflow steps have been updated.', 2000);
         });
       });
       
@@ -1126,9 +1550,25 @@
       btn.addEventListener('click', () => {
         const processId = btn.dataset.processId;
         const processName = encodeURIComponent(btn.dataset.processName);
+        const steps = JSON.parse(btn.dataset.steps);
+        
+        if (steps.length === 0) {
+          showToast('warning', 'No Steps Defined', 'This process has no workflow steps. Please add steps before creating tasks.');
+          return;
+        }
+        
         window.location.href = `/add-task?processId=${processId}&process=${processName}`;
       });
     });
+
+    // Show initial toast if there are server messages
+    <% if (errorMessage) { %>
+      showToast('error', 'Error', '<%= errorMessage %>', 7000);
+    <% } %>
+    
+    <% if (successMessage) { %>
+      showToast('success', 'Success', '<%= successMessage %>', 5000);
+    <% } %>
   });
   </script>
 </body>
