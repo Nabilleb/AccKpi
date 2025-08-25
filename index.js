@@ -14,7 +14,8 @@ import rateLimit from "express-rate-limit";
 import cookieParser from 'cookie-parser';
 import csrf from 'csurf';
 import { Queue } from 'bullmq';
-
+import https from "https";
+import fs from "fs";
 
 dotenv.config();
 
@@ -59,10 +60,9 @@ app.use(session({
   cookie: {
     httpOnly: true,
     secure: false,
-    sameSite: 'lax',
+    sameSite: 'none',
     maxAge: 5 * 60 * 1000
-    
-  }
+      }
   
 }));
 
