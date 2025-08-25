@@ -37,6 +37,9 @@ const config = {
 const app = express();
 const resend = new Resend(process.env.API_RESEND);
 
+const isHttps = process.env.USE_HTTPS === 'true';
+console.log("http", isHttps)
+
 let pool;
 
 app.set('view engine', 'ejs');
@@ -59,8 +62,8 @@ app.use(session({
   saveUninitialized: true,
   cookie: {
     httpOnly: true,
-    secure: false,
-    sameSite: 'none',
+    secure: true,
+    sameSite: 'lax',
     maxAge: 5 * 60 * 1000
       }
   
@@ -102,13 +105,27 @@ function isAdmin(req, res, next) {
   next();
 }
 
+const keyPath = "./server.key";
+const certPath = "./server.cert";
+
 async function initializeDatabase() {
   try {
     pool = await sql.connect(config);
-    console.log('Connected to database');
-    app.listen(port, () => {
-      console.log("Listening on port", port);
-    });
+    console.log("Connected to database");
+
+    if (fs.existsSync(keyPath) && fs.existsSync(certPath)) {
+      const options = {
+        key: fs.readFileSync(keyPath),
+        cert: fs.readFileSync(certPath),
+      };
+      https.createServer(options, app).listen(443, () => {
+        console.log("HTTPS server running at https://localhost");
+      });
+    } else {
+      app.listen(port, () => {
+        console.log(` HTTPS files not found. HTTP server running at http://localhost:${port}`);
+      });
+    }
   } catch (err) {
     console.error("SQL connection error", err);
     process.exit(1);
@@ -124,7 +141,7 @@ const loginLimiter = rateLimit({
 });
 
 
-app.get('/login', checkIfInSession, (req, res) => {
+app.get('/', checkIfInSession, (req, res) => {
   res.render('login.ejs');
 });
 
