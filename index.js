@@ -63,7 +63,7 @@ app.use(session({
   cookie: {
     httpOnly: true,
     secure: true,
-    sameSite: 'lax',
+    sameSite: 'strict',
     maxAge: 5 * 60 * 1000
       }
   
@@ -74,7 +74,7 @@ app.use(helmet({
     directives: {
       defaultSrc: ["'self'"],
       scriptSrc: ["'self'", "'unsafe-inline'"],
-      scriptSrcAttr: ["'self'", "'unsafe-inline'"]  // this allows inline event handlers
+      scriptSrcAttr: ["'self'", "'unsafe-inline'"]  
     }
   }
 }));
@@ -85,7 +85,7 @@ function ensureAuthenticated(req, res, next) {
   if (req.session && req.session.user) {
     return next();
   }
-  res.redirect('/login');
+  res.redirect('/');
 }
 
 function checkIfInSession(req, res, next){
@@ -97,10 +97,10 @@ function checkIfInSession(req, res, next){
 
 function isAdmin(req, res, next) {
   if (!req.session || !req.session.user) {
-    return res.status(401).send("Unauthorized: Please log in.");
+    res.redirect("/")
   }
   if (!req.session.user.usrAdmin) {
-    return res.status(403).send("Forbidden: Admins only.");
+    res.redirect("/")
   }
   next();
 }
@@ -1906,23 +1906,36 @@ app.post("/addUser", async (req, res) => {
     usrReadPolicy
   } = req.body;
 
+  // Basic validation
+  if (!usrID || !usrDesc || !usrPWD || !DepartmentID) {
+    return res.status(400).send("usrID, usrDesc, usrPWD, and DepartmentID are required.");
+  }
+
+  if (usrDesc.length > 40) return res.status(400).send("usrDesc exceeds 40 characters.");
+  if (usrEmail && usrEmail.length > 50) return res.status(400).send("usrEmail exceeds 50 characters.");
+  if (usrSignature && usrSignature.length > 100) return res.status(400).send("usrSignature exceeds 100 characters.");
+
   const insertDate = new Date();
   const lastUpdate = new Date();
 
   try {
+    // Hash the password
+    const hashedPwd = await bcrypt.hash(usrPWD, 10);
+
+    // Insert user
     await pool.request()
       .input("usrID", sql.VarChar(10), usrID)
       .input("usrDesc", sql.VarChar(40), usrDesc)
-      .input("usrPWD", sql.VarChar(15), usrPWD)
+      .input("usrPWD", sql.VarChar(255), hashedPwd)
       .input("usrAdmin", sql.Bit, usrAdmin ? 1 : 0)
       .input("usrSTID", sql.SmallInt, usrSTID || null)
       .input("DepartmentID", sql.Int, parseInt(DepartmentID))
       .input("AllowAccess", sql.Bit, AllowAccess ? 1 : 0)
       .input("Export", sql.SmallInt, Export || 0)
       .input("LastUpdate", sql.DateTime, lastUpdate)
-      .input("usrEmail", sql.VarChar(50), usrEmail)
-      .input("usrSignature", sql.VarChar(100), usrSignature)
-      .input("emailSignature", sql.Text, emailSignature)
+      .input("usrEmail", sql.VarChar(50), usrEmail || null)
+      .input("usrSignature", sql.VarChar(100), usrSignature || null)
+      .input("emailSignature", sql.Text, emailSignature || null)
       .input("usrReadPolicy", sql.TinyInt, usrReadPolicy || 0)
       .input("insertDate", sql.DateTime, insertDate)
       .query(`
