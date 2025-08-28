@@ -119,7 +119,7 @@ async function initializeDatabase() {
         cert: fs.readFileSync(certPath),
       };
       https.createServer(options, app).listen(443, () => {
-        console.log("HTTPS server running at https://localhost");
+        console.log("HTTPS server running at https://localhost/login");
       });
     } else {
       app.listen(port, () => {
@@ -141,7 +141,7 @@ const loginLimiter = rateLimit({
 });
 
 
-app.get('/', checkIfInSession, (req, res) => {
+app.get('/login', (req, res) => {
   res.render('login.ejs');
 });
 
