@@ -1,5 +1,8 @@
 document.addEventListener('DOMContentLoaded', () => {
   // Toast notification function
+  setTimeout(() => {
+    window.location.href = "/login";
+  }, 5 * 60 * 1000); 
   function showToast(message, type = 'success') {
     const toast = document.createElement('div');
     toast.className = `toast-notification toast-${type}`;
@@ -344,7 +347,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
   
-  // Initialize the page by showing the first process flow if available
   const firstProcessBtn = document.querySelector('.view-process-btn');
   if (firstProcessBtn) {
     setTimeout(() => {

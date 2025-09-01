@@ -141,7 +141,7 @@ const loginLimiter = rateLimit({
 });
 
 
-app.get('/login', (req, res) => {
+app.get('/login', checkIfInSession,(req, res) => {
   res.render('login.ejs');
 });
 
