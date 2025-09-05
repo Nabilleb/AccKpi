@@ -28,11 +28,23 @@ const config = {
   password: process.env.DB_PASSWORD,
   server: process.env.DB_SERVER,
   database: process.env.DB_DATABASE,
+    port: parseInt(process.env.DB_PORT) || 1433,
   options: {
     encrypt: false,
     trustServerCertificate: true
   }
 };
+
+async function testConnection() {
+  try {
+    const pool = await sql.connect(config);
+    console.log('✅ Connected successfully!');
+    pool.close();
+  } catch (err) {
+    console.error('❌ Connection error:', err);
+  }
+}
+testConnection();
 
 const app = express();
 const resend = new Resend(process.env.API_RESEND);
@@ -133,6 +145,8 @@ async function initializeDatabase() {
 }
 
 initializeDatabase();
+
+
 
 const loginLimiter = rateLimit({
   windowMs: 5 * 60 * 1000, 
