@@ -14,66 +14,29 @@ import cookieParser from 'cookie-parser';
 import https from "https";
 import fs from "fs";
 import path from "path";
-import nodemailer from 'nodemailer'; // node mailer 
-
-console.log("🚀 Server booting...");
+import nodemailer from 'nodemailer';
 
 // Load env vars
 dotenv.config();
-console.log("✅ .env loaded");
 
 // File paths
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const PORT = 3000;
-const SERVER_IP = 'localhost'; 
-// --- Log Buffer & File Setup ---
-let logBuffer = [];
-const logFile = "./server.log";
-
-function logMessage(msg) {
-  const entry = `[${new Date().toISOString()}] ${msg}`;
-  logBuffer.push(entry);
-  if (logBuffer.length > 50) logBuffer.shift();
-
-  try {
-    fs.appendFileSync(logFile, entry + "\n");
-  } catch (err) {
-    console.error("❌ Failed to write to log file:", err);
-  }
-}
-
-// Override console.log & console.error
-const origLog = console.log;
-const origErr = console.error;
-console.log = (...args) => { origLog(...args); logMessage(args.join(" ")); };
-console.error = (...args) => { origErr(...args); logMessage(args.join(" ")); };
+const SERVER_IP = 'localhost';
 
 // --- Express App ---
 const app = express();
 const resend = new Resend(process.env.API_RESEND);
 
-// /logs route (view last 50 logs in browser, protected by key)
-app.get("/logs", (req, res) => {
-  res.type("text/plain").send(logBuffer.join("\n"));
-});
-
-// --- ENV check ---
-console.log("🔑 ENV CHECK START");
-console.log("🔑 DB_USER:", process.env.DB_USER || "❌ MISSING");
-console.log("🔑 DB_SERVER:", process.env.DB_SERVER || "❌ MISSING");
-console.log("🔑 DB_DATABASE:", process.env.DB_DATABASE || "❌ MISSING");
-console.log("🔑 SESSION_SECRET:", process.env.SESSION_SECRET ? "✅ SET" : "❌ MISSING");
-console.log("🔑 ENV CHECK END");
-
 // Database config
 const config = {
-  user: 'sa',                        // Default SQL admin user
-  password: 'sa',                 // Dummy password (replace with your test one)
-  server: 'localhost',               // Local SQL Server instance
-  database: 'AccDBF',               // Your dummy database name
+  user: 'sa',
+  password: 'sa',
+  server: 'localhost',
+  database: 'AccDBF',
   options: {
-    encrypt: false,                  // No SSL needed locally
+    encrypt: false,
     trustServerCertificate: true
   }
 };
