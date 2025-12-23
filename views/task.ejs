@@ -149,6 +149,41 @@
       padding: 0.875rem 1.25rem;
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
+      /* Link task dropdown and unlink button styles */
+      .link-task-select {
+        padding: 6px 10px;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        background: linear-gradient(180deg, var(--white), #fbfdff);
+        box-shadow: var(--shadow-sm);
+        font-size: 0.95rem;
+        color: var(--text);
+        min-width: 180px;
+        transition: border-color 0.18s ease, box-shadow 0.18s ease;
+        -webkit-appearance: none;
+        appearance: none;
+      }
+      .link-task-select:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 4px 12px rgba(67,97,238,0.12);
+      }
+      .btn-unlink {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin-left: 8px;
+        padding: 4px 8px;
+        border-radius: 6px;
+        border: 1px solid rgba(239,68,68,0.15);
+        background: linear-gradient(180deg,#fff5f5,#fff1f1);
+        color: var(--danger);
+        font-size: 0.82rem;
+        cursor: pointer;
+        transition: transform 0.12s ease, box-shadow 0.12s ease;
+      }
+      .btn-unlink i { font-size: 0.9rem; }
+      .btn-unlink:hover { transform: translateY(-1px); box-shadow: 0 6px 14px rgba(239,68,68,0.06); }
       font-size: 1rem;
       transition: var(--transition);
       background: var(--white);
@@ -431,6 +466,28 @@
 
     .tasks-table tr:hover td {
       background: var(--primary-light);
+    }
+
+    .link-task-select {
+      padding: 0.5rem;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-size: 0.9rem;
+      background-color: var(--white);
+      cursor: pointer;
+      transition: var(--transition);
+      min-width: 150px;
+    }
+
+    .link-task-select:hover {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.1);
+    }
+
+    .link-task-select:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
     }
 
     .status-badge {
@@ -1179,6 +1236,8 @@ function renderTasks(tasks) {
                 <th>Planned Date</th>
                 <th>Days</th>
                 <th>Priority</th>
+                <th>Link Task</th>
+                <th>Linked To</th>
               </tr>
             </thead>
             <tbody>`;
@@ -1189,6 +1248,9 @@ function renderTasks(tasks) {
       const isOverdue = status === 'delayed' ||
         (status === 'pending' && new Date(task.PlannedDate) < new Date());
 
+      // find linked task (if any) from the loaded process tasks
+      const linkedTaskObj = currentTasks.find(ct => ct.TaskID === task.linkTasks);
+
       html += `
         <tr class="${isOverdue ? 'overdue-task' : ''}">
           <td>${task.TaskName || '-'}</td>
@@ -1196,6 +1258,22 @@ function renderTasks(tasks) {
           <td>${task.PlannedDate ? formatDate(task.PlannedDate) : '-'}</td>
           <td>${task.DaysRequired || '-'}</td>
           <td>${task.Priority ?? '-'}</td>
+          <td>
+            <select class="link-task-select" data-task-id="${task.TaskID}" data-dept-id="${task.DepId}" onchange="linkTaskToOther(this)">
+              <option value="">-- Link Task --</option>
+              ${currentTasks
+                .filter(t => {
+                  // Can only link to tasks in same process and different departments
+                  return t.TaskID !== task.TaskID && t.DepId !== task.DepId;
+                })
+                .map(t => `<option value="${t.TaskID}">${t.TaskName} (${t.DeptName})</option>`)
+                .join('')}
+            </select>
+          </td>
+          <td class="linked-task" data-task-id="${task.TaskID}">
+            ${linkedTaskObj ? linkedTaskObj.TaskName + ' (' + linkedTaskObj.DeptName + ')' : '-'}
+            ${linkedTaskObj ? `<button class="btn-unlink" onclick="unlinkTask(${task.TaskID})" title="Remove link"><i class="fas fa-unlink"></i></button>` : ''}
+          </td>
         </tr>`;
     });
 
@@ -1376,6 +1454,74 @@ function formatDateTime(dateString) {
     minute: '2-digit'
   };
   return new Date(dateString).toLocaleString(undefined, options);
+}
+
+function linkTaskToOther(selectElement) {
+  const taskID = parseInt(selectElement.getAttribute('data-task-id'));
+  const taskDeptId = parseInt(selectElement.getAttribute('data-dept-id'));
+  const linkedTaskID = parseInt(selectElement.value);
+
+  if (!linkedTaskID) {
+    showToast('Please select a task to link', true);
+    return;
+  }
+
+  // Prevent self-linking
+  if (taskID === linkedTaskID) {
+    showToast('Cannot link a task to itself', true);
+    selectElement.value = '';
+    return;
+  }
+
+  // Send request to update linkTasks with validation
+  fetch(`/api/link-task/${taskID}/${linkedTaskID}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      fromDeptId: taskDeptId
+    })
+  })
+  .then(response => {
+    if (!response.ok) {
+      return response.json().then(err => {
+        throw new Error(err.error || 'Failed to link tasks');
+      });
+    }
+    return response.json();
+  })
+  .then(data => {
+    // Update in-memory tasks and re-render so the "Linked To" column shows immediately
+    const src = currentTasks.find(t => t.TaskID === taskID);
+    if (src) src.linkTasks = linkedTaskID;
+    filterAndRenderTasks();
+    showToast(`Tasks linked successfully! Task linked to ${data.linkedTaskName}`);
+    selectElement.value = ''; // Reset select
+  })
+  .catch(error => {
+    console.error('Error linking tasks:', error);
+    showToast('Failed to link tasks: ' + error.message, true);
+    selectElement.value = '';
+  });
+}
+
+function unlinkTask(taskId) {
+  if (!confirm('Remove the link for this task?')) return;
+  fetch(`/api/unlink-task/${taskId}`, { method: 'PUT' })
+    .then(async res => {
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to remove link');
+      // update local state and re-render
+      const src = currentTasks.find(t => t.TaskID === parseInt(taskId));
+      if (src) src.linkTasks = null;
+      filterAndRenderTasks();
+      showToast('Link removed successfully');
+    })
+    .catch(err => {
+      console.error('Error unlinking task:', err);
+      showToast('Failed to remove link: ' + err.message, true);
+    });
 }
 
 function showToast(message, isError = false) {

@@ -24,9 +24,11 @@
     "express-validator": "^7.2.1",
     "fs": "^0.0.1-security",
     "helmet": "^8.1.0",
+    "http": "^0.0.1-security",
     "https": "^1.0.0",
     "mssql": "^11.0.1",
     "nodemailer": "^7.0.3",
+    "path": "^0.12.7",
     "resend": "^4.7.0"
   },
   "description": ""

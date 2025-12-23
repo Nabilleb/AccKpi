@@ -5,13 +5,334 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Add New User | Engineering System</title>
   <link rel="stylesheet" href="/css/all.min.css">
-  <link rel="stylesheet" href= "/styles/adduser.css">
+  <link rel="stylesheet" href="/styles/adduser.css">
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-light: #dbeafe;
+      --primary-lighter: #eff6ff;
+      --primary-dark: #1d4ed8;
+      --text: #1e293b;
+      --text-light: #64748b;
+      --border: #e2e8f0;
+      --background: #f8fafc;
+      --white: #ffffff;
+      --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin-left: 250px;
+      background-color: var(--background);
+    }
+
+    /* Navbar Styles */
+    .dashboard-nav {
+      background: var(--white);
+      height: 100vh;
+      width: 250px;
+      position: fixed;
+      left: 0;
+      top: 0;
+      box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+      display: flex;
+      flex-direction: column;
+      z-index: 1000;
+    }
+
+    .nav-header {
+      padding: 1.5rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .nav-header i {
+      font-size: 1.5rem;
+      color: var(--primary);
+    }
+
+    .nav-header h2 {
+      margin: 0;
+      font-size: 1.25rem;
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .nav-links {
+      list-style: none;
+      padding: 1rem 0;
+      flex-grow: 1;
+      overflow-y: auto;
+    }
+
+    .nav-item {
+      margin: 0.25rem 0;
+    }
+
+    .nav-item a {
+      display: flex;
+      align-items: center;
+      padding: 0.75rem 1.5rem;
+      color: var(--text-light);
+      text-decoration: none;
+      transition: var(--transition);
+    }
+
+    .nav-item a:hover {
+      background: var(--primary-lighter);
+      color: var(--primary);
+    }
+
+    .nav-item a i {
+      margin-right: 0.75rem;
+      width: 20px;
+      text-align: center;
+    }
+
+    .nav-footer {
+      padding: 1rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .logout-btn {
+      display: flex;
+      align-items: center;
+      padding: 0.75rem 1.5rem;
+      color: var(--text-light);
+      text-decoration: none;
+      transition: var(--transition);
+      border-radius: 6px;
+    }
+
+    .logout-btn:hover {
+      background: #fee2e2;
+      color: #dc2626;
+    }
+
+    .logout-btn i {
+      margin-right: 0.75rem;
+      width: 20px;
+      text-align: center;
+    }
+
+    .form-container {
+      margin-left: 0;
+      padding: 2rem;
+      max-width: 900px;
+    }
+
+    @media (max-width: 768px) {
+      body {
+        margin-left: 0;
+      }
+
+      .dashboard-nav {
+        width: 100%;
+        height: auto;
+        position: relative;
+        flex-direction: row;
+        flex-wrap: wrap;
+      }
+
+      .nav-header {
+        width: 100%;
+      }
+
+      .nav-links {
+        display: flex;
+        flex-wrap: wrap;
+        padding: 0;
+        flex-grow: 0;
+      }
+
+      .nav-item {
+        flex: 1;
+        min-width: 120px;
+        margin: 0;
+      }
+
+      .nav-footer {
+        width: 100%;
+      }
+    }
+  </style>
 </head>
 <body>
+  <nav class="dashboard-nav">
+    <div class="nav-header">
+      <i class="fas fa-building"></i>
+      <h2>Admin Panel</h2>
+    </div>
+    <ul class="nav-links">
+      <li class="nav-item">
+        <a href="/adminpage">
+          <i class="fas fa-home"></i>
+          <span>Dashboard</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a href="/addUser">
+          <i class="fas fa-user-plus"></i>
+          <span>Add User</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a href="/add-department">
+          <i class="fas fa-building"></i>
+          <span>Add Department</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a href="/addProcess">
+          <i class="fas fa-cogs"></i>
+          <span>Add Process</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a href="/addPackage">
+          <i class="fas fa-box"></i>
+          <span>Add Package</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a href="/addProject">
+          <i class="fas fa-project-diagram"></i>
+          <span>Add Project</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a href="/workFlowDash">
+          <i class="fas fa-tasks"></i>
+          <span>Workflows</span>
+        </a>
+      </li>
+    </ul>
+    <div class="nav-footer">
+      <a href="/logout" class="logout-btn">
+        <i class="fas fa-sign-out-alt"></i>
+        <span>Logout</span>
+      </a>
+    </div>
+  </nav>
+
   <div class="form-container">
     <h1><i class="fas fa-user-plus"></i> Add New User</h1>
     
     <form action="/addUser" method="POST" class="form-grid">
+      <div class="form-group">
+        <label for="usrID">User ID</label>
+        <input type="text" id="usrID" name="usrID" required>
+      </div>
+      
+      <div class="form-group">
+        <label for="usrDesc">Description</label>
+        <input type="text" id="usrDesc" name="usrDesc">
+      </div>
+      
+      <div class="form-group">
+        <label for="usrPWD">Password</label>
+        <input type="password" id="usrPWD" name="usrPWD">
+      </div>
+      
+      <div class="form-group">
+        <label for="usrEmail">Email</label>
+        <input type="email" id="usrEmail" name="usrEmail">
+      </div>
+      
+      <div class="form-group">
+        <label for="departmentSelect">Department</label>
+        <select id="departmentSelect" name="DepartmentID" required>
+        </select>
+      </div>
+      
+      <div class="form-group">
+        <label for="usrSTID">Status ID</label>
+        <input type="number" id="usrSTID" name="usrSTID">
+      </div>
+      
+      <div class="form-group">
+        <label for="Export">Export Level</label>
+        <input type="number" id="Export" name="Export">
+      </div>
+      
+      <div class="form-group">
+        <label for="usrReadPolicy">Read Policy (0-255)</label>
+        <input type="number" id="usrReadPolicy" name="usrReadPolicy" min="0" max="255">
+      </div>
+      
+      <div class="form-group">
+        <label for="usrSignature">Signature</label>
+        <input type="text" id="usrSignature" name="usrSignature">
+      </div>
+      
+      <div class="form-group">
+        <label for="emailSignature">Email Signature</label>
+        <textarea id="emailSignature" name="emailSignature"></textarea>
+      </div>
+      
+      <div class="checkbox-group">
+        <input type="checkbox" id="usrAdmin" name="usrAdmin" value="1">
+        <label for="usrAdmin">Admin User</label>
+      </div>
+      
+      <div class="checkbox-group">
+        <input type="checkbox" id="AllowAccess" name="AllowAccess" value="1">
+        <label for="AllowAccess">Allow Access</label>
+      </div>
+      
+      <div class="form-actions">
+        <button type="reset" class="btn btn-secondary">
+          <i class="fas fa-undo"></i> Reset
+        </button>
+        <button type="submit" class="btn btn-primary">
+          <i class="fas fa-save"></i> Add User
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    async function loadDepartments() {
+      try {
+        const res = await fetch('/api/departments');
+        if (!res.ok) throw new Error('Failed to load departments');
+        
+        const departments = await res.json();
+        const select = document.getElementById('departmentSelect');
+        
+        // Add default empty option
+        const defaultOption = document.createElement('option');
+        defaultOption.value = '';
+        defaultOption.textContent = 'Select Department';
+        defaultOption.disabled = true;
+        defaultOption.selected = true;
+        select.appendChild(defaultOption);
+        
+        // Add department options
+        departments.forEach(dept => {
+          const option = document.createElement('option');
+          option.value = dept.DepartmentID;
+          option.textContent = dept.DeptName;
+          select.appendChild(option);
+        });
+      } catch (error) {
+        console.error('Error loading departments:', error);
+        const select = document.getElementById('departmentSelect');
+        const errorOption = document.createElement('option');
+        errorOption.textContent = 'Error loading departments';
+        select.appendChild(errorOption);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadDepartments);
+  </script>
+</body>
+</html>
       <div class="form-group">
         <label for="usrID">User ID</label>
         <input type="text" id="usrID" name="usrID" required>

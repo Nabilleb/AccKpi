@@ -1080,11 +1080,9 @@
                 <label class="filter-label" for="processFilter">Process</label>
                 <select id="processFilter" aria-label="Filter by process">
                     <option value="">All Processes</option>
-                    <option value="Requirements Analysis">Requirements Analysis</option>
-                    <option value="System Design">System Design</option>
-                    <option value="Implementation">Implementation</option>
-                    <option value="Testing">Testing</option>
-                    <option value="Deployment">Deployment</option>
+                    <% processes.forEach(process => { %>
+                        <option value="<%= process.ProcessName %>"><%= process.ProcessName %></option>
+                    <% }) %>
                 </select>
             </div>
 
@@ -1548,10 +1546,12 @@ function showToast(message, type = 'success') {
 function applyFilters() {
     currentPage = 1;
     
-    const searchTerm = searchInput.value.toLowerCase();
-    const projectValue = projectFilter.value;
-    const processValue = processFilter.value;
-    const statusValue = statusFilter.value;
+    const searchTerm = searchInput.value.toLowerCase().trim();
+    const projectValue = projectFilter.value.trim();
+    const processValue = processFilter.value.trim();
+    const statusValue = statusFilter.value.trim();
+    
+    console.log('Filter values:', { projectValue, processValue, statusValue, searchTerm });
     
     filteredWorkflows = allWorkflows.filter(workflow => {
         const matchesSearch = !searchTerm || 
@@ -1561,13 +1561,19 @@ function applyFilters() {
             (workflow.ProjectName && workflow.ProjectName.toLowerCase().includes(searchTerm)) ||
             (workflow.Status && workflow.Status.toLowerCase().includes(searchTerm));
         
-        const matchesProject = !projectValue || (workflow.ProjectID && workflow.ProjectID.toString() === projectValue);
-        const matchesProcess = !processValue || (workflow.ProcessName === processValue);
-        const matchesStatus = !statusValue || (workflow.Status === statusValue);
+        // Project filter: compare projectID as numbers
+        const matchesProject = !projectValue || (workflow.projectID && String(workflow.projectID) === projectValue);
+        
+        // Process filter: compare ProcessName as strings (exact match)
+        const matchesProcess = !processValue || (workflow.ProcessName && workflow.ProcessName === processValue);
+        
+        // Status filter: compare Status as strings (exact match)
+        const matchesStatus = !statusValue || (workflow.Status && workflow.Status === statusValue);
         
         return matchesSearch && matchesProject && matchesProcess && matchesStatus;
     });
     
+    console.log('Filtered workflows count:', filteredWorkflows.length);
     updateTable();
     updatePagination();
 }

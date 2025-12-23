@@ -1138,6 +1138,16 @@
     .priority-low {
       background-color: var(--success);
     }
+.delay-reason-input[disabled] {
+  background-color: #f5f5f5;
+  color: #999;
+  cursor: not-allowed;
+}
+
+.delay-reason-input.editable {
+  background-color: #fffbe6;
+  border: 1px solid #f1c40f;
+}
 
     /* New: Responsive table cell stacking */
     @media (max-width: 768px) {
@@ -1731,10 +1741,17 @@
 
     const startTask = async (taskId) => {
         try {
+            const task = taskList.find(t => t.TaskID === Number(taskId));
+            if (!task) return showError('Task not found');
+            
             const res = await fetch(`/start-task/${taskId}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ startTime: new Date().toISOString() })
+                body: JSON.stringify({ 
+                    startTime: new Date().toISOString(),
+                    workFlowHdrId: task.WorkFlowHdrID,
+                    processID: task.NumberOfProccessID
+                })
             });
 
             if (!res.ok) throw new Error("Failed to start task");
@@ -1862,6 +1879,7 @@
                                     <th>Status</th>
                                     <th>Days Delay</th>
                                     <th>Delay Reason</th>
+                                    <th>Linked To</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
@@ -1938,6 +1956,12 @@ if (!isAdmin && (task.Delay > 0 && isOwnDepartment )){
     <td data-label="Delay Reason">
         <input type="text" value="${delayReason}" class="delay-reason-input" data-task-id="${task.TaskID}" 
             ${delayInputDisabled} placeholder="${delayInputDisabled ? '' : 'Enter delay reason...'}">
+    </td>
+    <td data-label="Linked To">
+        ${task.linkTasks ? (() => {
+            const linkedTask = taskList.find(t => t.TaskID === task.linkTasks);
+            return linkedTask ? `${linkedTask.TaskName} (${linkedTask.DeptName})` : 'N/A';
+        })() : '-'}
     </td>
     <td data-label="Actions"><div class="button-container">${actionButton}${extraButtons}</div></td>
 </tr>
@@ -2029,6 +2053,23 @@ if (!isAdmin && (task.Delay > 0 && isOwnDepartment )){
                 e.target.disabled = false;
             });
         }
+if (e.target.classList.contains('delay-reason-input')) {
+    const input = e.target;
+
+    if (input.disabled) {
+        input.disabled = false;
+        input.classList.add('editable');
+        input.focus();
+
+        input.addEventListener('blur', () => {
+            input.disabled = true;
+            input.classList.remove('editable');
+        }, { once: true }); 
+    }
+
+    return;
+}
+
     };
 
     const handleEditDaysClick = (e) => {

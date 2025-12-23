@@ -219,8 +219,12 @@
       border-bottom: 1px solid var(--border);
     }
 
-    .process-table tr:hover {
-      background-color: rgba(0, 91, 171, 0.05);
+    .process-table tbody tr {
+      cursor: pointer;
+    }
+
+    .process-table tbody tr:hover {
+      background-color: rgba(0, 91, 171, 0.1);
     }
 
     .process-id {
@@ -314,7 +318,7 @@
       gap: 0.5rem;
     }
 
-    .edit-btn, .delete-btn {
+    .edit-btn, .delete-btn, .task-btn {
       border: none;
       padding: 0.5rem 1rem;
       border-radius: 4px;
@@ -332,6 +336,16 @@
     }
 
     .edit-btn:hover {
+      background-color: var(--primary-dark);
+      transform: translateY(-1px);
+    }
+
+    .task-btn {
+      background-color: var(--primary);
+      color: white;
+    }
+
+    .task-btn:hover {
       background-color: var(--primary-dark);
       transform: translateY(-1px);
     }
@@ -612,7 +626,8 @@
       <h3 class="section-title"><i class="fas fa-bolt"></i> Quick Actions</h3>
       <div class="actions-grid">
         <a href="/addPackage" class="action-btn"><i class="fas fa-box-open"></i> Add Package</a>
-        <a href="/addProcess" class="action-btn"><i class="fas fa-cogs"></i> Add Process</a>
+          <a href="/addProcess" class="action-btn"><i class="fas fa-cogs"></i> Add Process</a>
+          <a href="/add-department" class="action-btn"><i class="fas fa-sitemap"></i> Add Department</a>
         <a href="/addUser" class="action-btn"><i class="fas fa-user-plus"></i> Add User</a>
         <a href="/workFlowDash" class="action-btn"><i class="fas fa-tasks"></i> Add Workflow</a>
         <a href="/addProject" class="action-btn"><i class="fas fa-project-diagram"></i> Add Project</a>
@@ -632,14 +647,22 @@
         </thead>
         <tbody>
           <% processes.forEach(process => { %>
-          <tr>
+          <tr onclick="viewProcessFlow(<%= process.NumberOfProccessID %>, '<%= process.ProcessName %>')">
             <td class="process-id">#<%= process.NumberOfProccessID %></td>
             <td class="process-name"><%= process.ProcessName %></td>
             <td class="process-desc"><%= process.processDesc || 'No description provided.' %></td>
-            <td>
-              <button class="view-process-btn" onclick="viewProcessFlow(<%= process.NumberOfProccessID %>, '<%= process.ProcessName %>')">
-                <i class="fas fa-project-diagram"></i> View Flow
-              </button>
+            <td onclick="event.stopPropagation()">
+              <div class="action-buttons">
+                <button class="view-process-btn" onclick="viewProcessFlow(<%= process.NumberOfProccessID %>, '<%= process.ProcessName %>')">
+                  <i class="fas fa-project-diagram"></i> View Flow
+                </button>
+                <button class="edit-btn" onclick="editProcess(<%= process.NumberOfProccessID %>)">
+                  <i class="fas fa-edit"></i> Edit
+                </button>
+                <button class="task-btn" onclick="goToTask(<%= process.NumberOfProccessID %>)">
+                  <i class="fas fa-tasks"></i> Task
+                </button>
+              </div>
             </td>
           </tr>
           <% }) %>
@@ -689,5 +712,16 @@
     </section>
   </main>
 <script src="/js/adminpage.js"></script>
+<script>
+  function editProcess(processID) {
+    // Navigate to the edit process page
+    window.location.href = `/editProcess/${processID}`;
+  }
+
+  function goToTask(processID) {
+    // Navigate to add-task page with process ID
+    window.location.href = `/add-task?processId=${processID}`;
+  }
+</script>
 </body>
 </html>

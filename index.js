@@ -6,153 +6,250 @@ import { dirname } from 'path';
 import sql from 'mssql';
 import dotenv from 'dotenv';
 import session from 'express-session';
-import nodemailer from 'nodemailer';
 import flash from 'connect-flash';
 import helmet from 'helmet';
 import cors from 'cors';
 import rateLimit from "express-rate-limit";
 import cookieParser from 'cookie-parser';
-import csrf from 'csurf';
-import { Queue } from 'bullmq';
 import https from "https";
 import fs from "fs";
+import path from "path";
+import nodemailer from 'nodemailer'; // node mailer 
 
+console.log("🚀 Server booting...");
+
+// Load env vars
 dotenv.config();
+console.log("✅ .env loaded");
 
+// File paths
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+const PORT = 3000;
+const SERVER_IP = 'localhost'; 
+// --- Log Buffer & File Setup ---
+let logBuffer = [];
+const logFile = "./server.log";
 
-const port = process.env.PORT || 3000;
+function logMessage(msg) {
+  const entry = `[${new Date().toISOString()}] ${msg}`;
+  logBuffer.push(entry);
+  if (logBuffer.length > 50) logBuffer.shift();
+
+  try {
+    fs.appendFileSync(logFile, entry + "\n");
+  } catch (err) {
+    console.error("❌ Failed to write to log file:", err);
+  }
+}
+
+// Override console.log & console.error
+const origLog = console.log;
+const origErr = console.error;
+console.log = (...args) => { origLog(...args); logMessage(args.join(" ")); };
+console.error = (...args) => { origErr(...args); logMessage(args.join(" ")); };
+
+// --- Express App ---
+const app = express();
+const resend = new Resend(process.env.API_RESEND);
+
+// /logs route (view last 50 logs in browser, protected by key)
+app.get("/logs", (req, res) => {
+  res.type("text/plain").send(logBuffer.join("\n"));
+});
+
+// --- ENV check ---
+console.log("🔑 ENV CHECK START");
+console.log("🔑 DB_USER:", process.env.DB_USER || "❌ MISSING");
+console.log("🔑 DB_SERVER:", process.env.DB_SERVER || "❌ MISSING");
+console.log("🔑 DB_DATABASE:", process.env.DB_DATABASE || "❌ MISSING");
+console.log("🔑 SESSION_SECRET:", process.env.SESSION_SECRET ? "✅ SET" : "❌ MISSING");
+console.log("🔑 ENV CHECK END");
+
+// Database config
 const config = {
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  server: process.env.DB_SERVER,
-  database: process.env.DB_DATABASE,
-    port: parseInt(process.env.DB_PORT) || 1433,
+  user: 'sa',                        // Default SQL admin user
+  password: 'sa',                 // Dummy password (replace with your test one)
+  server: 'localhost',               // Local SQL Server instance
+  database: 'AccDBF',               // Your dummy database name
   options: {
-    encrypt: false,
+    encrypt: false,                  // No SSL needed locally
     trustServerCertificate: true
   }
 };
 
-async function testConnection() {
+
+
+// IIS-safe DB connection
+let pool;
+async function initializeDatabase() {
+  console.log("⏳ Initializing database connection...");
   try {
-    const pool = await sql.connect(config);
-    console.log('✅ Connected successfully!');
-    pool.close();
+    pool = await sql.connect(config);
+    console.log("✅ Database connected successfully");
   } catch (err) {
-    console.error('❌ Connection error:', err);
+    console.error("❌ Database connection failed:");
+    console.error("   ↳ Code:", err.code);
+    console.error("   ↳ Message:", err.message);
+    console.error("   ↳ Stack:", err.stack);
   }
 }
-testConnection();
 
-const app = express();
-const resend = new Resend(process.env.API_RESEND);
-
-const isHttps = process.env.USE_HTTPS === 'true';
-console.log("http", isHttps)
-
-let pool;
-
+// --- Middleware ---
+// --- Middleware ---
+console.log("⚙️  Configuring middlewares...");
 app.set('view engine', 'ejs');
 app.set('views', __dirname + '/views');
 
-app.use(express.static("public"));
+// Static files
+const publicPath = path.join(__dirname, 'public');
+app.use(express.static(publicPath));
+console.log(`📂 Static files will be served from: ${publicPath}`);
+
 app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-app.use(helmet());
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      useDefaults: true,
+      directives: {
+        "default-src": ["'self'"],
 
-app.use(cors({
-  origin: 'http://localhost:3000',
-  credentials: true
-}));
+        "script-src": ["'self'", "'unsafe-inline'"],
+        "script-src-attr": ["'unsafe-inline'"],
 
+        "style-src": [
+          "'self'",
+          "'unsafe-inline'",
+          "https://cdnjs.cloudflare.com",      
+        ],
+
+        "font-src": [
+          "'self'",
+          "data:",
+          "https://cdnjs.cloudflare.com",     
+        ],
+
+        "img-src": ["'self'", "data:", "https:"],
+
+        "connect-src": ["'self'", "*"],
+      },
+    },
+
+    crossOriginEmbedderPolicy: false,
+  })
+);
+app.use(cors({ origin: process.env.CORS_ORIGIN || 'http://localhost:3000', credentials: true }));
+app.use(cookieParser());
 app.use(session({
-  secret: process.env.SESSION_SECRET,
+  secret: process.env.SESSION_SECRET || "fallback-secret",
   resave: false,
   saveUninitialized: true,
   cookie: {
     httpOnly: true,
-    secure: true,
-    sameSite: 'strict',
-    maxAge: 5 * 60 * 1000
-      }
-  
-}));
-
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'"],
-      scriptSrcAttr: ["'self'", "'unsafe-inline'"]  
-    }
+    secure: false,
+    sameSite: 'lax',
+    maxAge: 60 * 60 * 1000  // 1 hour for testing (change to 5 * 60 * 1000 for production)
   }
 }));
+
+const transporter = nodemailer.createTransport({
+  service: "gmail", 
+  auth: {
+    user: "Nabilgreen500@gmail.com",
+    pass: "rxwh bhcn apnw bgmz",
+  },
+}); // add email kpi here (Tareq)
 
 app.use(flash());
+console.log("✅ Middleware setup completed");
 
+
+// Request logger (every request is logged)
+app.use((req, res, next) => {
+  console.log(`➡️  ${req.method} ${req.url} | User: ${req.session?.user?.id || "Guest"}`);
+  next();
+});
+
+// Rate limiter
+const loginLimiter = rateLimit({
+  windowMs: 5 * 60 * 1000,
+  max: 10,
+  message: "Too many login attempts. Please try again later."
+});
+
+// --- Auth helpers ---
 function ensureAuthenticated(req, res, next) {
   if (req.session && req.session.user) {
+    console.log("🔒 Authenticated request");
     return next();
   }
+  console.log("🔓 Unauthenticated access blocked");
   res.redirect('/');
 }
 
-function checkIfInSession(req, res, next){
-  if(req.session && req.session.user){
+function checkIfInSession(req, res, next) {
+  if(req.session && req.session.user) {
+    console.log(`👤 User already in session: ID=${req.session.user.id}`);
     return res.redirect(req.session.user.usrAdmin ? "/adminpage" : `/userpage?id=${req.session.user.id}`);
   }
   next();
 }
 
 function isAdmin(req, res, next) {
-  if (!req.session || !req.session.user) {
-    res.redirect("/")
+  if (!req.session || !req.session.user || !req.session.user.usrAdmin) {
+    console.log("⛔ Admin check failed");
+    return res.redirect("/");
   }
-  if (!req.session.user.usrAdmin) {
-    res.redirect("/")
-  }
+  console.log("✅ Admin access granted");
   next();
 }
-
-const keyPath = "./server.key";
-const certPath = "./server.cert";
-
-async function initializeDatabase() {
-  try {
-    pool = await sql.connect(config);
-    console.log("Connected to database");
-
-    if (fs.existsSync(keyPath) && fs.existsSync(certPath)) {
-      const options = {
-        key: fs.readFileSync(keyPath),
-        cert: fs.readFileSync(certPath),
-      };
-      https.createServer(options, app).listen(443, () => {
-        console.log("HTTPS server running at https://localhost/login");
-      });
-    } else {
-      app.listen(port, () => {
-        console.log(` HTTPS files not found. HTTP server running at http://localhost:${port}`);
-      });
-    }
-  } catch (err) {
-    console.error("SQL connection error", err);
-    process.exit(1);
+// --- Routes ---
+app.get("/", (req, res) => {
+  if (req.session && req.session.user) {
+    return res.redirect(req.session.user.usrAdmin ? "/adminpage" : "/workFlowDash");
   }
+  res.redirect('/login');
+});
+
+// --- HTTPS fallback removed, use only HTTP for server ---
+async function startServer() {
+  console.log("🟢 Starting server initialization...");
+
+  try {
+    await initializeDatabase()
+    console.log("🔗 Database connected successfully.");
+    app.listen(PORT, SERVER_IP, () => {
+      console.log(`✅ HTTP server running at http://${SERVER_IP}:${PORT}`);
+      console.log("✅ Everything worked");
+    });
+  } catch (err) {
+    console.error("❌ Failed to start server:");
+    console.error("   ↳ Code:", err.code);
+    console.error("   ↳ Message:", err.message);
+    console.error("   ↳ Stack:", err.stack);
+  }
+
+  console.log("🏁 Server initialization finished.");
 }
 
-initializeDatabase();
 
-
-
-const loginLimiter = rateLimit({
-  windowMs: 5 * 60 * 1000, 
-  max: 10,
-  message: "Too many login attempts. Please try again later."
+// --- Global Error Handling ---
+process.on("uncaughtException", (err) => {
+  console.error("💥 Uncaught Exception:", err.message);
+  console.error(err.stack);
 });
+
+process.on("unhandledRejection", (reason, promise) => {
+  console.error("💥 Unhandled Rejection at:", promise, "reason:", reason);
+});
+
+// Start server
+startServer();
+
+
+
 
 
 app.get('/login', checkIfInSession,(req, res) => {
@@ -206,7 +303,11 @@ app.post("/login", loginLimiter, async (req, res) => {
 });
 
 app.get("/addPackage", isAdmin,async (req, res) => {
-res.render("packagefrom.ejs");
+res.render("packagefrom.ejs", {
+  isAdmin: req.session.user.usrAdmin,
+  userId: req.session.user.id,
+  desc_user: req.session.user.name
+});
 });
 
 
@@ -533,7 +634,10 @@ app.get("/addWorkflow", isAdmin, async (req, res) => {
     res.render("assignWorkflow.ejs", {
       users: users.recordset,
       tasks: tasks.recordset,
-      packages: packages.recordset
+      packages: packages.recordset,
+      isAdmin: req.session.user.usrAdmin,
+      userId: req.session.user.id,
+      desc_user: req.session.user.name
     });
   } catch (err) {
     console.error("Error loading workflow form:", err);
@@ -548,7 +652,12 @@ app.get("/addUser", isAdmin, async (req, res) => {
     `);
     const departments = result.recordset;
 
-    res.render("addUser", { departments }); 
+    res.render("addUser", {
+      departments,
+      isAdmin: req.session.user.usrAdmin,
+      userId: req.session.user.id,
+      desc_user: req.session.user.name
+    });
   } catch (err) {
     console.error("Failed to load departments:", err);
     res.status(500).send("Error loading form");
@@ -941,60 +1050,129 @@ app.get("/api/departments", async (req, res) => {
   }
 });
 
+app.get("/add-department", isAdmin, async (req, res) => {
+  res.render("dep.ejs", {
+    isAdmin: req.session.user.usrAdmin,
+    userId: req.session.user.id,
+    desc_user: req.session.user.name
+  });
+});
+
+app.post("/add-department", isAdmin, async (req, res) => {
+  const { deptName, deptEmail } = req.body;
+
+  // Validation
+  if (!deptName || !deptName.trim()) {
+    return res.status(400).send("Department name is required.");
+  }
+
+  if (deptName.length > 100) {
+    return res.status(400).send("Department name cannot exceed 100 characters.");
+  }
+
+  // Email validation if provided
+  const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  if (deptEmail && deptEmail.trim() && !emailPattern.test(deptEmail.trim())) {
+    return res.status(400).send("Invalid email format.");
+  }
+
+  try {
+    // Check for duplicate department name
+    const duplicateCheck = await pool.request()
+      .input('deptName', sql.NVarChar, deptName.trim())
+      .query(`
+        SELECT COUNT(*) AS DuplicateCount
+        FROM tblDepartments
+        WHERE UPPER(LTRIM(RTRIM(DeptName))) = UPPER(LTRIM(RTRIM(@deptName)))
+      `);
+
+    if (duplicateCheck.recordset[0].DuplicateCount > 0) {
+      return res.status(400).send("A department with this name already exists.");
+    }
+
+    // Insert department
+    const result = await pool.request()
+      .input('deptName', sql.NVarChar, deptName.trim())
+      .input('deptEmail', sql.NVarChar, deptEmail ? deptEmail.trim() : null)
+      .query(`
+        INSERT INTO tblDepartments (DeptName, DeptEmail)
+        OUTPUT INSERTED.DepartmentID, INSERTED.DeptName, INSERTED.DeptEmail
+        VALUES (@deptName, @deptEmail)
+      `);
+
+    const newDepartment = result.recordset[0];
+
+    console.log(`✅ Department added successfully: ID=${newDepartment.DepartmentID}, Name=${newDepartment.DeptName}`);
+
+    res.status(201).json({
+      success: true,
+      message: 'Department added successfully',
+      department: newDepartment
+    });
+
+  } catch (err) {
+    console.error("❌ Error inserting department:", err);
+    res.status(500).json({ success: false, error: "Failed to add department" });
+  }
+});
+
 
 app.get("/logout", (req, res) => {
   req.session.destroy();
   res.redirect("/login");
 });
 
+// 📨 Assign user and send email
 app.post('/assign-user-to-task/:taskId', async (req, res) => {
   const { taskId } = req.params;
   const { userId } = req.body;
 
   try {
+    // 1️⃣ Get user email and name
     const userEmailResult = await pool.request()
-      .input('userId', userId)
+      .input('userId', sql.Int, userId)
       .query(`
         SELECT usrEmail, usrDesc
         FROM tblUsers
         WHERE usrID = @userId
       `);
 
-    if (userEmailResult.recordset.length > 0) {
-      const assignedUser = userEmailResult.recordset[0];
-
-      await pool.request()
-        .input("taskID", sql.Int, taskId)
-        .input("userDesc", assignedUser.usrDesc)
-        .query(`
-          UPDATE tblWorkflowDtl
-          SET assignUser = @userDesc
-          WHERE TaskID = @taskID
-
-        `);
-
-      //  Only works if "to" is your own Resend account email
-      const emailResponse = await resend.emails.send({
-        from: 'onboarding@resend.dev',
-        to: "nabilgreen500@gmail.com",  // need to buy a domain 
-        subject: 'Task Assigned to You',
-        html: `
-          <p>Hello ${assignedUser.usrDesc},</p>
-          <p>A task with ID <strong>${taskId}</strong> has been assigned to you.</p>
-          <p>Please log in to the Engineering Portal to begin your task.</p>
-          <p>Regards,<br>Engineering Project Dashboard</p>
-        `
-      });
-
-      console.log('Email sent:', emailResponse);
-      return res.status(200).json({ message: 'Email sent successfully' });
-
-    } else {
+    if (userEmailResult.recordset.length === 0) {
       return res.status(404).json({ error: 'User not found' });
     }
 
+    const assignedUser = userEmailResult.recordset[0];
+
+    // 2️⃣ Update the task
+    await pool.request()
+      .input('taskID', sql.Int, taskId)
+      .input('userDesc', sql.NVarChar, assignedUser.usrDesc)
+      .query(`
+        UPDATE tblWorkflowDtl
+        SET assignUser = @userDesc
+        WHERE TaskID = @taskID
+      `);
+
+    // 3️⃣ Send email
+    const mailOptions = {
+      from: '"Engineering Dashboard" <Nabilgreen500@gmail.com>',
+      to: "Nabilgreen500@gmail.com",
+      subject: 'Task Assigned to You',
+      html: `
+        <p>Hello ${assignedUser.usrDesc},</p>
+        <p>A task with ID <strong>${taskId}</strong> has been assigned to you.</p>
+        <p>Please log in to the Engineering Portal to begin your task.</p>
+        <p>Regards,<br>Engineering Project Dashboard</p>
+      `
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    console.log('📨 Email sent to:', assignedUser.usrEmail);
+    return res.status(200).json({ message: 'Email sent successfully' });
+
   } catch (error) {
-    console.error('Error assigning user to task:', error);
+    console.error('❌ Error assigning user to task:', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -1420,7 +1598,10 @@ app.get('/task-selected', async (req, res) => {
     }
 
     res.render('selectTask.ejs', {
-      taskWorkflows: joinedQuery.recordset
+      taskWorkflows: joinedQuery.recordset,
+      isAdmin: req.session.user?.usrAdmin || false,
+      userId: req.session.user?.id,
+      desc_user: req.session.user?.name
     });
 
   } catch (err) {
@@ -1456,7 +1637,12 @@ app.get('/edit-task/:id', async (req, res) => {
       return res.status(403).send('Cannot edit finished tasks');
     }
 
-    res.render('edittasks.ejs', { task });
+    res.render('edittasks.ejs', {
+      task,
+      isAdmin: req.session.user?.usrAdmin || false,
+      userId: req.session.user?.id,
+      desc_user: req.session.user?.name
+    });
   } catch (error) {
     console.error(error);
     res.status(500).send('Server Error');
@@ -1545,7 +1731,10 @@ app.get("/workflow/new", async (req, res) => {
     res.render("addworkflow.ejs", {
       processes: processes.recordset,
       projects: projects.recordset,
-      packages: packages.recordset
+      packages: packages.recordset,
+      isAdmin: req.session.user.usrAdmin,
+      userId: req.session.user.id,
+      desc_user: req.session.user.name
     });
   } catch (err) {
     console.error("Error loading form data:", err);
@@ -1814,6 +2003,219 @@ app.post("/postProcess", async (req, res) => {
     console.error("Error assigning process:", err);
     req.flash("error", "Failed to assign process.");
     res.redirect("/addProcess");
+  }
+});
+
+// GET: Edit Process Page
+app.get("/editProcess/:processId", isAdmin, async (req, res) => {
+  const { processId } = req.params;
+
+  try {
+    // Fetch process details
+    const processResult = await pool.request()
+      .input("processId", sql.Int, parseInt(processId))
+      .query(`
+        SELECT NumberOfProccessID, ProcessName, processDesc
+        FROM tblProcess
+        WHERE NumberOfProccessID = @processId
+      `);
+
+    if (processResult.recordset.length === 0) {
+      req.flash("error", "Process not found.");
+      return res.redirect("/");
+    }
+
+    const process = processResult.recordset[0];
+
+    // Fetch current departments for this process
+    const stepsResult = await pool.request()
+      .input("processId", sql.Int, parseInt(processId))
+      .query(`
+        SELECT pd.DepartmentID, pd.StepOrder, d.DeptName
+        FROM tblProcessDepartment pd
+        JOIN tblDepartments d ON pd.DepartmentID = d.DepartmentID
+        WHERE pd.ProcessID = @processId
+        ORDER BY pd.StepOrder
+      `);
+
+    const currentSteps = stepsResult.recordset;
+    const currentDeptIds = currentSteps.map(step => step.DepartmentID);
+
+    // Fetch all departments
+    const departmentsResult = await pool.request().query(`
+      SELECT DepartmentID, DeptName FROM tblDepartments
+    `);
+
+    // Fetch workflows associated with this process
+    const workflowsResult = await pool.request()
+      .input("processId", sql.Int, parseInt(processId))
+      .query(`
+        SELECT 
+          hdr.WorkFlowID,
+          hdr.Status,
+          hdr.createdDate,
+          hdr.startDate,
+          hdr.completionDate,
+          prj.ProjectName,
+          pk.PkgeName AS PackageName
+        FROM tblWorkflowHdr hdr
+        LEFT JOIN tblProject prj ON hdr.ProjectID = prj.ProjectID
+        LEFT JOIN tblPackages pk ON hdr.PackageID = pk.PkgeID
+        WHERE hdr.ProcessID = @processId
+        ORDER BY hdr.createdDate DESC
+      `);
+
+    const associatedWorkflows = workflowsResult.recordset;
+    const hasWorkflows = associatedWorkflows.length > 0;
+
+    res.render("editprocess", {
+      process,
+      currentSteps,
+      currentDeptIds,
+      departments: departmentsResult.recordset,
+      associatedWorkflows,
+      hasWorkflows,
+      isAdmin: req.session.user.usrAdmin,
+      desc_user: req.session.user.name,
+      errorMessage: req.flash("error"),
+      successMessage: req.flash("success")
+    });
+  } catch (err) {
+    console.error("Error loading edit process page:", err);
+    req.flash("error", "Failed to load process details.");
+    res.redirect("/");
+  }
+});
+
+// POST: Update Process
+app.post("/updateProcess/:processId", isAdmin, async (req, res) => {
+  const { processId } = req.params;
+  const { ProcessName, processDesc, Departments } = req.body;
+
+  if (!ProcessName || !ProcessName.trim()) {
+    req.flash("error", "Process name is required.");
+    return res.redirect(`/editProcess/${processId}`);
+  }
+
+  const departmentIDs = Array.isArray(Departments)
+    ? Departments.map(id => parseInt(id))
+    : [parseInt(Departments)];
+
+  if (departmentIDs.length === 0) {
+    req.flash("error", "Please select at least one department.");
+    return res.redirect(`/editProcess/${processId}`);
+  }
+
+  try {
+    // Check if process exists
+    const processCheck = await pool.request()
+      .input("processId", sql.Int, parseInt(processId))
+      .query(`
+        SELECT NumberOfProccessID FROM tblProcess
+        WHERE NumberOfProcessID = @processId
+      `);
+
+    if (processCheck.recordset.length === 0) {
+      req.flash("error", "Process not found.");
+      return res.redirect("/");
+    }
+
+    // Update process basic info
+    await pool.request()
+      .input("processId", sql.Int, parseInt(processId))
+      .input("ProcessName", sql.VarChar(100), ProcessName.trim())
+      .input("processDesc", sql.VarChar(500), processDesc || null)
+      .query(`
+        UPDATE tblProcess
+        SET ProcessName = @ProcessName,
+            processDesc = @processDesc
+        WHERE NumberOfProccessID = @processId
+      `);
+
+    // Delete existing department assignments
+    await pool.request()
+      .input("processId", sql.Int, parseInt(processId))
+      .query(`
+        DELETE FROM tblProcessDepartment
+        WHERE ProcessID = @processId
+      `);
+
+    // Add new department assignments
+    let stepNumber = 1;
+    for (const deptID of departmentIDs) {
+      const IsActive = stepNumber === 1 ? 1 : 0;
+
+      await pool.request()
+        .input("ProcessID", sql.Int, parseInt(processId))
+        .input("DepartmentID", sql.Int, deptID)
+        .input("StepNumber", sql.Int, stepNumber)
+        .input("IsActive", sql.Bit, IsActive)
+        .query(`
+          INSERT INTO tblProcessDepartment (ProcessID, DepartmentID, StepOrder, IsActive)
+          VALUES (@ProcessID, @DepartmentID, @StepNumber, @IsActive)
+        `);
+
+      stepNumber++;
+    }
+
+    req.flash("success", "Process updated successfully.");
+    res.redirect("/");
+  } catch (err) {
+    console.error("Error updating process:", err);
+    req.flash("error", "Failed to update process.");
+    res.redirect(`/editProcess/${processId}`);
+  }
+});
+
+// DELETE: Delete Process
+app.delete("/deleteProcess/:processId", isAdmin, async (req, res) => {
+  const { processId } = req.params;
+
+  try {
+    // Check if process exists
+    const processCheck = await pool.request()
+      .input("processId", sql.Int, parseInt(processId))
+      .query(`
+        SELECT NumberOfProccessID FROM tblProcess
+        WHERE NumberOfProccessID = @processId
+      `);
+
+    if (processCheck.recordset.length === 0) {
+      return res.status(404).json({ error: "Process not found" });
+    }
+
+    // Check if process is being used in any workflows
+    const workflowCheck = await pool.request()
+      .input("processId", sql.Int, parseInt(processId))
+      .query(`
+        SELECT COUNT(*) AS Count FROM tblProcessWorkflow
+        WHERE processID = @processId
+      `);
+
+    if (workflowCheck.recordset[0].Count > 0) {
+      return res.status(400).json({ error: "Cannot delete process that is used in workflows" });
+    }
+
+    // Delete process department assignments
+    await pool.request()
+      .input("processId", sql.Int, parseInt(processId))
+      .query(`
+        DELETE FROM tblProcessDepartment
+        WHERE ProcessID = @processId
+      `);
+
+    // Delete the process
+    await pool.request()
+      .input("processId", sql.Int, parseInt(processId))
+      .query(`
+        DELETE FROM tblProcess
+        WHERE NumberOfProccessID = @processId
+      `);
+
+    res.json({ message: "Process deleted successfully" });
+  } catch (err) {
+    console.error("Error deleting process:", err);
+    res.status(500).json({ error: "Failed to delete process" });
   }
 });
 
@@ -2185,6 +2587,135 @@ app.put('/save-task-updates', async (req, res) => {
   }
 });
 
+// PUT: Link Task to Another Task with Process Step Validation
+app.put('/api/link-task/:taskId/:linkedTaskId', async (req, res) => {
+  const { taskId, linkedTaskId } = req.params;
+  const fromDeptId = req.body?.fromDeptId;
+
+  try {
+    // Validate both tasks exist and get their details
+    const taskCheckQuery = await pool.request()
+      .input('taskId', sql.Int, parseInt(taskId))
+      .query(`
+        SELECT t.TaskID, t.TaskName, t.DepId, t.proccessID
+        FROM tblTasks t
+        WHERE t.TaskID = @taskId
+      `);
+
+    const linkedTaskCheckQuery = await pool.request()
+      .input('linkedTaskId', sql.Int, parseInt(linkedTaskId))
+      .query(`
+        SELECT t.TaskID, t.TaskName, t.DepId, t.proccessID
+        FROM tblTasks t
+        WHERE t.TaskID = @linkedTaskId
+      `);
+
+    if (taskCheckQuery.recordset.length === 0 || linkedTaskCheckQuery.recordset.length === 0) {
+      return res.status(404).json({ error: 'One or both tasks not found' });
+    }
+
+    const sourceTask = taskCheckQuery.recordset[0];
+    const targetTask = linkedTaskCheckQuery.recordset[0];
+
+    // Prevent self-linking
+    if (parseInt(taskId) === parseInt(linkedTaskId)) {
+      return res.status(400).json({ error: 'Cannot link a task to itself' });
+    }
+
+    // Both tasks must be in the same process
+    if (sourceTask.proccessID !== targetTask.proccessID) {
+      return res.status(400).json({ error: 'Tasks must be from the same process' });
+    }
+
+    // Validate process step ordering - source task must be in an earlier step than target task
+    const stepOrderQuery = await pool.request()
+      .input('processId', sql.Int, sourceTask.proccessID)
+      .input('sourceDeptId', sql.Int, sourceTask.DepId)
+      .input('targetDeptId', sql.Int, targetTask.DepId)
+      .query(`
+        SELECT 
+          (SELECT pd.StepOrder FROM tblProcessDepartment pd 
+           WHERE pd.ProcessID = @processId AND pd.DepartmentID = @sourceDeptId) AS SourceStepOrder,
+          (SELECT pd.StepOrder FROM tblProcessDepartment pd 
+           WHERE pd.ProcessID = @processId AND pd.DepartmentID = @targetDeptId) AS TargetStepOrder
+      `);
+
+    const stepOrderResult = stepOrderQuery.recordset[0];
+    
+    // If either step order is NULL, departments are not part of this process
+    if (stepOrderResult.SourceStepOrder === null || stepOrderResult.TargetStepOrder === null) {
+      return res.status(400).json({ error: 'One or both tasks are not part of the process workflow' });
+    }
+
+    // Enforce forward-only linking: source step must be less than target step
+    if (stepOrderResult.SourceStepOrder >= stepOrderResult.TargetStepOrder) {
+      return res.status(400).json({ 
+        error: `Cannot link to this task. Task '${sourceTask.TaskName}' (Step ${stepOrderResult.SourceStepOrder}) can only link to tasks in later process steps. Task '${targetTask.TaskName}' is in Step ${stepOrderResult.TargetStepOrder}.` 
+      });
+    }
+
+    // Ensure no other task already links to the target (unique target)
+    const existingLink = await pool.request()
+      .input('linkedTaskId', sql.Int, parseInt(linkedTaskId))
+      .query(`SELECT TaskID, TaskName FROM tblTasks WHERE linkTasks = @linkedTaskId`);
+
+    if (existingLink.recordset.length > 0 && existingLink.recordset[0].TaskID !== sourceTask.TaskID) {
+      return res.status(400).json({ 
+        error: `This target task is already linked by another task. Remove that link first.`,
+        linkedBy: existingLink.recordset[0]
+      });
+    }
+
+    // Update the linkTasks column
+    await pool.request()
+      .input('taskId', sql.Int, parseInt(taskId))
+      .input('linkedTaskId', sql.Int, parseInt(linkedTaskId))
+      .query(`
+        UPDATE tblTasks
+        SET linkTasks = @linkedTaskId
+        WHERE TaskID = @taskId
+      `);
+
+    res.json({ 
+      success: true, 
+      message: 'Tasks linked successfully',
+      taskId: parseInt(taskId),
+      linkedTaskId: parseInt(linkedTaskId),
+      linkedTaskName: targetTask.TaskName
+    });
+
+  } catch (err) {
+    console.error('Error linking tasks:', err);
+    res.status(500).json({ error: 'Failed to link tasks' });
+  }
+});
+
+    // PUT: Unlink a task (remove its linkTasks value)
+    app.put('/api/unlink-task/:taskId', async (req, res) => {
+      const taskId = req.params.taskId;
+      try {
+        const taskCheck = await pool.request()
+          .input('taskId', sql.Int, parseInt(taskId))
+          .query('SELECT TaskID, TaskName FROM tblTasks WHERE TaskID = @taskId');
+
+        if (taskCheck.recordset.length === 0) {
+          return res.status(404).json({ error: 'Task not found' });
+        }
+
+        await pool.request()
+          .input('taskId', sql.Int, parseInt(taskId))
+          .query(`
+            UPDATE tblTasks
+            SET linkTasks = NULL
+            WHERE TaskID = @taskId
+          `);
+
+        res.json({ success: true, message: 'Link removed', taskId: parseInt(taskId) });
+      } catch (err) {
+        console.error('Error unlinking task:', err);
+        res.status(500).json({ error: 'Failed to remove link' });
+      }
+    });
 
 
 
@@ -2494,17 +3025,26 @@ const delay = Math.max(0, Math.ceil((finishedDateOnly - plannedDateOnly) / (1000
 const userEmails = usersEmailResult.recordset.map(row => row.usrEmail);
 console.log("emails", userEmails)
 // Send to each email via Resend
-    try {
-      await resend.emails.send({
-        from: 'onboarding@resend.dev',
-        to: 'Nabilgreen500@gmail.com',
-        subject: 'New Process Activated for Your Department',
-        text: `Hello,\n\nYour department has been activated for the next step in the project workflow.\n\nRegards,\nEngineering Project Dashboard`
-      });
-      console.log(`Email sent to via Resend`);
-    } catch (err) {
-      console.error(`Resend email error for :`, err);
-    }
+  try {
+    for (const email of userEmails){
+  const mailOptions = {
+    from: '"Engineering Dashboard" <Nabilgreen500@gmail.com>', 
+    to: email,                             
+    subject: "New Process Activated for Your Department",
+    text: `Hello,
+
+Your department has been activated for the next step in the project workflow.
+
+Regards,
+Engineering Project Dashboard`,
+  };
+
+  const info = await transporter.sendMail(mailOptions);
+  console.log(`✅ Email sent successfully: ${info.response}`);
+}
+} catch (err) {
+  console.error(`❌ Email send error:`, err);
+}
   
      await pool.request()
             .input('nextDepId', nextDepId)
