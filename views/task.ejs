@@ -202,6 +202,71 @@
       opacity: 0.6;
     }
 
+    /* Checkbox Styling */
+    .checkbox-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      cursor: pointer;
+      font-weight: 500;
+      color: var(--text);
+      user-select: none;
+      margin: 0;
+    }
+
+    .checkbox-label input[type="checkbox"] {
+      display: none;
+    }
+
+    .checkbox-custom {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      border: 2px solid var(--border);
+      border-radius: 6px;
+      background: var(--white);
+      transition: var(--transition);
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .checkbox-label input[type="checkbox"]:checked + .checkbox-custom {
+      background: var(--primary);
+      border-color: var(--primary);
+    }
+
+    .checkbox-label input[type="checkbox"]:checked + .checkbox-custom::after {
+      content: "✓";
+      color: var(--white);
+      font-weight: bold;
+      font-size: 0.9rem;
+    }
+
+    .checkbox-label:hover .checkbox-custom {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+    }
+
+    .checkbox-text {
+      font-size: 0.95rem;
+      color: var(--text);
+    }
+
+    .helper-text {
+      font-size: 0.85rem;
+      color: var(--text-light);
+      margin-left: 2.75rem;
+      display: block;
+    }
+
     .form-actions {
       grid-column: 1 / -1;
       display: flex;
@@ -885,6 +950,16 @@
       <div class="validation-error" id="DaysRequired-error">Please enter a valid number of days</div>
     </div>
 
+    <div class="form-group checkbox-group">
+      <label for="IsFixed-check" class="checkbox-label">
+        <input type="hidden" name="IsFixed" id="IsFixed" value="0"/>
+        <input type="checkbox" id="IsFixed-check" />
+        <span class="checkbox-custom"></span>
+        <span class="checkbox-text">Task is Fixed</span>
+      </label>
+      <small class="helper-text">Mark this task as fixed if it cannot be delayed</small>
+    </div>
+
     <% if (!hasWorkflow) { %>
   <div class="form-actions">
     <button type="submit" class="btn btn-primary" id="submit-btn">
@@ -961,6 +1036,16 @@ document.addEventListener('DOMContentLoaded', function() {
   // Initialize form validation
   setupFormValidation();
   
+  // Initialize IsFixed checkbox listener
+  const isFixedCheckbox = document.getElementById('IsFixed-check');
+  if (isFixedCheckbox) {
+    isFixedCheckbox.addEventListener('change', function() {
+      const isFixedHidden = document.getElementById('IsFixed');
+      isFixedHidden.value = this.checked ? 1 : 0;
+      console.log('IsFixed value updated to:', isFixedHidden.value);
+    });
+  }
+  
   // Initialize department selection logic
   
   // Load tasks for this process
@@ -1036,6 +1121,11 @@ function setupFormValidation() {
         firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
     } else {
+      // Set IsFixed value: 1 if checked, 0 if unchecked
+      const isFixedCheck = document.getElementById('IsFixed-check');
+      const isFixedHidden = document.getElementById('IsFixed');
+      isFixedHidden.value = isFixedCheck.checked ? 1 : 0;
+      
       // Show loading state on submit button
       const submitBtn = document.getElementById('submit-btn');
       submitBtn.disabled = true;
@@ -1492,11 +1582,20 @@ function linkTaskToOther(selectElement) {
     return response.json();
   })
   .then(data => {
-    // Update in-memory tasks and re-render so the "Linked To" column shows immediately
+    // Update in-memory tasks with response from server
     const src = currentTasks.find(t => t.TaskID === taskID);
-    if (src) src.linkTasks = linkedTaskID;
+    const linkedTask = currentTasks.find(t => t.TaskID === linkedTaskID);
+    
+    if (src) {
+      src.linkTasks = linkedTaskID;
+      // Use the date returned from the server (which was calculated there)
+      if (data.newPlannedDate) {
+        src.PlannedDate = data.newPlannedDate;
+      }
+    }
+    
     filterAndRenderTasks();
-    showToast(`Tasks linked successfully! Task linked to ${data.linkedTaskName}`);
+    showToast(`Tasks linked successfully! Task planned date updated.`);
     selectElement.value = ''; // Reset select
   })
   .catch(error => {
@@ -1512,9 +1611,14 @@ function unlinkTask(taskId) {
     .then(async res => {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to remove link');
+      
       // update local state and re-render
       const src = currentTasks.find(t => t.TaskID === parseInt(taskId));
-      if (src) src.linkTasks = null;
+      if (src) {
+        src.linkTasks = null;
+        // Reset planned date to current value or reset if needed
+        // The date calculation will revert to normal on the next task add/edit
+      }
       filterAndRenderTasks();
       showToast('Link removed successfully');
     })
