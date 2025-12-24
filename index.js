@@ -438,6 +438,7 @@ const tasksResult = await request1.query(`
   t.Priority,
   t.PredecessorID,
   t.DaysRequired,
+  t.IsFixed,
   t.WorkFlowHdrID,
   t.linkTasks,
   d.WorkflowDtlId,
@@ -662,12 +663,20 @@ app.get('/userpage', ensureAuthenticated, async (req, res) => {
                                  .query('SELECT * FROM tblProject');
         const projects = getProjects.recordset;
 
+        const user = {
+          id: sessionUserId,
+          name: usrDesc,
+          DepartmentId: DepartmentID,
+          DeptName: deptDetails.DeptName || 'Admin'
+        };
+
         res.render('userpage', {
             userId: sessionUserId,
             departmentID: DepartmentID,
             usrDesc,
             department: deptDetails.DepartmentID,
-            projects
+            projects,
+            user
         });
 
     } catch (error) {

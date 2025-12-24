@@ -555,6 +555,35 @@
       box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
     }
 
+    .days-required-input {
+      padding: 0.5rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background-color: var(--white);
+      transition: var(--transition);
+      width: 100%;
+      font-family: inherit;
+      min-width: 100px;
+      font-size: 0.9rem;
+    }
+
+    .days-required-input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+    }
+
+    .days-fixed {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.5rem;
+      background-color: #fee2e2;
+      color: var(--danger);
+      border-radius: var(--radius-sm);
+      font-weight: 500;
+      border: 1px solid #fecaca;
+    }
+
     /* Button styles - Modern Design */
     .button-container {
       display: flex;
@@ -1509,14 +1538,14 @@
               <i class="fas fa-project-diagram"></i>
               Process
             </span>
-            <span class="info-value"><%= tasks[0]?.ProcessName || 'N/A' %></span>
+            <span class="info-value"><%= (typeof tasks !== 'undefined' && tasks && tasks[0]) ? tasks[0].ProcessName : 'N/A' %></span>
           </div>
           <div class="info-item">
             <span class="info-label">
               <i class="fas fa-folder"></i>
               Project
             </span>
-            <span class="info-value"><%= tasks[0]?.ProjectName || 'N/A' %></span>
+            <span class="info-value"><%= (typeof tasks !== 'undefined' && tasks && tasks[0]) ? tasks[0].ProjectName : 'N/A' %></span>
           </div>
           <div class="info-item">
             <span class="info-label">
@@ -1948,7 +1977,21 @@ if (!isAdmin && (task.Delay > 0 && isOwnDepartment )){
     <td data-label="Task Name">${task.TaskName || ''}</td>
     <td data-label="Description">${task.TaskPlanned || ''}</td>
     <td data-label="Planned Date">${plannedDate}</td>
-        <td data-label="Days-Required">${task.DaysRequired}</td>
+    <td data-label="Days-Required">
+        ${(() => {
+            const isLocked = task.IsFixed === true || task.IsFixed === 1 || task.TimeFinished || !isOwnDepartment;
+            let lockReason = 'This task is fixed';
+            if (task.TimeFinished) {
+                lockReason = 'Task is finished';
+            } else if (!isOwnDepartment) {
+                lockReason = 'You can only view tasks from other departments';
+            }
+            console.log('Task:', task.TaskName, 'IsFixed:', task.IsFixed, 'TimeFinished:', task.TimeFinished, 'isOwnDepartment:', isOwnDepartment, 'IsLocked:', isLocked);
+            return isLocked ? 
+                `<span class="days-fixed" title="${lockReason}">${task.DaysRequired} <i class="fas fa-lock" style="margin-left:0.5rem;color:var(--danger);"></i></span>` :
+                `<input type="number" value="${task.DaysRequired}" class="days-required-input" data-task-id="${task.TaskID}" min="1" placeholder="Days required">`;
+        })()}
+    </td>
     <td data-label="Start Date">${startDate}</td> <!-- ✅ Added -->
     <td data-label="Date Finished">${finishDate}</td>
     <td data-label="Status">${status}</td>
@@ -1967,6 +2010,7 @@ if (!isAdmin && (task.Delay > 0 && isOwnDepartment )){
 </tr>
 
         `;
+
     };
 
     // Initialize the page with optimized event delegation
