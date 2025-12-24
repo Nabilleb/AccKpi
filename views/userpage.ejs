@@ -1552,14 +1552,7 @@
               <i class="fas fa-box"></i>
               Package
             </span>
-            <span class="info-value"><%= tasks[0]?.PkgeName || 'N/A' %></span>
-          </div>
-          <div class="info-item">
-            <span class="info-label">
-              <i class="fas fa-calendar-alt"></i>
-              Start Date
-            </span>
-            <span class="info-value"><%= tasks[0]?.ProcessStartDate ? new Date(tasks[0].ProcessStartDate).toLocaleDateString() : 'N/A' %></span>
+            <span class="info-value"><%= (typeof tasks !== 'undefined' && tasks && tasks[0]) ? tasks[0].PkgeName : 'N/A' %></span>
           </div>
         </div>
         
@@ -1614,9 +1607,36 @@
     const modalConfirmBtn = document.getElementById('modal-confirm-btn');
     const modalCancelBtn = document.getElementById('modal-cancel-btn');
     
-    setTimeout(() => {
-    window.location.href = "/login";
-  }, 5 * 60 * 1000); 
+    // Idle timeout configuration
+    const IDLE_TIMEOUT = 5 * 60 * 1000; // 5 minutes
+    let idleTimer = null;
+    let idleWarningTimer = null;
+    
+    const resetIdleTimer = () => {
+        // Clear existing timers
+        if (idleTimer) clearTimeout(idleTimer);
+        if (idleWarningTimer) clearTimeout(idleWarningTimer);
+        
+        // Set warning timer (4:50 - warn user 10 seconds before logout)
+        idleWarningTimer = setTimeout(() => {
+            showMessage(successEl, successText, 'You will be logged out in 10 seconds due to inactivity', 5000);
+        }, IDLE_TIMEOUT - 10000);
+        
+        // Set logout timer
+        idleTimer = setTimeout(() => {
+            window.location.href = "/logout";
+        }, IDLE_TIMEOUT);
+    };
+    
+    // Track user activity
+    const activityEvents = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
+    
+    activityEvents.forEach(event => {
+        document.addEventListener(event, resetIdleTimer, true);
+    });
+    
+    // Start the idle timer on page load
+    resetIdleTimer(); 
 
     console.log(taskList)
     // Predefined objects and variables
@@ -1956,8 +1976,20 @@
         }
 
 let extraButtons = '';
-if (!isAdmin && (task.Delay > 0 && isOwnDepartment )){
-    extraButtons = `<button class="row-save-btn" data-task-id="${task.TaskID}"> Save</button>`;
+if (!isAdmin && isOwnDepartment && !task.TimeFinished) {
+    const buttons = [];
+    
+    // Save button for delay reason (if there's a delay)
+    if (task.Delay > 0) {
+        buttons.push(`<button class="row-save-btn" data-task-id="${task.TaskID}" data-save-type="delay"> Save Delay</button>`);
+    }
+    
+    // Save button for days required (if task is not fixed)
+    if (!task.IsFixed && task.IsFixed !== true) {
+        buttons.push(`<button class="row-save-btn" data-task-id="${task.TaskID}" data-save-type="days"> Save Days</button>`);
+    }
+    
+    extraButtons = buttons.join('');
 }
 
         let nextTaskSelect = '';
@@ -1977,7 +2009,7 @@ if (!isAdmin && (task.Delay > 0 && isOwnDepartment )){
     <td data-label="Task Name">${task.TaskName || ''}</td>
     <td data-label="Description">${task.TaskPlanned || ''}</td>
     <td data-label="Planned Date">${plannedDate}</td>
-    <td data-label="Days-Required">
+    <td data-label="Days Required">
         ${(() => {
             const isLocked = task.IsFixed === true || task.IsFixed === 1 || task.TimeFinished || !isOwnDepartment;
             let lockReason = 'This task is fixed';
@@ -1995,7 +2027,7 @@ if (!isAdmin && (task.Delay > 0 && isOwnDepartment )){
     <td data-label="Start Date">${startDate}</td> <!-- ✅ Added -->
     <td data-label="Date Finished">${finishDate}</td>
     <td data-label="Status">${status}</td>
-    <td data-label="Days Delay">${task.Delay !== null ? task.Delay : 0}</td>
+    <td data-label="Days Delay">${task.TimeFinished ? (task.Delay !== null && task.Delay > 0 ? task.Delay : 'On Time') : '-'}</td>
     <td data-label="Delay Reason">
         <input type="text" value="${delayReason}" class="delay-reason-input" data-task-id="${task.TaskID}" 
             ${delayInputDisabled} placeholder="${delayInputDisabled ? '' : 'Enter delay reason...'}">
@@ -2168,7 +2200,7 @@ if (e.target.classList.contains('delay-reason-input')) {
             // Collect all updates
             const delayInput = row?.querySelector('.delay-reason-input');
             const daysCell = row?.querySelector('td[data-label="Days Required"]');
-            const daysDisplay = daysCell?.querySelector('.days-display');
+            const daysInput = daysCell?.querySelector('.days-required-input');
             
             // Delay reason update
             if (delayInput && !delayInput.disabled && delayInput.value.trim() !== '') {
@@ -2181,8 +2213,8 @@ if (e.target.classList.contains('delay-reason-input')) {
             }
             
             // Days required update
-            if (daysDisplay) {
-                const newDays = parseInt(daysDisplay.textContent.trim());
+            if (daysInput) {
+                const newDays = parseInt(daysInput.value);
                 if (!isNaN(newDays) && newDays > 0) {
                     updates.push({
                         taskId,
@@ -2199,18 +2231,31 @@ if (e.target.classList.contains('delay-reason-input')) {
             }
 
             // Save updates
-            const updatedTask = await saveTaskUpdates(taskId, updates);
+            const response = await saveTaskUpdates(taskId, updates);
             
-            if (updatedTask && updatedTask.updatedTasks && updatedTask.updatedTasks[0].PlannedDate) {
-                const plannedDate = new Date(updatedTask.updatedTasks[0].PlannedDate);
-                const day = String(plannedDate.getDate()).padStart(2, '0');
-                const month = String(plannedDate.getMonth() + 1).padStart(2, '0');
-                const year = plannedDate.getFullYear();
-                const formattedDate = `${day}/${month}/${year}`;
+            if (response && response.success && response.updatedTasks && response.updatedTasks[0]) {
+                const updatedTask = response.updatedTasks[0];
                 
-                const plannedDateCell = row.querySelector('td[data-label="Planned Date"]');
-                if (plannedDateCell) plannedDateCell.textContent = formattedDate;
+                // Update Planned Date if it changed
+                if (updatedTask.PlannedDate) {
+                    const plannedDate = new Date(updatedTask.PlannedDate);
+                    const day = String(plannedDate.getDate()).padStart(2, '0');
+                    const month = String(plannedDate.getMonth() + 1).padStart(2, '0');
+                    const year = plannedDate.getFullYear();
+                    const formattedDate = `${day}/${month}/${year}`;
+                    
+                    const plannedDateCell = row.querySelector('td[data-label="Planned Date"]');
+                    if (plannedDateCell) plannedDateCell.textContent = formattedDate;
+                }
                 
+                // Update Days Required if it was changed
+                const daysCell = row?.querySelector('td[data-label="Days Required"]');
+                const daysInput = daysCell?.querySelector('.days-required-input');
+                if (daysInput) {
+                    daysInput.value = updatedTask.DaysRequired;
+                }
+                
+                // Disable delay input if saved
                 if (delayInput && delayInput.value.trim() !== '') {
                     delayInput.disabled = true;
                 }

@@ -758,7 +758,7 @@ if (!isActive) {
   .input('processId', processId)
   .input('departmentId', userDeptId)
   .query(
-    `SELECT T.TaskID,T.TaskName,T.TaskPlanned, T.DepId,T.PlannedDate,T.isTaskSelected, T.isDateFixed,T.DaysRequired, W.Delay,W.TimeStarted,W.TimeFinished, W.DelayReason
+    `SELECT T.TaskID,T.TaskName,T.TaskPlanned, T.DepId,T.PlannedDate,T.isTaskSelected, T.IsFixed,T.DaysRequired, W.Delay,W.TimeStarted,W.TimeFinished, W.DelayReason
      FROM tblTasks T
      JOIN tblWorkflowDtl W ON W.TaskID = T.TaskID
      JOIN tblProcessDepartment P ON P.DepartmentID = @departmentId AND P.ProcessID = @processId
@@ -916,7 +916,7 @@ app.get('/department/:departmentId/tasks', async (req, res) => {
       .input('departmentId', departmentId)
       .query(`
         SELECT T.TaskID, T.TaskName, T.TaskPlanned, T.PlannedDate, W.TimeFinished, W.TimeStarted,
-               T.DepId, T.IsDateFixed,T.DaysRequired,
+               T.DepId, T.IsFixed,T.DaysRequired,
                 W.Delay, W.DelayReason
         FROM tblTasks T
         LEFT JOIN tblWorkflowDtl W ON T.TaskID = W.TaskID
@@ -1159,7 +1159,7 @@ app.post('/tasks/:id/update', async (req, res) => {
   try {
     await sql.query`
       UPDATE tblTasks
-      SET PlannedDate = CASE WHEN IsDateFixed = 0 THEN ${PlannedDate} ELSE PlannedDate END
+      SET PlannedDate = CASE WHEN IsFixed = 0 THEN ${PlannedDate} ELSE PlannedDate END
       WHERE TaskID = ${id}
     `;
 
@@ -1547,7 +1547,7 @@ app.get('/task-selected', async (req, res) => {
         t.TaskName,
         t.TaskPlanned,
         t.IsTaskSelected,
-        t.IsDateFixed,
+        t.IsFixed,
         t.PlannedDate,
         t.DepId,
         t.Priority,
@@ -1673,7 +1673,7 @@ app.delete('/delete-task/:taskId', async (req, res) => {
 
 app.post('/update-task/:id', async (req, res) => {
   const taskId = req.params.id;
-  const { TaskName, TaskPlanned, IsDateFixed, PlannedDate } = req.body;
+  const { TaskName, TaskPlanned, IsFixed, PlannedDate } = req.body;
 
   try {
     await pool
@@ -1681,12 +1681,12 @@ app.post('/update-task/:id', async (req, res) => {
       .input('TaskID', sql.Int, taskId)
       .input('TaskName', sql.NVarChar, TaskName)
       .input('TaskPlanned', sql.NVarChar, TaskPlanned)
-      .input('IsDateFixed', sql.Bit, IsDateFixed)
+      .input('IsFixed', sql.Bit, IsFixed)
       .input('PlannedDate', sql.DateTime, PlannedDate)
       .query(`UPDATE tblTasks SET 
         TaskName = @TaskName, 
         TaskPlanned = @TaskPlanned, 
-        IsDateFixed = @IsDateFixed, 
+        IsFixed = @IsFixed, 
         PlannedDate = @PlannedDate 
         WHERE TaskID = @TaskID`);
 
@@ -2379,7 +2379,7 @@ app.post("/addUser", async (req, res) => {
 //           TaskName,
 //           TaskPlanned,
 //           PlannedDate,
-//           IsDateFixed,
+//           IsFixed,
 //           isTaskSelected,
 //           DepId,
 //           Priority,
@@ -2497,14 +2497,14 @@ app.put('/save-task-updates', async (req, res) => {
       console.log("Processing field:", field);
 
       if (field === 'daysRequired') {
-        // Check IsDateFixed and PlannedDate
+        // Check IsFixed and PlannedDate
         const check = await pool
           .request()
           .input('taskId', sql.Int, taskId)
-          .query('SELECT IsDateFixed, PlannedDate FROM tblTasks WHERE TaskID = @taskId');
+          .query('SELECT IsFixed, PlannedDate FROM tblTasks WHERE TaskID = @taskId');
 
         const task = check.recordset[0];
-        const isFixed = task?.IsDateFixed;
+        const isFixed = task?.IsFixed;
         const plannedDate = task?.PlannedDate;
 
         if (!isFixed) {
@@ -3186,14 +3186,14 @@ app.post('/api/tasks/switch-details', async (req, res) => {
     const taskA = await pool.request()
       .input('taskIdA', sql.Int, taskIdA)
       .query(`
-        SELECT PlannedDate, IsTaskSelected, IsDateFixed, Priority, PredecessorID
+        SELECT PlannedDate, IsTaskSelected, IsFixed, Priority, PredecessorID
         FROM tblTasks WHERE TaskID = @taskIdA
       `);
 
     const taskB = await pool.request()
       .input('taskIdB', sql.Int, taskIdB)
       .query(`
-        SELECT PlannedDate, IsTaskSelected, IsDateFixed, Priority, PredecessorID
+        SELECT PlannedDate, IsTaskSelected, IsFixed, Priority, PredecessorID
         FROM tblTasks WHERE TaskID = @taskIdB
       `);
 
@@ -3212,13 +3212,13 @@ app.post('/api/tasks/switch-details', async (req, res) => {
     await pool.request()
       .input('taskIdA', sql.Int, taskIdA)
       .input('IsTaskSelected', sql.Bit, b.IsTaskSelected)
-      .input('IsDateFixed', sql.Bit, b.IsDateFixed)
+      .input('IsFixed', sql.Bit, b.IsFixed)
       .input('Priority', sql.Int, b.Priority)
       .input('PredecessorID', sql.Int, b.PredecessorID)
       .query(`
         UPDATE tblTasks SET
           IsTaskSelected = @IsTaskSelected,
-          IsDateFixed = @IsDateFixed,
+          IsFixed = @IsFixed,
           Priority = @Priority,
           PredecessorID = @PredecessorID
         WHERE TaskID = @taskIdA
@@ -3227,13 +3227,13 @@ app.post('/api/tasks/switch-details', async (req, res) => {
     await pool.request()
       .input('taskIdB', sql.Int, taskIdB)
       .input('IsTaskSelected', sql.Bit, a.IsTaskSelected)
-      .input('IsDateFixed', sql.Bit, a.IsDateFixed)
+      .input('IsFixed', sql.Bit, a.IsFixed)
       .input('Priority', sql.Int, a.Priority)
       .input('PredecessorID', sql.Int, a.PredecessorID)
       .query(`
         UPDATE tblTasks SET
           IsTaskSelected = @IsTaskSelected,
-          IsDateFixed = @IsDateFixed,
+          IsFixed = @IsFixed,
           Priority = @Priority,
           PredecessorID = @PredecessorID
         WHERE TaskID = @taskIdB
