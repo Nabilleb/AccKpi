@@ -960,6 +960,14 @@
       <small class="helper-text">Mark this task as fixed if it cannot be delayed</small>
     </div>
 
+    <div class="form-group">
+      <label for="linkTasks">Link to Task (Optional)</label>
+      <select name="linkTasks" id="linkTasks" class="link-task-select">
+        <option value="">-- No Link --</option>
+      </select>
+      <small class="helper-text">Link this task to another task to inherit its planned date</small>
+    </div>
+
     <% if (!hasWorkflow) { %>
   <div class="form-actions">
     <button type="submit" class="btn btn-primary" id="submit-btn">
@@ -1043,6 +1051,20 @@ document.addEventListener('DOMContentLoaded', function() {
       const isFixedHidden = document.getElementById('IsFixed');
       isFixedHidden.value = this.checked ? 1 : 0;
       console.log('IsFixed value updated to:', isFixedHidden.value);
+    });
+  }
+  
+  // Initialize linkTasks dropdown change listener
+  const linkTasksSelect = document.getElementById('linkTasks');
+  if (linkTasksSelect) {
+    linkTasksSelect.addEventListener('change', function() {
+      if (this.value) {
+        const linkedTaskId = parseInt(this.value);
+        const linkedTask = currentTasks.find(t => t.TaskID === linkedTaskId);
+        if (linkedTask) {
+          console.log('Task linked to:', linkedTask.TaskName, 'Planned Date:', linkedTask.PlannedDate);
+        }
+      }
     });
   }
   
@@ -1246,6 +1268,7 @@ function loadTasks() {
     })
     .then(data => {
       currentTasks = data;
+      populateLinkTasksDropdown();
       filterAndRenderTasks();
     })
     .catch(error => {
@@ -1262,6 +1285,28 @@ function loadTasks() {
     .finally(() => {
       isLoading = false;
     });
+}
+
+function populateLinkTasksDropdown() {
+  const linkTasksSelect = document.getElementById('linkTasks');
+  if (!linkTasksSelect) return;
+  
+  // Save current selection
+  const currentValue = linkTasksSelect.value;
+  
+  // Keep the default option
+  const html = '<option value="">-- No Link --</option>' +
+    currentTasks
+      .filter(t => t.TaskID) // Only tasks with valid IDs
+      .map(task => `<option value="${task.TaskID}">${task.TaskName} (${task.DeptName})</option>`)
+      .join('');
+  
+  linkTasksSelect.innerHTML = html;
+  
+  // Restore selection if it still exists
+  if (currentValue && currentTasks.find(t => t.TaskID == currentValue)) {
+    linkTasksSelect.value = currentValue;
+  }
 }
 
 function filterAndRenderTasks() {
@@ -1658,11 +1703,13 @@ function unlinkTask(taskId) {
       const src = currentTasks.find(t => t.TaskID === parseInt(taskId));
       if (src) {
         src.linkTasks = null;
-        // Reset planned date to current value or reset if needed
-        // The date calculation will revert to normal on the next task add/edit
+        // Update the planned date to the recalculated date from server
+        if (data.newPlannedDate) {
+          src.PlannedDate = data.newPlannedDate;
+        }
       }
       filterAndRenderTasks();
-      showToast('Link removed successfully');
+      showToast('Link removed successfully and task rescheduled');
     })
     .catch(err => {
       console.error('Error unlinking task:', err);

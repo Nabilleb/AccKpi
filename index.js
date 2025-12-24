@@ -1300,6 +1300,25 @@ app.post('/add-task', ensureAuthenticated, async (req, res) => {
       const now = new Date();
       now.setDate(now.getDate() + DaysRequiredInserted);
       PlannedDateToInsert = now.toISOString().split('T')[0];
+    } else if (req.body.linkTasks) {
+      // If task is linked to another task, get that task's date + its days
+      const linkedTaskId = parseInt(req.body.linkTasks);
+      const linkedResult = await poolConn.request()
+        .input('linkedTaskId', sql.Int, linkedTaskId)
+        .query(`
+          SELECT PlannedDate, DaysRequired
+          FROM tblTasks
+          WHERE TaskID = @linkedTaskId
+        `);
+
+      const linkedDateStr = linkedResult.recordset[0]?.PlannedDate;
+      const linkedDays = linkedResult.recordset[0]?.DaysRequired ?? 0;
+
+      if (linkedDateStr) {
+        const linkedDate = new Date(linkedDateStr);
+        linkedDate.setDate(linkedDate.getDate() + linkedDays);
+        PlannedDateToInsert = linkedDate.toISOString().split('T')[0];
+      }
     } else if (PredecessorTaskID) {
       // If predecessor is set, schedule after it
       const predResult = await poolConn.request()
@@ -2624,10 +2643,10 @@ app.put('/api/link-task/:taskId/:linkedTaskId', async (req, res) => {
       return res.status(400).json({ error: 'One or both tasks are not part of the process workflow' });
     }
 
-    // Enforce forward-only linking: source step must be less than target step
-    if (stepOrderResult.SourceStepOrder >= stepOrderResult.TargetStepOrder) {
+    // Enforce forward-only linking: linked task (target) must be in an earlier step than current task (source)
+    if (stepOrderResult.TargetStepOrder >= stepOrderResult.SourceStepOrder) {
       return res.status(400).json({ 
-        error: `Cannot link to this task. Task '${sourceTask.TaskName}' (Step ${stepOrderResult.SourceStepOrder}) can only link to tasks in later process steps. Task '${targetTask.TaskName}' is in Step ${stepOrderResult.TargetStepOrder}.` 
+        error: `Cannot link to this task. Task '${sourceTask.TaskName}' (Step ${stepOrderResult.SourceStepOrder}) can only link to tasks in earlier process steps. Task '${targetTask.TaskName}' is in Step ${stepOrderResult.TargetStepOrder}.` 
       });
     }
 
@@ -2643,22 +2662,52 @@ app.put('/api/link-task/:taskId/:linkedTaskId', async (req, res) => {
       });
     }
 
-    // Update the linkTasks column
+    // Update the linkTasks column and set IsTaskLinked to 1
     await pool.request()
       .input('taskId', sql.Int, parseInt(taskId))
       .input('linkedTaskId', sql.Int, parseInt(linkedTaskId))
       .query(`
         UPDATE tblTasks
-        SET linkTasks = @linkedTaskId
+        SET linkTasks = @linkedTaskId, IsTaskLinked = 1
         WHERE TaskID = @taskId
       `);
+
+    // Get the linked task's PlannedDate and DaysRequired to calculate new date for the CURRENT task
+    const linkedTaskDetailsQuery = await pool.request()
+      .input('linkedTaskId', sql.Int, parseInt(linkedTaskId))
+      .query(`
+        SELECT PlannedDate, DaysRequired
+        FROM tblTasks
+        WHERE TaskID = @linkedTaskId
+      `);
+
+    const linkedTaskDetails = linkedTaskDetailsQuery.recordset[0];
+    let newPlannedDate = null;
+
+    if (linkedTaskDetails && linkedTaskDetails.PlannedDate) {
+      const baseDate = new Date(linkedTaskDetails.PlannedDate);
+      const daysToAdd = linkedTaskDetails.DaysRequired || 0;
+      baseDate.setDate(baseDate.getDate() + daysToAdd);
+      newPlannedDate = baseDate.toISOString().split('T')[0];
+
+      // Update the current task's PlannedDate (taskId = Task 4), not the linked task (linkedTaskId = Task 1)
+      await pool.request()
+        .input('taskId', sql.Int, parseInt(taskId))
+        .input('newPlannedDate', sql.Date, newPlannedDate)
+        .query(`
+          UPDATE tblTasks
+          SET PlannedDate = @newPlannedDate
+          WHERE TaskID = @taskId
+        `);
+    }
 
     res.json({ 
       success: true, 
       message: 'Tasks linked successfully',
       taskId: parseInt(taskId),
       linkedTaskId: parseInt(linkedTaskId),
-      linkedTaskName: targetTask.TaskName
+      linkedTaskName: targetTask.TaskName,
+      newPlannedDate: newPlannedDate
     });
 
   } catch (err) {
@@ -2673,21 +2722,77 @@ app.put('/api/link-task/:taskId/:linkedTaskId', async (req, res) => {
       try {
         const taskCheck = await pool.request()
           .input('taskId', sql.Int, parseInt(taskId))
-          .query('SELECT TaskID, TaskName FROM tblTasks WHERE TaskID = @taskId');
+          .query('SELECT TaskID, TaskName, DepId, proccessID, PredecessorID, DaysRequired FROM tblTasks WHERE TaskID = @taskId');
 
         if (taskCheck.recordset.length === 0) {
           return res.status(404).json({ error: 'Task not found' });
         }
 
+        const task = taskCheck.recordset[0];
+        let newPlannedDate = null;
+
+        // First, check if task has a predecessor
+        if (task.PredecessorID) {
+          const predecessorResult = await pool.request()
+            .input('predecessorId', sql.Int, task.PredecessorID)
+            .query(`
+              SELECT PlannedDate, DaysRequired
+              FROM tblTasks
+              WHERE TaskID = @predecessorId
+            `);
+
+          if (predecessorResult.recordset.length > 0) {
+            const predTask = predecessorResult.recordset[0];
+            const predDate = new Date(predTask.PlannedDate);
+            const predDays = predTask.DaysRequired || 0;
+            predDate.setDate(predDate.getDate() + predDays);
+            newPlannedDate = predDate.toISOString().split('T')[0];
+          }
+        }
+
+        // If no predecessor, get the last task in the entire process
+        if (!newPlannedDate) {
+          const lastTaskResult = await pool.request()
+            .input('ProcessID', sql.Int, task.proccessID)
+            .input('currentTaskId', sql.Int, parseInt(taskId))
+            .query(`
+              SELECT TOP 1 PlannedDate, DaysRequired
+              FROM tblTasks
+              WHERE proccessID = @ProcessID 
+                AND TaskID != @currentTaskId AND PlannedDate IS NOT NULL
+              ORDER BY PlannedDate DESC
+            `);
+
+          if (lastTaskResult.recordset.length > 0) {
+            const lastTask = lastTaskResult.recordset[0];
+            const lastPlannedDate = new Date(lastTask.PlannedDate);
+            const lastDaysRequired = lastTask.DaysRequired || 0;
+            lastPlannedDate.setDate(lastPlannedDate.getDate() + lastDaysRequired);
+            newPlannedDate = lastPlannedDate.toISOString().split('T')[0];
+          } else {
+            // If no other tasks, set to today + DaysRequired
+            const today = new Date();
+            today.setDate(today.getDate() + (task.DaysRequired || 3));
+            newPlannedDate = today.toISOString().split('T')[0];
+          }
+        }
+
+        // Remove the link and update PlannedDate, set IsTaskLinked to 0
         await pool.request()
           .input('taskId', sql.Int, parseInt(taskId))
+          .input('newPlannedDate', sql.Date, newPlannedDate)
           .query(`
             UPDATE tblTasks
-            SET linkTasks = NULL
+            SET linkTasks = NULL, PlannedDate = @newPlannedDate, IsTaskLinked = 0
             WHERE TaskID = @taskId
           `);
 
-        res.json({ success: true, message: 'Link removed', taskId: parseInt(taskId) });
+        res.json({ 
+          success: true, 
+          message: 'Link removed', 
+          taskId: parseInt(taskId),
+          newPlannedDate: newPlannedDate
+        });
       } catch (err) {
         console.error('Error unlinking task:', err);
         res.status(500).json({ error: 'Failed to remove link' });
