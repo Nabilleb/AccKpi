@@ -1529,10 +1529,10 @@ app.post('/add-task', ensureAuthenticated, async (req, res) => {
       }
     }
 
-    res.redirect(`/add-task?processId=${ProcessID}`);
+    res.json({ success: true, message: 'Task created successfully', taskId: newTaskId });
   } catch (err) {
     console.error('❌ Error adding task:', err);
-    res.status(500).send('Failed to add task');
+    res.status(500).json({ error: 'Failed to add task', details: err.message });
   }
 });
 

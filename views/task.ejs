@@ -900,7 +900,7 @@
     </div>
   <% } %>
 
-  <form id="taskForm" action="/add-task" method="POST" class="form-grid">
+  <form id="taskForm" class="form-grid">
     <input type="hidden" name="ProcessID" value="<%= workflowDetails.ProcessID %>">
     
     <div class="workflow-info">
@@ -1102,8 +1102,10 @@ function setupFormValidation() {
     });
   });
   
-  // Form submission validation
-  form.addEventListener('submit', function(e) {
+  // Form submission validation with AJAX
+  form.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
     let isValid = true;
     inputs.forEach(input => {
       if (!validateField(input)) {
@@ -1112,7 +1114,6 @@ function setupFormValidation() {
     });
     
     if (!isValid) {
-      e.preventDefault();
       showToast('Please fix the errors in the form', true);
       
       // Scroll to first error
@@ -1120,16 +1121,57 @@ function setupFormValidation() {
       if (firstError) {
         firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
-    } else {
-      // Set IsFixed value: 1 if checked, 0 if unchecked
-      const isFixedCheck = document.getElementById('IsFixed-check');
-      const isFixedHidden = document.getElementById('IsFixed');
-      isFixedHidden.value = isFixedCheck.checked ? 1 : 0;
+      return;
+    }
+    
+    // Set IsFixed value: 1 if checked, 0 if unchecked
+    const isFixedCheck = document.getElementById('IsFixed-check');
+    const isFixedHidden = document.getElementById('IsFixed');
+    isFixedHidden.value = isFixedCheck.checked ? 1 : 0;
+    
+    // Show loading state on submit button
+    const submitBtn = document.getElementById('submit-btn');
+    const originalBtnText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
+    
+    try {
+      // Convert form data to JSON
+      const formData = new FormData(form);
+      const data = Object.fromEntries(formData);
       
-      // Show loading state on submit button
-      const submitBtn = document.getElementById('submit-btn');
-      submitBtn.disabled = true;
-      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
+      // Send POST request
+      const response = await fetch('/add-task', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to create task');
+      }
+      
+      // Success - show message and reset form
+      showToast('Task created successfully!', false);
+      form.reset();
+      
+      // Reset IsFixed checkbox
+      document.getElementById('IsFixed-check').checked = false;
+      document.getElementById('IsFixed').value = 0;
+      
+      // Reload tasks after short delay
+      setTimeout(() => {
+        loadTasks();
+      }, 500);
+      
+    } catch (error) {
+      console.error('Error:', error);
+      showToast('Error: ' + error.message, true);
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = originalBtnText;
     }
   });
 }
