@@ -1300,25 +1300,6 @@ app.post('/add-task', ensureAuthenticated, async (req, res) => {
       const now = new Date();
       now.setDate(now.getDate() + DaysRequiredInserted);
       PlannedDateToInsert = now.toISOString().split('T')[0];
-    } else if (req.body.linkTasks) {
-      // If task is linked to another task, get that task's date + its days
-      const linkedTaskId = parseInt(req.body.linkTasks);
-      const linkedResult = await poolConn.request()
-        .input('linkedTaskId', sql.Int, linkedTaskId)
-        .query(`
-          SELECT PlannedDate, DaysRequired
-          FROM tblTasks
-          WHERE TaskID = @linkedTaskId
-        `);
-
-      const linkedDateStr = linkedResult.recordset[0]?.PlannedDate;
-      const linkedDays = linkedResult.recordset[0]?.DaysRequired ?? 0;
-
-      if (linkedDateStr) {
-        const linkedDate = new Date(linkedDateStr);
-        linkedDate.setDate(linkedDate.getDate() + linkedDays);
-        PlannedDateToInsert = linkedDate.toISOString().split('T')[0];
-      }
     } else if (PredecessorTaskID) {
       // If predecessor is set, schedule after it
       const predResult = await poolConn.request()
