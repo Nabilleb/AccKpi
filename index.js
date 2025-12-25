@@ -2980,62 +2980,71 @@ const delay = Math.max(0, Math.ceil((finishedDateOnly - plannedDateOnly) / (1000
       .input('taskId', taskId)
       .query(`UPDATE tblTasks SET IsTaskSelected = 0 WHERE TaskID = @taskId`);
 
-    // Select the next task in this department and workflow
-    const nextTaskResult = await pool.request()
-      .input('depId', DepId)
+    // 🔗 ACTIVATE TASKS THAT ARE LINKED TO THIS FINISHED TASK
+    // Find any tasks in other departments that have linkTasks = finishedTaskId
+    const linkedTasksResult = await pool.request()
+      .input('finishedTaskId', parseInt(taskId))
       .input('workFlowHdrId', workFlowHdrId)
       .query(`
-        SELECT TOP 1 t.TaskID, t.DaysRequired
+        SELECT t.TaskID, t.DepId, t.PredecessorID
         FROM tblTasks t
         JOIN tblWorkflowDtl w ON t.TaskID = w.TaskID
-        WHERE t.DepId = @depId
+        WHERE t.linkTasks = @finishedTaskId
           AND w.workFlowHdrId = @workFlowHdrId
-          AND t.IsTaskSelected = 0
-          AND w.TimeFinished IS NULL
-        ORDER BY t.Priority ASC, t.TaskID ASC
       `);
 
-    if (nextTaskResult.recordset.length > 0) {
-      const nextTaskId = nextTaskResult.recordset[0].TaskID;
-      const nextTaskDays = nextTaskResult.recordset[0].DaysRequired || 1;
+    // For each task linked to this finished task
+    for (const linkedTask of linkedTasksResult.recordset) {
+      // Check if this linked task has a predecessor
+      if (linkedTask.PredecessorID) {
+        // Check if the predecessor is finished
+        const predCheck = await pool.request()
+          .input('predId', linkedTask.PredecessorID)
+          .input('workFlowHdrId', workFlowHdrId)
+          .query(`
+            SELECT w.TimeFinished
+            FROM tblTasks t
+            JOIN tblWorkflowDtl w ON t.TaskID = w.TaskID
+            WHERE t.TaskID = @predId AND w.workFlowHdrId = @workFlowHdrId
+          `);
 
-      const nextPlanned = new Date(finished);
-      nextPlanned.setDate(nextPlanned.getDate() + 1 + nextTaskDays);
-
-
-      // Update any linked tasks
-      const linkedTasks = await pool.request()
-        .input('linkTo', nextTaskId)
-        .query(`SELECT TaskID FROM tblTasks WHERE linkTasks = @linkTo`);
-
-      for (const row of linkedTasks.recordset) {
+        // Only activate linked task if its predecessor is finished
+        if (predCheck.recordset.length > 0 && predCheck.recordset[0].TimeFinished) {
+          await pool.request()
+            .input('linkedTaskId', linkedTask.TaskID)
+            .query(`UPDATE tblTasks SET IsTaskSelected = 1 WHERE TaskID = @linkedTaskId`);
+        }
+      } else {
+        // No predecessor—activate the linked task immediately
         await pool.request()
-          .input('plannedDate', nextPlanned.toISOString().split('T')[0])
-          .input('linkedId', row.TaskID)
-          .query(`UPDATE tblTasks SET PlannedDate = @plannedDate WHERE TaskID = @linkedId`);
+          .input('linkedTaskId', linkedTask.TaskID)
+          .query(`UPDATE tblTasks SET IsTaskSelected = 1 WHERE TaskID = @linkedTaskId`);
       }
     }
 
-    // Mark the next task in this department and workflow as selected
-    await pool.request()
-      .input('depId', DepId)
-      .input('workFlowHdrId', workFlowHdrId)
-      .query(`
-        ;WITH NextTask AS (
-          SELECT TOP 1 t.TaskID
+    // 🚫 Check if THIS task is a linked task (has linkTasks value)
+    const currentTaskCheck = await pool.request()
+      .input('taskId', parseInt(taskId))
+      .query(`SELECT linkTasks FROM tblTasks WHERE TaskID = @taskId`);
+    
+    const linkTaskId = currentTaskCheck.recordset[0]?.linkTasks;
+    const currentTaskIsLinked = linkTaskId !== null && linkTaskId !== undefined;
+
+    // If this task is linked, check if the task it depends on is finished
+    let linkedDependencyFinished = true;
+    if (currentTaskIsLinked) {
+      const linkedDepCheck = await pool.request()
+        .input('linkedTaskId', linkTaskId)
+        .input('workFlowHdrId', workFlowHdrId)
+        .query(`
+          SELECT w.TimeFinished
           FROM tblTasks t
           JOIN tblWorkflowDtl w ON t.TaskID = w.TaskID
-          WHERE t.DepId = @depId
-            AND w.workFlowHdrId = @workFlowHdrId
-            AND t.IsTaskSelected = 0
-            AND w.TimeFinished IS NULL
-          ORDER BY t.Priority ASC, t.PlannedDate ASC
-        )
-        UPDATE tblTasks
-        SET IsTaskSelected = 1
-        FROM tblTasks t
-        JOIN NextTask nt ON t.TaskID = nt.TaskID
-      `);
+          WHERE t.TaskID = @linkedTaskId AND w.workFlowHdrId = @workFlowHdrId
+        `);
+      
+      linkedDependencyFinished = linkedDepCheck.recordset.length > 0 && linkedDepCheck.recordset[0].TimeFinished !== null;
+    }
 
     // Check if all tasks in this department and workflow are finished
     const remaining = await pool.request()
@@ -3049,9 +3058,104 @@ const delay = Math.max(0, Math.ceil((finishedDateOnly - plannedDateOnly) / (1000
           AND w.workFlowHdrId = @workFlowHdrId
           AND w.TimeFinished IS NULL
       `);
- 
-    if (remaining.recordset[0].Remaining === 0) {
-      // All tasks in this department are finished—activate the next department
+
+    // Only auto-select next task if this task is NOT a linked task OR its linked dependency is finished
+    if (!currentTaskIsLinked || linkedDependencyFinished) {
+      // 🔗 Check if all predecessor departments are finished
+      // Get current department's step order
+      const currentDeptStepResult = await pool.request()
+        .input('depId', DepId)
+        .input('processID', processID)
+        .query(`
+          SELECT StepOrder
+          FROM tblProcessDepartment
+          WHERE DepartmentID = @depId AND ProcessID = @processID
+        `);
+
+      const currentStepOrder = currentDeptStepResult.recordset[0]?.StepOrder;
+      let canAutoSelect = true;
+
+      // If not the first step, check if all previous departments are finished
+      if (currentStepOrder && currentStepOrder > 1) {
+        const predecessorDeptResult = await pool.request()
+          .input('processID', processID)
+          .input('currentStep', currentStepOrder)
+          .input('workFlowHdrId', workFlowHdrId)
+          .query(`
+            SELECT COUNT(*) AS UnfinishedCount
+            FROM tblTasks t
+            JOIN tblWorkflowDtl w ON t.TaskID = w.TaskID
+            JOIN tblProcessDepartment pd ON t.DepId = pd.DepartmentID
+            WHERE pd.ProcessID = @processID
+              AND pd.StepOrder < @currentStep
+              AND w.workFlowHdrId = @workFlowHdrId
+              AND w.TimeFinished IS NULL
+          `);
+
+        canAutoSelect = predecessorDeptResult.recordset[0].UnfinishedCount === 0;
+      }
+
+      // Select the next task in this department and workflow ONLY if predecessors are done
+      if (canAutoSelect) {
+        const nextTaskResult = await pool.request()
+          .input('depId', DepId)
+          .input('workFlowHdrId', workFlowHdrId)
+          .query(`
+            SELECT TOP 1 t.TaskID, t.DaysRequired
+            FROM tblTasks t
+            JOIN tblWorkflowDtl w ON t.TaskID = w.TaskID
+            WHERE t.DepId = @depId
+              AND w.workFlowHdrId = @workFlowHdrId
+              AND t.IsTaskSelected = 0
+              AND w.TimeFinished IS NULL
+            ORDER BY t.Priority ASC, t.TaskID ASC
+          `);
+
+        if (nextTaskResult.recordset.length > 0) {
+          const nextTaskId = nextTaskResult.recordset[0].TaskID;
+          const nextTaskDays = nextTaskResult.recordset[0].DaysRequired || 1;
+
+          const nextPlanned = new Date(finished);
+          nextPlanned.setDate(nextPlanned.getDate() + 1 + nextTaskDays);
+
+          // Update any linked tasks
+          const linkedTasks = await pool.request()
+            .input('linkTo', nextTaskId)
+            .query(`SELECT TaskID FROM tblTasks WHERE linkTasks = @linkTo`);
+
+          for (const row of linkedTasks.recordset) {
+            await pool.request()
+              .input('plannedDate', nextPlanned.toISOString().split('T')[0])
+              .input('linkedId', row.TaskID)
+              .query(`UPDATE tblTasks SET PlannedDate = @plannedDate WHERE TaskID = @linkedId`);
+          }
+        }
+
+        // Mark the next task in this department and workflow as selected
+        await pool.request()
+          .input('depId', DepId)
+          .input('workFlowHdrId', workFlowHdrId)
+          .query(`
+            ;WITH NextTask AS (
+              SELECT TOP 1 t.TaskID
+              FROM tblTasks t
+              JOIN tblWorkflowDtl w ON t.TaskID = w.TaskID
+              WHERE t.DepId = @depId
+                AND w.workFlowHdrId = @workFlowHdrId
+                AND t.IsTaskSelected = 0
+                AND w.TimeFinished IS NULL
+              ORDER BY t.Priority ASC, t.PlannedDate ASC
+            )
+            UPDATE tblTasks
+            SET IsTaskSelected = 1
+            FROM tblTasks t
+            JOIN NextTask nt ON t.TaskID = nt.TaskID
+          `);
+      }
+    }
+
+    if (remaining.recordset[0].Remaining === 0 && (!currentTaskIsLinked || linkedDependencyFinished)) {
+      // All tasks in this department are finished AND this task's dependency is not blocking
       const processInfo = await pool.request()
         .input('depId', DepId)
         .input('processID', processID)
@@ -3063,6 +3167,59 @@ const delay = Math.max(0, Math.ceil((finishedDateOnly - plannedDateOnly) / (1000
 
       if (processInfo.recordset.length > 0) {
         const { ProcessID, StepOrder } = processInfo.recordset[0];
+
+        // Get the NEXT department
+        const nextDeptInfoResult = await pool.request()
+          .input('processId', ProcessID)
+          .input('currentStep', StepOrder)
+          .query(`
+            SELECT DepartmentID
+            FROM tblProcessDepartment
+            WHERE ProcessID = @processId AND StepOrder = @currentStep + 1
+          `);
+
+        // If there's a next department, check its first task's linked dependency
+        if (nextDeptInfoResult.recordset.length > 0) {
+          const nextDepId = nextDeptInfoResult.recordset[0].DepartmentID;
+
+          // Get the FIRST task in the next department
+          const nextTaskResult = await pool.request()
+            .input('nextDepId', nextDepId)
+            .input('workFlowHdrId', workFlowHdrId)
+            .query(`
+              SELECT TOP 1 t.TaskID, t.linkTasks
+              FROM tblTasks t
+              JOIN tblWorkflowDtl w ON t.TaskID = w.TaskID
+              WHERE t.DepId = @nextDepId
+              AND w.workFlowHdrId = @workFlowHdrId
+              ORDER BY t.Priority ASC, t.TaskID ASC
+            `);
+
+          // If the next task has a linked dependency, check if it's finished
+          if (nextTaskResult.recordset.length > 0 && nextTaskResult.recordset[0].linkTasks) {
+            const nextTaskId = nextTaskResult.recordset[0].TaskID;
+            const linkedTaskId = nextTaskResult.recordset[0].linkTasks;
+            
+            // Check if the NEXT TASK ITSELF is finished, not just its linked dependency
+            const nextTaskFinishedCheck = await pool.request()
+              .input('nextTaskId', nextTaskId)
+              .input('workFlowHdrId', workFlowHdrId)
+              .query(`
+                SELECT w.TimeFinished
+                FROM tblWorkflowDtl w
+                WHERE w.TaskID = @nextTaskId AND w.workFlowHdrId = @workFlowHdrId
+              `);
+
+            console.log('🔗 Checking next task:', nextTaskId, 'is finished:', nextTaskFinishedCheck.recordset[0]?.TimeFinished);
+
+            // If the next task is NOT finished, don't proceed with department transition
+            if (nextTaskFinishedCheck.recordset.length === 0 || nextTaskFinishedCheck.recordset[0].TimeFinished === null) {
+              console.log('⛔ Blocking department transition - next task not finished yet');
+              res.sendStatus(200);
+              return;
+            }
+          }
+        }
 
         const nextDeptResult = await pool.request()
           .input('processId', ProcessID)
