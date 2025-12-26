@@ -401,12 +401,6 @@ app.get("/api/workFlowDashData", ensureAuthenticated, async (req, res) => {
 });
 
 
-
-
-
-
-
-
 app.get("/userpage/:hdrId", async (req, res) => {
   const hdrId = req.params.hdrId;
   const sessionUser = req.session.user;
@@ -2301,25 +2295,22 @@ app.post("/addUser", async (req, res) => {
 
   // Basic validation
   if (!usrID || !usrDesc || !usrPWD || !DepartmentID) {
-    return res.status(400).send("usrID, usrDesc, usrPWD, and DepartmentID are required.");
+    return res.status(400).json({ error: "usrID, usrDesc, usrPWD, and DepartmentID are required." });
   }
 
-  if (usrDesc.length > 40) return res.status(400).send("usrDesc exceeds 40 characters.");
-  if (usrEmail && usrEmail.length > 50) return res.status(400).send("usrEmail exceeds 50 characters.");
-  if (usrSignature && usrSignature.length > 100) return res.status(400).send("usrSignature exceeds 100 characters.");
+  if (usrDesc.length > 40) return res.status(400).json({ error: "usrDesc exceeds 40 characters." });
+  if (usrEmail && usrEmail.length > 50) return res.status(400).json({ error: "usrEmail exceeds 50 characters." });
+  if (usrSignature && usrSignature.length > 100) return res.status(400).json({ error: "usrSignature exceeds 100 characters." });
 
   const insertDate = new Date();
   const lastUpdate = new Date();
 
   try {
-    // Hash the password
-    const hashedPwd = await bcrypt.hash(usrPWD, 10);
-
-    // Insert user
+    // Insert user with plain password (no hashing for now)
     await pool.request()
       .input("usrID", sql.VarChar(10), usrID)
       .input("usrDesc", sql.VarChar(40), usrDesc)
-      .input("usrPWD", sql.VarChar(255), hashedPwd)
+      .input("usrPWD", sql.VarChar(255), usrPWD)
       .input("usrAdmin", sql.Bit, usrAdmin ? 1 : 0)
       .input("usrSTID", sql.SmallInt, usrSTID || null)
       .input("DepartmentID", sql.Int, parseInt(DepartmentID))
@@ -2344,10 +2335,10 @@ app.post("/addUser", async (req, res) => {
         )
       `);
 
-    res.status(201).send("User added successfully.");
+    res.status(201).json({ success: true, message: "User added successfully." });
   } catch (err) {
     console.error("Error inserting user:", err);
-    res.status(500).send("Failed to add user.");
+    res.status(500).json({ error: "Failed to add user." });
   }
 });
 
@@ -2653,6 +2644,17 @@ app.put('/api/link-task/:taskId/:linkedTaskId', async (req, res) => {
         WHERE TaskID = @taskId
       `);
 
+    // Update the hasLinkedFrom column on the LINKED task (source/dependency)
+    // hasLinkedFrom = the task that depends on this one (taskId)
+    await pool.request()
+      .input('taskId', sql.Int, parseInt(taskId))
+      .input('linkedTaskId', sql.Int, parseInt(linkedTaskId))
+      .query(`
+        UPDATE tblTasks
+        SET hasLinkedFrom = @taskId
+        WHERE TaskID = @linkedTaskId
+      `);
+
     // Get the linked task's PlannedDate and DaysRequired to calculate new date for the CURRENT task
     const linkedTaskDetailsQuery = await pool.request()
       .input('linkedTaskId', sql.Int, parseInt(linkedTaskId))
@@ -2701,15 +2703,17 @@ app.put('/api/link-task/:taskId/:linkedTaskId', async (req, res) => {
     app.put('/api/unlink-task/:taskId', async (req, res) => {
       const taskId = req.params.taskId;
       try {
+        // Get the linkedTaskId before unlinking
         const taskCheck = await pool.request()
           .input('taskId', sql.Int, parseInt(taskId))
-          .query('SELECT TaskID, TaskName, DepId, proccessID, PredecessorID, DaysRequired FROM tblTasks WHERE TaskID = @taskId');
+          .query('SELECT TaskID, TaskName, DepId, proccessID, PredecessorID, DaysRequired, linkTasks FROM tblTasks WHERE TaskID = @taskId');
 
         if (taskCheck.recordset.length === 0) {
           return res.status(404).json({ error: 'Task not found' });
         }
 
         const task = taskCheck.recordset[0];
+        const linkedTaskId = task.linkTasks; // Get the task this one was linked to
         let newPlannedDate = null;
 
         // First, check if task has a predecessor
@@ -2767,6 +2771,17 @@ app.put('/api/link-task/:taskId/:linkedTaskId', async (req, res) => {
             SET linkTasks = NULL, PlannedDate = @newPlannedDate, IsTaskLinked = 0
             WHERE TaskID = @taskId
           `);
+
+        // Clear hasLinkedFrom on the linked task
+        if (linkedTaskId) {
+          await pool.request()
+            .input('linkedTaskId', sql.Int, linkedTaskId)
+            .query(`
+              UPDATE tblTasks
+              SET hasLinkedFrom = NULL
+              WHERE TaskID = @linkedTaskId
+            `);
+        }
 
         res.json({ 
           success: true, 
@@ -2980,46 +2995,28 @@ const delay = Math.max(0, Math.ceil((finishedDateOnly - plannedDateOnly) / (1000
       .input('taskId', taskId)
       .query(`UPDATE tblTasks SET IsTaskSelected = 0 WHERE TaskID = @taskId`);
 
-    // 🔗 ACTIVATE TASKS THAT ARE LINKED TO THIS FINISHED TASK
-    // Find any tasks in other departments that have linkTasks = finishedTaskId
+    // 🔗 ACTIVATE TASKS THAT DEPEND ON THIS FINISHED TASK
+    // Find any tasks that have linkTasks = finishedTaskId (tasks that depend on this task)
     const linkedTasksResult = await pool.request()
       .input('finishedTaskId', parseInt(taskId))
       .input('workFlowHdrId', workFlowHdrId)
       .query(`
-        SELECT t.TaskID, t.DepId, t.PredecessorID
+        SELECT t.TaskID, t.DepId, t.PredecessorID, t.linkTasks
         FROM tblTasks t
         JOIN tblWorkflowDtl w ON t.TaskID = w.TaskID
         WHERE t.linkTasks = @finishedTaskId
           AND w.workFlowHdrId = @workFlowHdrId
       `);
 
-    // For each task linked to this finished task
-    for (const linkedTask of linkedTasksResult.recordset) {
-      // Check if this linked task has a predecessor
-      if (linkedTask.PredecessorID) {
-        // Check if the predecessor is finished
-        const predCheck = await pool.request()
-          .input('predId', linkedTask.PredecessorID)
-          .input('workFlowHdrId', workFlowHdrId)
-          .query(`
-            SELECT w.TimeFinished
-            FROM tblTasks t
-            JOIN tblWorkflowDtl w ON t.TaskID = w.TaskID
-            WHERE t.TaskID = @predId AND w.workFlowHdrId = @workFlowHdrId
-          `);
+    console.log('Finished Task ID:', taskId);
+    console.log('Linked Tasks Found:', linkedTasksResult.recordset);
 
-        // Only activate linked task if its predecessor is finished
-        if (predCheck.recordset.length > 0 && predCheck.recordset[0].TimeFinished) {
-          await pool.request()
-            .input('linkedTaskId', linkedTask.TaskID)
-            .query(`UPDATE tblTasks SET IsTaskSelected = 1 WHERE TaskID = @linkedTaskId`);
-        }
-      } else {
-        // No predecessor—activate the linked task immediately
-        await pool.request()
-          .input('linkedTaskId', linkedTask.TaskID)
-          .query(`UPDATE tblTasks SET IsTaskSelected = 1 WHERE TaskID = @linkedTaskId`);
-      }
+    // For each task that depends on this finished task, activate it immediately
+    for (const linkedTask of linkedTasksResult.recordset) {
+      console.log('Activating linked task:', linkedTask.TaskID);
+      await pool.request()
+        .input('linkedTaskId', linkedTask.TaskID)
+        .query(`UPDATE tblTasks SET IsTaskSelected = 1 WHERE TaskID = @linkedTaskId`);
     }
 
     // 🚫 Check if THIS task is a linked task (has linkTasks value)
