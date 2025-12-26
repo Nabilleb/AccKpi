@@ -1185,25 +1185,30 @@ app.post("/addPackage", async (req, res) => {
     'file-upload': fileUpload
   } = req.body;
 
+  // Validate required fields
+  if (!packageName || !duration || !division || !trade) {
+    return res.status(400).json({ error: 'Missing required fields: packageName, duration, division, trade' });
+  }
+
   try {
     const result = await pool.request()
       .input('packageName', sql.VarChar, packageName)
-      .input('duration', sql.Int, duration)
+      .input('duration', sql.Int, parseInt(duration))
       .input('division', sql.VarChar, division)
       .input('selected', sql.Bit, selected ? 1 : 0)
       .input('standard', sql.Bit, standard ? 1 : 0)
       .input('trade', sql.VarChar, trade)
-      .input('fileUpload', sql.VarChar, fileUpload)
+      .input('fileUpload', sql.VarChar, fileUpload || null)
       .input('synched', sql.Bit, synched ? 1 : 0)
       .query(`
-        INSERT INTO tblPackages (PkgeName, Duration, Division, Selected, Standard, Trade, FilePath, IsSynched,insertDate)
+        INSERT INTO tblPackages (PkgeName, Duration, Division, Selected, Standard, Trade, FilePath, IsSynched, insertDate)
         VALUES (@packageName, @duration, @division, @selected, @standard, @trade, @fileUpload, @synched, GETDATE())
       `);
 
-    res.status(200).json({ message: 'Package added successfully' });
+    res.status(200).json({ success: true, message: 'Package added successfully' });
   } catch (error) {
     console.error('SQL Error:', error);
-    res.status(500).json({ error: 'Database insertion failed' });
+    res.status(500).json({ error: 'Database insertion failed: ' + error.message });
   }
 });
 
