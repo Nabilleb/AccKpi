@@ -980,6 +980,41 @@ app.get("/adminpage", ensureAuthenticated, async (req, res) => {
   }
 });
 
+app.get("/check-users", ensureAuthenticated, async (req, res) => {
+  const user = req.session.user;
+  const desc_user = req.session.user.name;
+  
+  if (!user || !user.usrAdmin) {
+    return res.status(403).send("Forbidden: Admins only");
+  }
+
+  try {
+    const request = pool.request();
+    const result = await request.query(`
+      SELECT 
+        tu.usrID,
+        tu.usrDesc,
+        tu.usrAdmin,
+        tu.usrEmail,
+        td.DeptName,
+        tu.DepartmentID,
+        tu.insertDate
+      FROM tblUsers tu
+      LEFT JOIN tblDepartments td ON tu.DepartmentID = td.DepartmentID
+      ORDER BY tu.usrID ASC
+    `);
+    
+    res.render("checkuser.ejs", {
+      user,
+      desc_user,
+      users: result.recordset
+    });
+  } catch (err) {
+    console.error("Error fetching users:", err);
+    res.status(500).send("Server error");
+  }
+});
+
 app.get("/process/:id/departments", async (req, res) => {
   const processId = req.params.id;
   try {
@@ -1772,6 +1807,48 @@ app.delete('/delete-task/:taskId', async (req, res) => {
   } catch (err) {
     console.error('DB error:', err);
     res.status(500).json({ error: 'Database connection failed' });
+  }
+});
+
+// DELETE: Delete User
+app.delete('/delete-user/:usrID', ensureAuthenticated, async (req, res) => {
+  const usrID = req.params.usrID;
+
+  // Check if user is admin
+  if (!req.user || !req.user.usrAdmin) {
+    return res.status(403).json({ success: false, message: 'Unauthorized: Admin access required' });
+  }
+
+  // Prevent self-deletion
+  if (req.user.usrID == usrID) {
+    return res.status(400).json({ success: false, message: 'Cannot delete your own account' });
+  }
+
+  try {
+    const pool = await sql.connect(dbConfig);
+    const transaction = new sql.Transaction(pool);
+
+    await transaction.begin();
+
+    try {
+      // Delete user from tblUsers
+      await transaction
+        .request()
+        .input('usrID', sql.Int, usrID)
+        .query('DELETE FROM tblUsers WHERE usrID = @usrID');
+
+      await transaction.commit();
+      res.json({ success: true, message: 'User deleted successfully' });
+
+    } catch (error) {
+      await transaction.rollback();
+      console.error('Transaction error:', error);
+      res.status(500).json({ success: false, message: 'Failed to delete user: ' + error.message });
+    }
+
+  } catch (err) {
+    console.error('DB error:', err);
+    res.status(500).json({ success: false, message: 'Database connection failed' });
   }
 });
 
