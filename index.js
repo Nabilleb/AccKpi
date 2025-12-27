@@ -1319,7 +1319,9 @@ app.post('/add-task', ensureAuthenticated, async (req, res) => {
     if (isFirstTask && StepOrder === 1 && !PredecessorTaskID) {
       IsTaskSelected = 1;
       const now = new Date();
-      now.setDate(now.getDate() + DaysRequiredInserted);
+      // If 0 days, task completes at midnight same day, so next task starts next day
+      const daysToAdd = DaysRequiredInserted === 0 ? 1 : DaysRequiredInserted;
+      now.setDate(now.getDate() + daysToAdd);
       PlannedDateToInsert = now.toISOString().split('T')[0];
     } else if (PredecessorTaskID) {
       // If predecessor is set, schedule after it
@@ -1336,7 +1338,9 @@ app.post('/add-task', ensureAuthenticated, async (req, res) => {
 
       if (predDateStr) {
         const predDate = new Date(predDateStr);
-        predDate.setDate(predDate.getDate() + predDays);
+        // If predecessor has 0 days, it completes at midnight, next task starts next day
+        const daysToAdd = predDays === 0 ? 1 : predDays;
+        predDate.setDate(predDate.getDate() + daysToAdd);
         PlannedDateToInsert = predDate.toISOString().split('T')[0];
       }
     } else {
@@ -1355,7 +1359,9 @@ app.post('/add-task', ensureAuthenticated, async (req, res) => {
 
       if (lastPlannedDateStr) {
         const lastPlannedDate = new Date(lastPlannedDateStr);
-        lastPlannedDate.setDate(lastPlannedDate.getDate() + lastDaysRequired);
+        // If last task has 0 days, it completes at midnight, next task starts next day
+        const daysToAdd = lastDaysRequired === 0 ? 1 : lastDaysRequired;
+        lastPlannedDate.setDate(lastPlannedDate.getDate() + daysToAdd);
         PlannedDateToInsert = lastPlannedDate.toISOString().split('T')[0];
       }
     }

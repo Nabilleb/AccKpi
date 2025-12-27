@@ -981,7 +981,7 @@
 
     <div class="form-group">
       <label for="DaysRequired" class="required-field">Estimated Days</label>
-      <input type="number" name="DaysRequired" id="DaysRequired" min="1" required placeholder="3"/>
+      <input type="number" name="DaysRequired" id="DaysRequired" min="0" required placeholder="0"/>
       <div class="validation-error" id="DaysRequired-error">Please enter a valid number of days</div>
     </div>
 
@@ -1251,7 +1251,7 @@ function validateField(field) {
   }
   
   // Specific validations
-  if (field.id === 'DaysRequired' && (isNaN(field.value) || field.value < 1)) {
+  if (field.id === 'DaysRequired' && (isNaN(field.value) || field.value < 0)) {
     showError(field, errorElement, 'Please enter a valid number of days');
     return false;
   }
@@ -1476,7 +1476,7 @@ function renderTasks(tasks) {
         <tr class="${isOverdue ? 'overdue-task' : ''}">
           <td>${task.TaskPlanned || '-'}</td>
           <td>${task.PlannedDate ? formatDate(task.PlannedDate) : '-'}</td>
-          <td>${task.DaysRequired || '-'}</td>
+          <td>${task.DaysRequired != null ? task.DaysRequired : '-'}</td>
           <td>${task.Priority ?? '-'}</td>
           <td>
             <select class="link-task-select" data-task-id="${task.TaskID}" data-dept-id="${task.DepId}" onchange="linkTaskToOther(this)">
