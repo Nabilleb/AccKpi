@@ -550,6 +550,33 @@
 
     .add-task-btn:hover {
       background-color: var(--primary-dark);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .edit-process-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.5rem 1rem;
+      background-color: #8b5cf6;
+      color: white;
+      border-radius: var(--radius-sm);
+      text-decoration: none;
+      font-size: 0.875rem;
+      transition: var(--transition);
+      border: none;
+      cursor: pointer;
+    }
+
+    .edit-process-btn:hover {
+      background-color: #7c3aed;
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .add-task-btn:hover {
+      background-color: var(--primary-dark);
       transform: translateY(-1px);
     }
 
@@ -1360,6 +1387,9 @@
           >
             Add Task
           </button>
+          <a href="/editProcess/<%= proc.NumberOfProccessID %>" class="edit-process-btn">
+            <i class="fas fa-edit"></i> Edit
+          </a>
         </td>
       </tr>
     <% }) %>

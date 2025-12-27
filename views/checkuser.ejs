@@ -343,15 +343,22 @@
                 </td>
                 <td><%= u.usrDesc %></td>
                 <td>
-                  <% if (u.usrAdmin) { %>
-                    <span class="badge badge-admin">
-                      <i class="fas fa-shield-alt"></i> Admin
-                    </span>
-                  <% } else { %>
-                    <span class="badge badge-user">
-                      <i class="fas fa-user"></i> User
-                    </span>
-                  <% } %>
+                  <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
+                    <% if (u.usrAdmin) { %>
+                      <span class="badge badge-admin">
+                        <i class="fas fa-shield-alt"></i> Admin
+                      </span>
+                    <% } else { %>
+                      <span class="badge badge-user">
+                        <i class="fas fa-user"></i> User
+                      </span>
+                    <% } %>
+                    <% if (u.IsSpecialUser) { %>
+                      <span class="badge" style="background-color: #f59e0b; color: white;">
+                        <i class="fas fa-star"></i> Special
+                      </span>
+                    <% } %>
+                  </div>
                 </td>
                 <td>
                   <% if (u.usrEmail) { %>

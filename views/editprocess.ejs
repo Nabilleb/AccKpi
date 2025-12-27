@@ -568,6 +568,48 @@
     const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
     const processId = <%= process.NumberOfProccessID %>;
     const hasWorkflows = <%= hasWorkflows ? 'true' : 'false' %>;
+    
+    // Store original department selections
+    const originalDeptIds = [<%= currentDeptIds.join(',') %>];
+
+    // Handle form submission - delete tasks only if workflow changed
+    document.getElementById('editProcessForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      // Get currently selected departments
+      const deptSelect = document.getElementById('Departments');
+      const selectedDeptIds = Array.from(deptSelect.selectedOptions).map(opt => parseInt(opt.value));
+      
+      // Check if departments (workflow) changed
+      const deptChanged = selectedDeptIds.length !== originalDeptIds.length || 
+                         !selectedDeptIds.every(id => originalDeptIds.includes(id));
+      
+      // If only name/description changed, submit directly
+      if (!deptChanged) {
+        document.getElementById('editProcessForm').submit();
+        return;
+      }
+      
+      // If departments changed, show confirmation and delete tasks
+      if (confirm('Changing the workflow departments will delete all existing tasks. Do you want to continue?')) {
+        try {
+          // Delete all tasks for this process
+          const deleteResponse = await fetch(`/deleteProcessTasks/${processId}`, {
+            method: 'DELETE'
+          });
+
+          if (deleteResponse.ok) {
+            // If tasks deleted successfully, submit the form
+            document.getElementById('editProcessForm').submit();
+          } else {
+            alert('Error deleting tasks. Please try again.');
+          }
+        } catch (error) {
+          console.error('Error:', error);
+          alert('Error deleting tasks. Please try again.');
+        }
+      }
+    });
 
     deleteBtn.addEventListener('click', () => {
       if (hasWorkflows) {

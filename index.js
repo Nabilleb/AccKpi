@@ -236,7 +236,7 @@ app.post("/login", loginLimiter, async (req, res) => {
       .input('username', sql.VarChar, username)
       .input('password', sql.VarChar, password)
       .query(`
-        SELECT usrID, usrDesc, DepartmentID, usrAdmin 
+        SELECT usrID, usrDesc, DepartmentID, usrAdmin, IsSpecialUser
         FROM tblUsers 
         WHERE LOWER(usrEmail) = @username AND usrPWD = @password
       `);
@@ -248,7 +248,8 @@ app.post("/login", loginLimiter, async (req, res) => {
         id: user.usrID,
         name: user.usrDesc,
         usrAdmin: user.usrAdmin,
-        DepartmentId: user.DepartmentID
+        DepartmentId: user.DepartmentID,
+        IsSpecialUser: user.IsSpecialUser
       };
 
       return res.json({
@@ -280,9 +281,10 @@ app.get("/workFlowDash",ensureAuthenticated ,async (req, res) => {
     const package1 = await pool.request().query("SELECT * FROM tblPackages");
     const process = await pool.request().query("SELECT * FROM tblProcess")
     const isAdmin = req.session.user.usrAdmin
+    const isSpecialUser = req.session.user.IsSpecialUser
  
 
-    res.render("workflowdashboard.ejs", { projects: projects.recordset, usrAdmin:isAdmin , packages: package1.recordset, processes:process.recordset });
+    res.render("workflowdashboard.ejs", { projects: projects.recordset, usrAdmin:isAdmin , packages: package1.recordset, processes:process.recordset, isSpecialUser: isSpecialUser });
   } catch (err) {
     console.error("Error loading projects:", err);
     res.status(500).send("Error loading dashboard");
@@ -998,7 +1000,8 @@ app.get("/check-users", ensureAuthenticated, async (req, res) => {
         tu.usrEmail,
         td.DeptName,
         tu.DepartmentID,
-        tu.insertDate
+        tu.insertDate,
+        tu.IsSpecialUser
       FROM tblUsers tu
       LEFT JOIN tblDepartments td ON tu.DepartmentID = td.DepartmentID
       ORDER BY tu.usrID ASC
@@ -2421,7 +2424,7 @@ app.post("/updateProcess/:processId", isAdmin, async (req, res) => {
       .input("processId", sql.Int, parseInt(processId))
       .query(`
         SELECT NumberOfProccessID FROM tblProcess
-        WHERE NumberOfProcessID = @processId
+        WHERE NumberOfProccessID = @processId
       `);
 
     if (processCheck.recordset.length === 0) {
@@ -2477,6 +2480,41 @@ app.post("/updateProcess/:processId", isAdmin, async (req, res) => {
 });
 
 // DELETE: Delete Process
+app.delete("/deleteProcessTasks/:processId", isAdmin, async (req, res) => {
+  const { processId } = req.params;
+
+  try {
+    // Delete from tblAlerts (references TaskID)
+    await pool.request()
+      .input("processId", sql.Int, parseInt(processId))
+      .query(`
+        DELETE FROM tblAlerts
+        WHERE TaskID IN (SELECT TaskID FROM tblTasks WHERE proccessID = @processId)
+      `);
+
+    // Delete from tblWorkflowDtl (references TaskID)
+    await pool.request()
+      .input("processId", sql.Int, parseInt(processId))
+      .query(`
+        DELETE FROM tblWorkflowDtl
+        WHERE TaskID IN (SELECT TaskID FROM tblTasks WHERE proccessID = @processId)
+      `);
+
+    // Delete from tblTasks (handle self-references: linkTasks, PredecessorID)
+    await pool.request()
+      .input("processId", sql.Int, parseInt(processId))
+      .query(`
+        DELETE FROM tblTasks
+        WHERE proccessID = @processId
+      `);
+
+    res.status(200).json({ message: "All tasks deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting process tasks:", error);
+    res.status(500).json({ error: "Failed to delete process tasks" });
+  }
+});
+
 app.delete("/deleteProcess/:processId", isAdmin, async (req, res) => {
   const { processId } = req.params;
 
