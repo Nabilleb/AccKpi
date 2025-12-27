@@ -45,40 +45,47 @@
       justify-content: space-between;
       align-items: center;
       background-color: var(--white);
-      padding: 1rem 2rem;
+      padding: 1.2rem 2rem;
       border-bottom: 3px solid var(--primary);
       box-shadow: var(--shadow);
       position: sticky;
       top: 0;
       z-index: 100;
+      gap: 2rem;
     }
 
     .logo {
       height: 50px;
+      flex-shrink: 0;
     }
 
     .header-right {
       display: flex;
       align-items: center;
-      gap: 1.5rem;
+      gap: 2rem;
+      margin-left: auto;
     }
 
     .user-info {
       font-weight: 500;
       color: var(--primary-dark);
+      white-space: nowrap;
+      font-size: 0.95rem;
     }
 
     .logout-btn {
       background-color: var(--primary);
       color: var(--white);
-      padding: 0.5rem 1.25rem;
+      padding: 0.6rem 1.3rem;
       text-decoration: none;
       border-radius: 6px;
       font-weight: 600;
       display: inline-flex;
       align-items: center;
-      gap: 0.5rem;
+      gap: 0.6rem;
       transition: var(--transition);
+      white-space: nowrap;
+      font-size: 0.9rem;
     }
 
     .logout-btn:hover {
@@ -99,51 +106,192 @@
     .process-table-container {
       background-color: var(--white);
       margin-bottom: 1.5rem;
-      padding: 1.5rem;
-      border-radius: 12px;
+      padding: 2rem;
+      border-radius: 16px;
       box-shadow: var(--shadow);
+      border-top: 5px solid var(--accent);
+    }
+
+    .quick-actions {
+      border-top: 5px solid var(--accent);
+    }
+
+    .process-table-container {
+      border-top: 5px solid #06b6d4;
+    }
+
+    .activity-table {
+      border-top: 5px solid #3b82f6;
     }
 
     .section-title {
-      margin: 0 0 1.25rem 0;
+      margin: 0 0 1.5rem 0;
       color: var(--primary-dark);
-      font-size: 1.25rem;
-      font-weight: 700;
+      font-size: 1.4rem;
+      font-weight: 800;
       display: flex;
       align-items: center;
-      gap: 0.5rem;
+      gap: 0.75rem;
+      position: relative;
+      padding-bottom: 0.75rem;
+    }
+
+    .section-title::after {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 50px;
+      height: 4px;
+      background: linear-gradient(90deg, var(--accent), var(--accent-dark));
+      border-radius: 2px;
     }
 
     .section-title i {
       color: var(--accent);
+      font-size: 1.5rem;
     }
 
     .actions-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 1rem;
-      margin-top: 1rem;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1.25rem;
+      margin-top: 1.5rem;
     }
 
     .action-btn {
-      background-color: var(--accent);
+      background: linear-gradient(135deg, var(--accent), var(--accent-dark));
       color: var(--white);
-      padding: 1rem;
+      padding: 1.5rem 1.25rem;
       text-align: center;
       text-decoration: none;
-      border-radius: 8px;
+      border-radius: 12px;
       font-weight: 600;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 0.5rem;
+      gap: 0.75rem;
       transition: var(--transition);
+      position: relative;
+      overflow: hidden;
+      border: 2px solid transparent;
+      box-shadow: 0 4px 15px rgba(0, 122, 204, 0.2);
+    }
+
+    .action-btn::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.15);
+      transition: left 0.4s ease;
+      z-index: 0;
+    }
+
+    .action-btn:hover::before {
+      left: 100%;
+    }
+
+    .action-btn i {
+      font-size: 2.2rem;
+      transition: var(--transition);
+      position: relative;
+      z-index: 1;
+    }
+
+    .action-btn .btn-label {
+      font-size: 1rem;
+      font-weight: 700;
+      position: relative;
+      z-index: 1;
+      letter-spacing: 0.3px;
+    }
+
+    .action-btn .btn-subtitle {
+      font-size: 0.75rem;
+      opacity: 0.85;
+      font-weight: 400;
+      position: relative;
+      z-index: 1;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
 
     .action-btn:hover {
-      background-color: var(--accent-dark);
-      transform: translateY(-2px);
-      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+      transform: translateY(-6px);
+      box-shadow: 0 10px 25px rgba(0, 122, 204, 0.35);
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .action-btn:hover i {
+      transform: scale(1.15) rotate(5deg);
+    }
+
+    /* Color variants for different action types */
+    .action-package {
+      background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+      box-shadow: 0 4px 15px rgba(139, 92, 246, 0.2);
+    }
+
+    .action-package:hover {
+      box-shadow: 0 10px 25px rgba(139, 92, 246, 0.35);
+    }
+
+    .action-process {
+      background: linear-gradient(135deg, #06b6d4, #0891b2);
+      box-shadow: 0 4px 15px rgba(6, 182, 212, 0.2);
+    }
+
+    .action-process:hover {
+      box-shadow: 0 10px 25px rgba(6, 182, 212, 0.35);
+    }
+
+    .action-department {
+      background: linear-gradient(135deg, #10b981, #059669);
+      box-shadow: 0 4px 15px rgba(16, 185, 129, 0.2);
+    }
+
+    .action-department:hover {
+      box-shadow: 0 10px 25px rgba(16, 185, 129, 0.35);
+    }
+
+    .action-user {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      box-shadow: 0 4px 15px rgba(245, 158, 11, 0.2);
+    }
+
+    .action-user:hover {
+      box-shadow: 0 10px 25px rgba(245, 158, 11, 0.35);
+    }
+
+    .action-view-users {
+      background: linear-gradient(135deg, #ec4899, #db2777);
+      box-shadow: 0 4px 15px rgba(236, 72, 153, 0.2);
+    }
+
+    .action-view-users:hover {
+      box-shadow: 0 10px 25px rgba(236, 72, 153, 0.35);
+    }
+
+    .action-workflow {
+      background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+      box-shadow: 0 4px 15px rgba(59, 130, 246, 0.2);
+    }
+
+    .action-workflow:hover {
+      box-shadow: 0 10px 25px rgba(59, 130, 246, 0.35);
+    }
+
+    .action-project {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      box-shadow: 0 4px 15px rgba(239, 68, 68, 0.2);
+    }
+
+    .action-project:hover {
+      box-shadow: 0 10px 25px rgba(239, 68, 68, 0.35);
     }
 
     .package-info {
@@ -186,45 +334,51 @@
     .process-table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 1rem;
+      margin-top: 1.5rem;
     }
 
     .process-table th {
-      background-color: var(--primary-light);
+      background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
       color: var(--primary-dark);
-      font-weight: 600;
-      padding: 0.75rem 1rem;
+      font-weight: 700;
+      padding: 1rem;
       text-align: left;
-      border-bottom: 2px solid var(--primary);
+      border-bottom: 3px solid var(--accent);
       cursor: pointer;
       transition: var(--transition);
+      font-size: 0.95rem;
+      letter-spacing: 0.5px;
     }
 
     .process-table th:hover {
-      background-color: rgba(0, 91, 171, 0.15);
+      background: linear-gradient(135deg, #e0f2fe, #cffafe);
     }
 
     .process-table th.sort-asc::after {
       content: " ↑";
       font-size: 0.8em;
+      color: var(--accent);
     }
 
     .process-table th.sort-desc::after {
       content: " ↓";
       font-size: 0.8em;
+      color: var(--accent);
     }
 
     .process-table td {
-      padding: 0.75rem 1rem;
-      border-bottom: 1px solid var(--border);
+      padding: 1rem;
+      border-bottom: 1px solid #f0f0f0;
     }
 
     .process-table tbody tr {
       cursor: pointer;
+      transition: var(--transition);
     }
 
     .process-table tbody tr:hover {
-      background-color: rgba(0, 91, 171, 0.1);
+      background: linear-gradient(90deg, transparent, rgba(0, 122, 204, 0.05), transparent);
+      box-shadow: inset 0 2px 8px rgba(0, 122, 204, 0.08);
     }
 
     .process-id {
@@ -242,75 +396,86 @@
     }
 
     .view-process-btn {
-      background-color: var(--primary);
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
       color: white;
       border: none;
-      padding: 0.5rem 1rem;
-      border-radius: 4px;
+      padding: 0.6rem 1.2rem;
+      border-radius: 8px;
       cursor: pointer;
-      font-weight: 500;
+      font-weight: 600;
       display: inline-flex;
       align-items: center;
-      gap: 0.5rem;
+      gap: 0.6rem;
       transition: var(--transition);
+      font-size: 0.9rem;
+      box-shadow: 0 2px 8px rgba(0, 91, 171, 0.2);
     }
 
     .view-process-btn:hover {
-      background-color: var(--primary-dark);
-      transform: translateY(-1px);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(0, 91, 171, 0.3);
     }
 
     /* Activity Table */
     .activity-table table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 1rem;
+      margin-top: 1.5rem;
     }
 
     .activity-table th {
-      background-color: var(--primary-light);
+      background: linear-gradient(135deg, #eff6ff, #dbeafe);
       color: var(--primary-dark);
-      font-weight: 600;
-      padding: 0.75rem 1rem;
+      font-weight: 700;
+      padding: 1rem;
       text-align: left;
-      border-bottom: 2px solid var(--primary);
+      border-bottom: 3px solid #3b82f6;
       cursor: pointer;
+      transition: var(--transition);
+      font-size: 0.95rem;
+      letter-spacing: 0.5px;
     }
 
     .activity-table th:hover {
-      background-color: rgba(0, 91, 171, 0.15);
+      background: linear-gradient(135deg, #dbeafe, #bfdbfe);
     }
 
     .activity-table td {
-      padding: 0.75rem 1rem;
-      border-bottom: 1px solid var(--border);
+      padding: 1rem;
+      border-bottom: 1px solid #f0f0f0;
     }
 
     .activity-table tr:hover {
-      background-color: rgba(0, 91, 171, 0.05);
+      background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.05), transparent);
+      box-shadow: inset 0 2px 8px rgba(59, 130, 246, 0.08);
     }
 
     .status-badge {
       display: inline-block;
-      padding: 0.25rem 0.75rem;
-      border-radius: 999px;
-      font-size: 0.75rem;
-      font-weight: 600;
+      padding: 0.35rem 1rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
 
     .status-pending {
-      background-color: rgba(255, 193, 7, 0.1);
-      color: var(--warning);
+      background: linear-gradient(135deg, rgba(255, 193, 7, 0.15), rgba(255, 193, 7, 0.1));
+      color: #d97706;
+      border: 1px solid rgba(255, 193, 7, 0.3);
     }
 
     .status-on-time {
-      background-color: rgba(40, 167, 69, 0.1);
-      color: var(--success);
+      background: linear-gradient(135deg, rgba(40, 167, 69, 0.15), rgba(40, 167, 69, 0.1));
+      color: #059669;
+      border: 1px solid rgba(40, 167, 69, 0.3);
     }
 
     .status-delayed {
-      background-color: rgba(220, 53, 69, 0.1);
-      color: var(--danger);
+      background: linear-gradient(135deg, rgba(220, 53, 69, 0.15), rgba(220, 53, 69, 0.1));
+      color: #dc2626;
+      border: 1px solid rgba(220, 53, 69, 0.3);
     }
 
     .action-buttons {
@@ -320,44 +485,48 @@
 
     .edit-btn, .delete-btn, .task-btn {
       border: none;
-      padding: 0.5rem 1rem;
-      border-radius: 4px;
+      padding: 0.6rem 1.2rem;
+      border-radius: 8px;
       cursor: pointer;
-      font-weight: 500;
+      font-weight: 600;
       display: inline-flex;
       align-items: center;
-      gap: 0.5rem;
+      gap: 0.6rem;
       transition: var(--transition);
+      font-size: 0.9rem;
     }
 
     .edit-btn {
-      background-color: var(--primary);
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
       color: white;
+      box-shadow: 0 2px 8px rgba(0, 91, 171, 0.2);
     }
 
     .edit-btn:hover {
-      background-color: var(--primary-dark);
-      transform: translateY(-1px);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(0, 91, 171, 0.3);
     }
 
     .task-btn {
-      background-color: var(--primary);
+      background: linear-gradient(135deg, #8b5cf6, #7c3aed);
       color: white;
+      box-shadow: 0 2px 8px rgba(139, 92, 246, 0.2);
     }
 
     .task-btn:hover {
-      background-color: var(--primary-dark);
-      transform: translateY(-1px);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(139, 92, 246, 0.3);
     }
 
     .delete-btn {
-      background-color: var(--danger);
+      background: linear-gradient(135deg, #ef4444, #dc2626);
       color: white;
+      box-shadow: 0 2px 8px rgba(239, 68, 68, 0.2);
     }
 
     .delete-btn:hover {
-      background-color: #c82333;
-      transform: translateY(-1px);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(239, 68, 68, 0.3);
     }
 
     /* Process Flow Visualization */
@@ -433,29 +602,47 @@
     .filters-container {
       display: flex;
       gap: 1rem;
-      margin-bottom: 1rem;
+      margin-bottom: 1.5rem;
       flex-wrap: wrap;
+      padding: 1rem;
+      background: linear-gradient(135deg, #f8f9fa, #f0f1f3);
+      border-radius: 10px;
+      border: 1px solid var(--border);
     }
 
     .filter-group {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
+      gap: 0.75rem;
     }
 
     .filter-label {
       font-size: 0.9rem;
       color: var(--text-light);
-      font-weight: 500;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
     }
 
     .filter-select, #taskSearchInput {
-      padding: 0.5rem;
-      border: 1px solid var(--border);
-      border-radius: 4px;
+      padding: 0.7rem 1rem;
+      border: 2px solid var(--border);
+      border-radius: 8px;
       background-color: var(--white);
       font-size: 0.9rem;
       min-width: 150px;
+      transition: var(--transition);
+      font-weight: 500;
+    }
+
+    .filter-select:hover, #taskSearchInput:hover {
+      border-color: var(--accent);
+    }
+
+    .filter-select:focus, #taskSearchInput:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(0, 122, 204, 0.1);
     }
 
     #taskSearchInput {
@@ -612,12 +799,10 @@
   <header class="dashboard-header">
     <img src="/images/accNewLog.webp" alt="Company Logo" class="logo" />
     <div class="header-right">
-      <p class="user-info">welcome <%=desc_user %> (admin)</p>
-      <div> 
-        <a href="/logout" class="logout-btn">
-          <i class="fas fa-sign-out-alt"></i> Log out
-        </a>
-      </div>
+      <p class="user-info">Welcome <%=desc_user %> (Admin)</p>
+      <a href="/logout" class="logout-btn">
+        <i class="fas fa-sign-out-alt"></i> Log out
+      </a>
     </div>
   </header>
 
@@ -625,13 +810,41 @@
     <section class="quick-actions">
       <h3 class="section-title"><i class="fas fa-bolt"></i> Quick Actions</h3>
       <div class="actions-grid">
-        <a href="/addPackage" class="action-btn"><i class="fas fa-box-open"></i> Add Package</a>
-          <a href="/addProcess" class="action-btn"><i class="fas fa-cogs"></i> Add Process</a>
-          <a href="/add-department" class="action-btn"><i class="fas fa-sitemap"></i> Add Department</a>
-        <a href="/addUser" class="action-btn"><i class="fas fa-user-plus"></i> Add User</a>
-        <a href="/check-users" class="action-btn"><i class="fas fa-users"></i> View Users</a>
-        <a href="/workFlowDash" class="action-btn"><i class="fas fa-tasks"></i> Add Workflow</a>
-        <a href="/addProject" class="action-btn"><i class="fas fa-project-diagram"></i> Add Project</a>
+        <a href="/addPackage" class="action-btn action-package" title="Create a new package">
+          <i class="fas fa-box-open"></i>
+          <span class="btn-label">Add Package</span>
+          <span class="btn-subtitle">New procurement</span>
+        </a>
+        <a href="/addProcess" class="action-btn action-process" title="Setup a new process">
+          <i class="fas fa-cogs"></i>
+          <span class="btn-label">Add Process</span>
+          <span class="btn-subtitle">Define workflow</span>
+        </a>
+        <a href="/add-department" class="action-btn action-department" title="Create a new department">
+          <i class="fas fa-sitemap"></i>
+          <span class="btn-label">Add Department</span>
+          <span class="btn-subtitle">Organization</span>
+        </a>
+        <a href="/addUser" class="action-btn action-user" title="Invite a new user">
+          <i class="fas fa-user-plus"></i>
+          <span class="btn-label">Add User</span>
+          <span class="btn-subtitle">Team member</span>
+        </a>
+        <a href="/check-users" class="action-btn action-view-users" title="View all users">
+          <i class="fas fa-users"></i>
+          <span class="btn-label">View Users</span>
+          <span class="btn-subtitle">User directory</span>
+        </a>
+        <a href="/workFlowDash" class="action-btn action-workflow" title="Create a new workflow">
+          <i class="fas fa-tasks"></i>
+          <span class="btn-label">Add Workflow</span>
+          <span class="btn-subtitle">Task management</span>
+        </a>
+        <a href="/addProject" class="action-btn action-project" title="Start a new project">
+          <i class="fas fa-project-diagram"></i>
+          <span class="btn-label">Add Project</span>
+          <span class="btn-subtitle">New initiative</span>
+        </a>
       </div>
     </section>
     
