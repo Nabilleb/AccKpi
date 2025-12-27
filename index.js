@@ -1614,37 +1614,159 @@ app.delete('/delete-task/:taskId', async (req, res) => {
   const taskId = parseInt(req.params.taskId);
 
   try {
-    const pool = await sql.connect();
-    const transaction = new sql.Transaction(pool);
+    const poolConn = await sql.connect();
+    const transaction = new sql.Transaction(poolConn);
     await transaction.begin();
 
     try {
       const request = transaction.request();
       request.input('TaskID', sql.Int, taskId);
 
+      // Get the task info before deletion (DepId, ProcessID, Priority)
+      const taskInfoResult = await request.query(`
+        SELECT DepId, proccessID AS ProcessID, Priority
+        FROM tblTasks
+        WHERE TaskID = @TaskID
+      `);
+
+      if (taskInfoResult.recordset.length === 0) {
+        await transaction.rollback();
+        return res.status(404).json({ error: 'Task not found' });
+      }
+
+      const { DepId, ProcessID } = taskInfoResult.recordset[0];
+
+      // Update tasks that depend on this task
       await request.query(`
         UPDATE tblTasks
         SET PredecessorID = NULL
         WHERE PredecessorID = @TaskID
       `);
 
+      // Delete workflow details
       await request.query(`
         DELETE FROM tblWorkflowDtl
         WHERE TaskID = @TaskID
       `);
 
+      // Delete the task
       await request.query(`
         DELETE FROM tblTasks
         WHERE TaskID = @TaskID
       `);
 
+      // Recalculate dates for remaining tasks in the same department
+      let getTasksReq = transaction.request();
+      getTasksReq.input('DepId', sql.Int, DepId);
+      getTasksReq.input('ProcessID', sql.Int, ProcessID);
+      const remainingTasks = await getTasksReq.query(`
+        SELECT TaskID, DaysRequired, Priority, PlannedDate
+        FROM tblTasks
+        WHERE DepId = @DepId AND proccessID = @ProcessID
+        ORDER BY Priority ASC
+      `);
+
+      if (remainingTasks.recordset.length > 0) {
+        // Recalculate priorities in ascending order
+        for (let i = 0; i < remainingTasks.recordset.length; i++) {
+          const task = remainingTasks.recordset[i];
+          const newPriority = i + 1;
+          
+          let priorityReq = transaction.request();
+          priorityReq.input('NewPriority', sql.Int, newPriority);
+          priorityReq.input('UpdateTaskID', sql.Int, task.TaskID);
+          await priorityReq.query(`
+            UPDATE tblTasks
+            SET Priority = @NewPriority
+            WHERE TaskID = @UpdateTaskID
+          `);
+        }
+
+        let currentStartDate = new Date();
+        
+        // Start from the first task
+        for (const task of remainingTasks.recordset) {
+          const taskDateStr = currentStartDate.toISOString().split('T')[0];
+          
+          let updateReq = transaction.request();
+          updateReq.input('NewPlannedDate', sql.Date, taskDateStr);
+          updateReq.input('UpdateTaskID', sql.Int, task.TaskID);
+          await updateReq.query(`
+            UPDATE tblTasks
+            SET PlannedDate = @NewPlannedDate
+            WHERE TaskID = @UpdateTaskID
+          `);
+
+          currentStartDate.setDate(currentStartDate.getDate() + task.DaysRequired);
+        }
+
+        // Get the StepOrder of the current department
+        let stepReq = transaction.request();
+        stepReq.input('DepId', sql.Int, DepId);
+        stepReq.input('ProcessID', sql.Int, ProcessID);
+        const stepResult = await stepReq.query(`
+          SELECT StepOrder
+          FROM tblProcessDepartment
+          WHERE DepartmentID = @DepId AND ProcessID = @ProcessID
+        `);
+
+        if (stepResult.recordset.length > 0) {
+          const currentStepOrder = stepResult.recordset[0].StepOrder;
+          let currentEndDate = new Date(currentStartDate);
+
+          // Cascade to subsequent departments
+          let deptReq = transaction.request();
+          deptReq.input('CurrentStepOrder', sql.Int, currentStepOrder);
+          deptReq.input('ProcessID', sql.Int, ProcessID);
+          const subsequentDepts = await deptReq.query(`
+            SELECT DepartmentID, StepOrder
+            FROM tblProcessDepartment
+            WHERE StepOrder > @CurrentStepOrder AND ProcessID = @ProcessID
+            ORDER BY StepOrder ASC
+          `);
+
+          for (const dept of subsequentDepts.recordset) {
+            let tasksReq = transaction.request();
+            tasksReq.input('DeptId', sql.Int, dept.DepartmentID);
+            tasksReq.input('ProcessID', sql.Int, ProcessID);
+            const tasksNextDept = await tasksReq.query(`
+              SELECT TaskID, DaysRequired, Priority
+              FROM tblTasks
+              WHERE DepId = @DeptId AND proccessID = @ProcessID
+              ORDER BY Priority ASC
+            `);
+
+            if (tasksNextDept.recordset.length > 0) {
+              let newDeptStartDate = new Date(currentEndDate);
+
+              for (const task of tasksNextDept.recordset) {
+                const taskDateStr = newDeptStartDate.toISOString().split('T')[0];
+                
+                let updateDeptReq = transaction.request();
+                updateDeptReq.input('NewPlannedDate', sql.Date, taskDateStr);
+                updateDeptReq.input('UpdateTaskID', sql.Int, task.TaskID);
+                await updateDeptReq.query(`
+                  UPDATE tblTasks
+                  SET PlannedDate = @NewPlannedDate
+                  WHERE TaskID = @UpdateTaskID
+                `);
+
+                newDeptStartDate.setDate(newDeptStartDate.getDate() + task.DaysRequired);
+              }
+
+              currentEndDate = new Date(newDeptStartDate);
+            }
+          }
+        }
+      }
+
       await transaction.commit();
-      res.status(200).json({ message: 'Task and its workflows deleted successfully' });
+      res.status(200).json({ message: 'Task deleted and dates recalculated successfully' });
 
     } catch (error) {
       await transaction.rollback();
       console.error('Transaction error:', error);
-      res.status(500).json({ error: 'Failed to delete task and workflow due to task dependency' });
+      res.status(500).json({ error: 'Failed to delete task: ' + error.message });
     }
 
   } catch (err) {

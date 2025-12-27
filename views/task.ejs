@@ -184,6 +184,48 @@
       }
       .btn-unlink i { font-size: 0.9rem; }
       .btn-unlink:hover { transform: translateY(-1px); box-shadow: 0 6px 14px rgba(239,68,68,0.06); }
+
+      /* Action buttons */
+      .action-buttons {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .btn-edit, .btn-delete {
+        padding: 6px 12px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 0.85rem;
+        transition: var(--transition);
+      }
+
+      .btn-edit {
+        background-color: #e0e7ff;
+        color: var(--primary);
+      }
+
+      .btn-edit:hover {
+        background-color: #c7d2fe;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(67, 97, 238, 0.2);
+      }
+
+      .btn-delete {
+        background-color: #fee2e2;
+        color: var(--danger);
+      }
+
+      .btn-delete:hover {
+        background-color: #fecaca;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+      }
+
       font-size: 1rem;
       transition: var(--transition);
       background: var(--white);
@@ -1031,9 +1073,10 @@ const sortFunctions = {
 };
 // DOM Content Loaded
 document.addEventListener('DOMContentLoaded', function() {
-    setTimeout(() => {
-    window.location.href = "/login";
-  }, 5 * 60 * 1000);
+    // Auto-logout after 5 minutes - disabled to prevent random redirects
+    // setTimeout(() => {
+    // window.location.href = "/login";
+  // }, 5 * 60 * 1000);
   // Initialize form validation
   setupFormValidation();
   
@@ -1066,12 +1109,12 @@ document.addEventListener('DOMContentLoaded', function() {
   // Load tasks for this process
   loadTasks();
   
-  // Set up periodic refresh (every 2 minutes)
-  setInterval(() => {
-    if (!isLoading && document.visibilityState === 'visible') {
-      loadTasks();
-    }
-  }, 120000);
+  // Auto-refresh disabled - was reloading every 2 minutes causing random page refreshes
+  // setInterval(() => {
+  //   if (!isLoading && document.visibilityState === 'visible') {
+  //     loadTasks();
+  //   }
+  // }, 120000);
   
   // Set up task search functionality
   document.getElementById('task-search').addEventListener('input', function() {
@@ -1087,6 +1130,14 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('refresh-tasks').addEventListener('click', function() {
     if (!isLoading) {
       loadTasks();
+    }
+  });
+
+  // Close modal when clicking outside
+  document.addEventListener('click', function(event) {
+    const modal = document.getElementById('edit-task-modal');
+    if (event.target === modal) {
+      closeEditModal();
     }
   });
 });
@@ -1407,6 +1458,7 @@ function renderTasks(tasks) {
                 <th>Priority</th>
                 <th>Link Task</th>
                 <th>Linked To</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>`;
@@ -1441,6 +1493,14 @@ function renderTasks(tasks) {
           <td class="linked-task" data-task-id="${task.TaskID}">
             ${linkedTaskObj ? linkedTaskObj.TaskName + ' (' + linkedTaskObj.DeptName + ')' : '-'}
             ${linkedTaskObj ? `<button class="btn-unlink" onclick="unlinkTask(${task.TaskID})" title="Remove link"><i class="fas fa-unlink"></i></button>` : ''}
+          </td>
+          <td class="action-buttons">
+            <button class="btn-edit" onclick="editTask(${task.TaskID})" title="Edit task">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button class="btn-delete" onclick="deleteTask(${task.TaskID})" title="Delete task">
+              <i class="fas fa-trash"></i>
+            </button>
           </td>
         </tr>`;
     });
@@ -1750,6 +1810,232 @@ document.head.appendChild(style);
 document.getElementById('TaskPlanned').addEventListener('input', function() {
   document.getElementById('TaskPlanned-counter').textContent = `${this.value.length}/255`;
 });
+
+// Character counter for edit modal
+document.getElementById('edit-description').addEventListener('input', function() {
+  const counter = document.getElementById('edit-description-counter');
+  if (counter) {
+    counter.textContent = `${this.value.length}/255`;
+  }
+});
+// Edit Task Function
+function editTask(taskId) {
+  const task = currentTasks.find(t => t.TaskID === taskId);
+  if (!task) return;
+
+  const modal = document.getElementById('edit-task-modal');
+  document.getElementById('edit-task-id').value = taskId;
+  const descriptionField = document.getElementById('edit-description');
+  descriptionField.value = task.TaskPlanned || '';
+  document.getElementById('edit-description-counter').textContent = `${descriptionField.value.length}/255`;
+  document.getElementById('edit-days').value = task.DaysRequired || '';
+  
+  modal.classList.add('show');
+}
+
+// Close Edit Modal
+function closeEditModal() {
+  const modal = document.getElementById('edit-task-modal');
+  modal.classList.remove('show');
+}
+
+// Save Task Changes
+async function saveTaskChanges() {
+  const taskId = document.getElementById('edit-task-id').value;
+  const description = document.getElementById('edit-description').value;
+  const daysRequired = parseInt(document.getElementById('edit-days').value) || 0;
+
+  if (!description) {
+    alert('Description is required');
+    return;
+  }
+
+  try {
+    const response = await fetch(`/update-task/${taskId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        TaskPlanned: description,
+        DaysRequired: daysRequired
+      })
+    });
+
+    if (response.ok) {
+      alert('Task updated successfully');
+      closeEditModal();
+      location.reload();
+    } else {
+      alert('Failed to update task');
+    }
+  } catch (error) {
+    console.error('Error:', error);
+    alert('Error updating task: ' + error.message);
+  }
+}
+
+// Delete Task Function
+function deleteTask(taskId) {
+  if (confirm('Are you sure you want to delete this task? This action cannot be undone.')) {
+    deleteTaskConfirmed(taskId);
+  }
+}
+
+// Confirmed Delete
+async function deleteTaskConfirmed(taskId) {
+  try {
+    const response = await fetch(`/delete-task/${taskId}`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' }
+    });
+
+    if (response.ok) {
+      showToast('Task deleted successfully!', false);
+      setTimeout(() => {
+        location.reload();
+      }, 1500);
+    } else {
+      showToast('Failed to delete task', true);
+    }
+  } catch (error) {
+    console.error('Error:', error);
+    showToast('Error deleting task: ' + error.message, true);
+  }
+}
 </script>
+
+<!-- Edit Task Modal -->
+<div id="edit-task-modal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>Edit Task</h2>
+      <button class="modal-close" onclick="closeEditModal()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="edit-task-id">
+      
+      <div class="form-group">
+        <label for="edit-description">Description *</label>
+        <textarea id="edit-description" maxlength="255" rows="3" placeholder="Task description"></textarea>
+        <div class="char-counter" id="edit-description-counter">0/255</div>
+      </div>
+
+      <div class="form-group">
+        <label for="edit-days">Days Required</label>
+        <input type="number" id="edit-days" min="0" placeholder="0">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeEditModal()">Cancel</button>
+      <button class="btn-primary" onclick="saveTaskChanges()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* Modal Styles */
+  .modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+  }
+
+  .modal.show {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .modal-content {
+    background-color: var(--white);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    max-width: 500px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .modal-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: var(--text);
+  }
+
+  .modal-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: var(--text-light);
+    cursor: pointer;
+    transition: var(--transition);
+  }
+
+  .modal-close:hover {
+    color: var(--text);
+  }
+
+  .modal-body {
+    padding: 1.5rem;
+  }
+
+  .modal-footer {
+    display: flex;
+    gap: 1rem;
+    padding: 1.5rem;
+    border-top: 1px solid var(--border);
+    justify-content: flex-end;
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+
+  .btn-primary, .btn-secondary {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-weight: 500;
+    transition: var(--transition);
+  }
+
+  .btn-primary {
+    background-color: var(--primary);
+    color: var(--white);
+  }
+
+  .btn-primary:hover {
+    background-color: var(--primary-dark);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+  }
+
+  .btn-secondary {
+    background-color: var(--border);
+    color: var(--text);
+  }
+
+  .btn-secondary:hover {
+    background-color: #d1d5db;
+  }
+</style>
+
 </body>
 </html>
