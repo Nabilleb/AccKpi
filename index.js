@@ -1214,7 +1214,6 @@ app.post("/addPackage", async (req, res) => {
 
 app.post('/add-task', ensureAuthenticated, async (req, res) => {
   const {
-    TaskName,
     TaskPlanned,
     PlannedDate,
     DaysRequired,
@@ -1227,21 +1226,6 @@ app.post('/add-task', ensureAuthenticated, async (req, res) => {
 
   try {
     const poolConn = await pool.connect();
-
-    // 1. Check for duplicate
-    const duplicateCheck = await poolConn.request()
-      .input('TaskName', sql.NVarChar, TaskName)
-      .input('DepId', sql.Int, DepId)
-      .input('ProcessID', sql.Int, ProcessID)
-      .query(`
-        SELECT COUNT(*) AS DuplicateCount
-        FROM tblTasks
-        WHERE TaskName = @TaskName AND DepId = @DepId AND proccessID = @ProcessID
-      `);
-
-    if (duplicateCheck.recordset[0].DuplicateCount > 0) {
-      return res.status(400).send('Task already exists for this department and process.');
-    }
 
     // 1.5. Check if task is marked as fixed
     const isFixedBit = IsFixed && (IsFixed === '1' || IsFixed === 1 || IsFixed === true) ? 1 : 0;
@@ -1381,7 +1365,6 @@ app.post('/add-task', ensureAuthenticated, async (req, res) => {
 
     // 9. Insert into tblTasks
     const insertRequest = poolConn.request()
-      .input('TaskName', sql.NVarChar, TaskName)
       .input('TaskPlanned', sql.NVarChar, TaskPlanned)
       .input('IsTaskSelected', sql.Bit, IsTaskSelected)
       .input('PlannedDate', sql.Date, PlannedDateToInsert)
@@ -1398,13 +1381,13 @@ app.post('/add-task', ensureAuthenticated, async (req, res) => {
 
     const insertResult = await insertRequest.query(`
       INSERT INTO tblTasks (
-        TaskName, TaskPlanned, IsTaskSelected, PlannedDate,
+        TaskPlanned, IsTaskSelected, PlannedDate,
         DepId, Priority, PredecessorID, DaysRequired, proccessID, IsFixed
         ${workflowHdrId ? ', WorkFlowHdrID' : ''}
       )
       OUTPUT INSERTED.TaskID
       VALUES (
-        @TaskName, @TaskPlanned, @IsTaskSelected, @PlannedDate,
+        @TaskPlanned, @IsTaskSelected, @PlannedDate,
         @DepId, @Priority, @PredecessorID, @DaysRequired, @ProcessID, @IsFixed
         ${workflowHdrId ? ', @WorkFlowHdrID' : ''}
       )
@@ -1415,7 +1398,7 @@ app.post('/add-task', ensureAuthenticated, async (req, res) => {
     // 10. Insert into tblWorkflowDtl if needed
     if (workflowHdrId) {
       await poolConn.request()
-        .input('WorkflowName', sql.NVarChar, TaskName)
+        .input('WorkflowName', sql.NVarChar, TaskPlanned)
         .input('TaskID', sql.Int, newTaskId)
         .input('WorkFlowHdrID', sql.Int, workflowHdrId)
         .query(`
