@@ -1801,6 +1801,157 @@ app.post('/update-task/:id', async (req, res) => {
   }
 });
 
+// PUT endpoint for updating task via modal with date recalculation
+app.put('/update-task/:taskId', async (req, res) => {
+  const taskId = parseInt(req.params.taskId);
+  const { TaskPlanned, DaysRequired } = req.body;
+
+  try {
+    const poolConn = await sql.connect();
+    const transaction = new sql.Transaction(poolConn);
+    await transaction.begin();
+
+    try {
+      // Get current task info
+      let getTaskReq = transaction.request();
+      getTaskReq.input('TaskID', sql.Int, taskId);
+      const taskResult = await getTaskReq.query(`
+        SELECT DepId, proccessID AS ProcessID, Priority, PlannedDate, DaysRequired
+        FROM tblTasks
+        WHERE TaskID = @TaskID
+      `);
+
+      if (taskResult.recordset.length === 0) {
+        await transaction.rollback();
+        return res.status(404).json({ error: 'Task not found' });
+      }
+
+      const task = taskResult.recordset[0];
+      const { DepId, ProcessID } = task;
+      const oldDaysRequired = task.DaysRequired;
+      const oldPlannedDate = new Date(task.PlannedDate);
+
+      // Update the task
+      let updateReq = transaction.request();
+      updateReq.input('TaskID', sql.Int, taskId);
+      updateReq.input('TaskPlanned', sql.NVarChar, TaskPlanned);
+      updateReq.input('DaysRequired', sql.Int, DaysRequired);
+      await updateReq.query(`
+        UPDATE tblTasks
+        SET TaskPlanned = @TaskPlanned, DaysRequired = @DaysRequired
+        WHERE TaskID = @TaskID
+      `);
+
+      // Calculate the difference in days to cascade
+      const daysDifference = (DaysRequired || 0) - (oldDaysRequired || 0);
+
+      // Get all tasks in the same department ordered by priority to find subsequent tasks
+      let getDepTasksReq = transaction.request();
+      getDepTasksReq.input('DepId', sql.Int, DepId);
+      getDepTasksReq.input('ProcessID', sql.Int, ProcessID);
+      const depTasksResult = await getDepTasksReq.query(`
+        SELECT TaskID, Priority, DaysRequired
+        FROM tblTasks
+        WHERE DepId = @DepId AND proccessID = @ProcessID
+        ORDER BY Priority ASC
+      `);
+
+      // Find the position of the current task and update subsequent tasks in same department
+      const taskIndex = depTasksResult.recordset.findIndex(t => t.TaskID === taskId);
+      let currentDate = oldPlannedDate;
+      currentDate.setDate(currentDate.getDate() + (DaysRequired || 0));
+
+      if (taskIndex >= 0 && taskIndex < depTasksResult.recordset.length - 1) {
+        // There are tasks after this one in the same department
+        for (let i = taskIndex + 1; i < depTasksResult.recordset.length; i++) {
+          const nextTask = depTasksResult.recordset[i];
+          const newDateStr = currentDate.toISOString().split('T')[0];
+
+          let updateNextReq = transaction.request();
+          updateNextReq.input('NewDate', sql.Date, newDateStr);
+          updateNextReq.input('TaskID', sql.Int, nextTask.TaskID);
+          await updateNextReq.query(`
+            UPDATE tblTasks
+            SET PlannedDate = @NewDate
+            WHERE TaskID = @TaskID
+          `);
+
+          currentDate.setDate(currentDate.getDate() + nextTask.DaysRequired);
+        }
+      }
+
+      // Cascade to subsequent departments (always execute, not just when there are subsequent tasks in same dept)
+      let getStepReq = transaction.request();
+      getStepReq.input('DepId', sql.Int, DepId);
+      getStepReq.input('ProcessID', sql.Int, ProcessID);
+      const stepResult = await getStepReq.query(`
+        SELECT StepOrder
+        FROM tblProcessDepartment
+        WHERE DepartmentID = @DepId AND ProcessID = @ProcessID
+      `);
+
+      if (stepResult.recordset.length > 0) {
+        const currentStepOrder = stepResult.recordset[0].StepOrder;
+
+        let getSubDeptReq = transaction.request();
+        getSubDeptReq.input('CurrentStepOrder', sql.Int, currentStepOrder);
+        getSubDeptReq.input('ProcessID', sql.Int, ProcessID);
+        const subDeptResult = await getSubDeptReq.query(`
+          SELECT DepartmentID, StepOrder
+          FROM tblProcessDepartment
+          WHERE StepOrder > @CurrentStepOrder AND ProcessID = @ProcessID
+          ORDER BY StepOrder ASC
+        `);
+
+        for (const dept of subDeptResult.recordset) {
+          let getSubTasksReq = transaction.request();
+          getSubTasksReq.input('DeptId', sql.Int, dept.DepartmentID);
+          getSubTasksReq.input('ProcessID', sql.Int, ProcessID);
+          const subTasksResult = await getSubTasksReq.query(`
+            SELECT TaskID, DaysRequired
+            FROM tblTasks
+            WHERE DepId = @DeptId AND proccessID = @ProcessID
+            ORDER BY Priority ASC
+          `);
+
+          if (subTasksResult.recordset.length > 0) {
+            let subDate = new Date(currentDate);
+
+            for (const subTask of subTasksResult.recordset) {
+              const subDateStr = subDate.toISOString().split('T')[0];
+
+              let updateSubReq = transaction.request();
+              updateSubReq.input('NewDate', sql.Date, subDateStr);
+              updateSubReq.input('TaskID', sql.Int, subTask.TaskID);
+              await updateSubReq.query(`
+                UPDATE tblTasks
+                SET PlannedDate = @NewDate
+                WHERE TaskID = @TaskID
+              `);
+
+              subDate.setDate(subDate.getDate() + subTask.DaysRequired);
+            }
+
+            currentDate = new Date(subDate);
+          }
+        }
+      }
+
+      await transaction.commit();
+      res.status(200).json({ success: true, message: 'Task updated and dates recalculated' });
+
+    } catch (error) {
+      await transaction.rollback();
+      console.error('Transaction error:', error);
+      res.status(500).json({ error: 'Failed to update task: ' + error.message });
+    }
+
+  } catch (err) {
+    console.error('DB error:', err);
+    res.status(500).json({ error: 'Database connection failed' });
+  }
+});
+
 app.get("/workflow/new", async (req, res) => {
   try {
     const [processes, projects, packages] = await Promise.all([
