@@ -973,6 +973,12 @@
     </div>
 
     <div class="form-group">
+      <label for="TaskName" class="required-field">Task Name</label>
+      <input type="text" name="TaskName" id="TaskName" required placeholder="Enter task name" maxlength="100"/>
+      <div class="validation-error" id="TaskName-error">Task name is required</div>
+    </div>
+
+    <div class="form-group">
       <label for="TaskPlanned" class="required-field">Task Description</label>
       <textarea name="TaskPlanned" id="TaskPlanned" required placeholder="Describe what needs to be done" maxlength="255" rows="3"></textarea>
       <div class="char-counter" id="TaskPlanned-counter">0/255</div>
@@ -1452,6 +1458,7 @@ function renderTasks(tasks) {
           <table class="tasks-table">
             <thead>
               <tr>
+                <th>Task Name</th>
                 <th>Description</th>
                 <th>Planned Date</th>
                 <th>Days</th>
@@ -1474,6 +1481,7 @@ function renderTasks(tasks) {
 
       html += `
         <tr class="${isOverdue ? 'overdue-task' : ''}">
+          <td>${task.TaskName || '-'}</td>
           <td>${task.TaskPlanned || '-'}</td>
           <td>${task.PlannedDate ? formatDate(task.PlannedDate) : '-'}</td>
           <td>${task.DaysRequired || '-'}</td>
@@ -1825,6 +1833,7 @@ function editTask(taskId) {
 
   const modal = document.getElementById('edit-task-modal');
   document.getElementById('edit-task-id').value = taskId;
+  document.getElementById('edit-task-name').value = task.TaskName || '';
   const descriptionField = document.getElementById('edit-description');
   descriptionField.value = task.TaskPlanned || '';
   document.getElementById('edit-description-counter').textContent = `${descriptionField.value.length}/255`;
@@ -1842,8 +1851,14 @@ function closeEditModal() {
 // Save Task Changes
 async function saveTaskChanges() {
   const taskId = document.getElementById('edit-task-id').value;
+  const taskName = document.getElementById('edit-task-name').value;
   const description = document.getElementById('edit-description').value;
   const daysRequired = parseInt(document.getElementById('edit-days').value) || 0;
+
+  if (!taskName) {
+    alert('Task name is required');
+    return;
+  }
 
   if (!description) {
     alert('Description is required');
@@ -1855,6 +1870,7 @@ async function saveTaskChanges() {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
+        TaskName: taskName,
         TaskPlanned: description,
         DaysRequired: daysRequired
       })
@@ -1914,6 +1930,11 @@ async function deleteTaskConfirmed(taskId) {
     </div>
     <div class="modal-body">
       <input type="hidden" id="edit-task-id">
+      
+      <div class="form-group">
+        <label for="edit-task-name">Task Name *</label>
+        <input type="text" id="edit-task-name" maxlength="100" placeholder="Task name">
+      </div>
       
       <div class="form-group">
         <label for="edit-description">Description *</label>

@@ -555,6 +555,184 @@
       box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
     }
 
+    .delay-reason-cell {
+      position: relative;
+    }
+
+    .delay-reason-display {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.5rem;
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.05) 0%, rgba(239, 68, 68, 0.02) 100%);
+      border-radius: var(--radius-sm);
+      border-left: 3px solid var(--danger);
+      min-height: 40px;
+      justify-content: space-between;
+    }
+
+    .delay-reason-text {
+      flex: 1;
+      font-size: 0.9rem;
+      color: var(--text);
+      word-break: break-word;
+      line-height: 1.4;
+    }
+
+    .delay-reason-empty {
+      color: var(--text-light);
+      font-style: italic;
+      font-size: 0.85rem;
+    }
+
+    .edit-reason-btn {
+      padding: 0.4rem 0.6rem;
+      background: var(--danger);
+      color: white;
+      border: none;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+    }
+
+    .edit-reason-btn:hover {
+      background: #dc2626;
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .delay-reason-modal {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: rgba(0,0,0,0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1001;
+      backdrop-filter: blur(4px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+
+    .delay-reason-modal.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .delay-reason-modal-content {
+      background: white;
+      padding: 2rem;
+      border-radius: var(--radius-lg);
+      max-width: 500px;
+      width: 90%;
+      box-shadow: var(--shadow-lg);
+      transform: translateY(20px);
+      transition: transform 0.3s ease;
+    }
+
+    .delay-reason-modal.show .delay-reason-modal-content {
+      transform: translateY(0);
+    }
+
+    .delay-reason-modal-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--primary-dark);
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .delay-reason-modal-title i {
+      color: var(--danger);
+    }
+
+    .delay-reason-textarea {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 0.95rem;
+      font-family: inherit;
+      resize: vertical;
+      min-height: 120px;
+      max-height: 200px;
+      transition: var(--transition);
+    }
+
+    .delay-reason-textarea:focus {
+      outline: none;
+      border-color: var(--danger);
+      box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
+    }
+
+    .delay-reason-counter {
+      font-size: 0.8rem;
+      color: var(--text-light);
+      margin-top: 0.5rem;
+      text-align: right;
+    }
+
+    .delay-reason-counter.warning {
+      color: var(--warning);
+    }
+
+    .delay-reason-counter.error {
+      color: var(--danger);
+    }
+
+    .delay-reason-modal-actions {
+      display: flex;
+      gap: 1rem;
+      justify-content: flex-end;
+      margin-top: 1.5rem;
+    }
+
+    .delay-reason-modal-actions button {
+      padding: 0.6rem 1.5rem;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-weight: 500;
+      cursor: pointer;
+      transition: var(--transition);
+      font-size: 0.9rem;
+    }
+
+    .delay-save-btn {
+      background: var(--danger);
+      color: white;
+    }
+
+    .delay-save-btn:hover {
+      background: #dc2626;
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .delay-save-btn:disabled {
+      background: var(--text-light);
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .delay-cancel-btn {
+      background: transparent;
+      color: var(--text-light);
+      border: 1px solid var(--border);
+    }
+
+    .delay-cancel-btn:hover {
+      background: var(--background);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+
     .days-required-input {
       padding: 0.5rem;
       border: 1px solid var(--border);
@@ -1677,6 +1855,138 @@
         currentTaskId = null;
     };
 
+    const showDatePickerModal = (title, callback) => {
+        const dateModal = document.createElement('div');
+        dateModal.className = 'modal show';
+        dateModal.innerHTML = `
+            <div class="modal-content">
+                <div class="modal-title">
+                    <i class="fas fa-calendar"></i> ${title}
+                </div>
+                <div style="margin: 1.5rem 0;">
+                    <input type="date" id="date-picker-input" style="padding: 0.75rem; font-size: 1rem; border: 1px solid var(--border); border-radius: var(--radius-sm); width: 100%; max-width: 250px;">
+                </div>
+                <div class="modal-actions">
+                    <button class="modal-cancel-btn" id="date-cancel-btn">Cancel</button>
+                    <button class="modal-confirm-btn" id="date-confirm-btn">Confirm</button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(dateModal);
+        const datePicker = dateModal.querySelector('#date-picker-input');
+        const today = new Date().toISOString().split('T')[0];
+        datePicker.value = today;
+        datePicker.focus();
+        
+        const handleConfirm = () => {
+            const selectedDate = datePicker.value;
+            if (selectedDate) {
+                callback(selectedDate);
+            } else {
+                alert('Please select a date');
+            }
+            dateModal.remove();
+        };
+        
+        const handleCancel = () => {
+            dateModal.remove();
+        };
+        
+        dateModal.querySelector('#date-confirm-btn').addEventListener('click', handleConfirm);
+        dateModal.querySelector('#date-cancel-btn').addEventListener('click', handleCancel);
+        datePicker.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleConfirm();
+        });
+    };
+
+    const showDelayReasonModal = (taskId, currentReason) => {
+        const delayModal = document.createElement('div');
+        delayModal.className = 'delay-reason-modal show';
+        delayModal.innerHTML = `
+            <div class="delay-reason-modal-content">
+                <div class="delay-reason-modal-title">
+                    <i class="fas fa-exclamation-circle"></i> Delay Reason
+                </div>
+                <p style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 1rem;">
+                    Please explain why this task was delayed:
+                </p>
+                <textarea class="delay-reason-textarea" maxlength="500" placeholder="Explain the reason for this delay... (max 500 characters)">${currentReason}</textarea>
+                <div class="delay-reason-counter"><span class="char-count">${currentReason.length}</span>/500</div>
+                <div class="delay-reason-modal-actions">
+                    <button class="delay-cancel-btn">Cancel</button>
+                    <button class="delay-save-btn">Save Reason</button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(delayModal);
+        const textarea = delayModal.querySelector('.delay-reason-textarea');
+        const charCount = delayModal.querySelector('.char-count');
+        const counter = delayModal.querySelector('.delay-reason-counter');
+        const saveBtn = delayModal.querySelector('.delay-save-btn');
+        const cancelBtn = delayModal.querySelector('.delay-cancel-btn');
+        
+        textarea.focus();
+        
+        // Character counter
+        textarea.addEventListener('input', () => {
+            charCount.textContent = textarea.value.length;
+            if (textarea.value.length > 400) {
+                counter.classList.add('warning');
+            } else {
+                counter.classList.remove('warning');
+            }
+            if (textarea.value.length >= 500) {
+                counter.classList.add('error');
+            } else {
+                counter.classList.remove('error');
+            }
+        });
+        
+        const handleSave = async () => {
+            const reason = textarea.value.trim();
+            if (reason === '') {
+                showError('Please enter a delay reason');
+                return;
+            }
+            
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<i class="fas fa-spinner spinner"></i> Saving...';
+            
+            const updates = [{
+                taskId,
+                field: 'delayReason',
+                value: reason,
+                usrID: userId,
+            }];
+            
+            try {
+                await saveTaskUpdates(taskId, updates);
+                showSuccess('Delay reason saved successfully!');
+                delayModal.remove();
+                setTimeout(() => window.location.reload(), 500);
+            } catch (err) {
+                showError('Failed to save delay reason: ' + err.message);
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = 'Save Reason';
+            }
+        };
+        
+        const handleCancel = () => {
+            delayModal.remove();
+        };
+        
+        saveBtn.addEventListener('click', handleSave);
+        cancelBtn.addEventListener('click', handleCancel);
+        
+        textarea.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && e.ctrlKey) {
+                handleSave();
+            }
+        });
+    };
+
     // Optimized data processing functions
     const updateStatusCounts = (tasks) => {
         const counts = { pending: 0, inprogress: 0, completed: 0, overdue: 0 };
@@ -1793,19 +2103,26 @@
             const task = taskList.find(t => t.TaskID === Number(taskId));
             if (!task) return showError('Task not found');
             
-            const res = await fetch(`/start-task/${taskId}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    startTime: new Date().toISOString(),
-                    workFlowHdrId: task.WorkFlowHdrID,
-                    processID: task.NumberOfProccessID
-                })
-            });
+            showDatePickerModal('Select Start Date', async (selectedDate) => {
+                // Convert date string to local date at start of day
+                const [year, month, day] = selectedDate.split('-');
+                const localDate = new Date(year, month - 1, day, 0, 0, 0, 0);
+                const isoString = localDate.toISOString();
+                
+                const res = await fetch(`/start-task/${taskId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        startTime: isoString,
+                        workFlowHdrId: task.WorkFlowHdrID,
+                        processID: task.NumberOfProccessID
+                    })
+                });
 
-            if (!res.ok) throw new Error("Failed to start task");
-            showSuccess('Task started successfully');
-            window.location.reload();
+                if (!res.ok) throw new Error("Failed to start task");
+                showSuccess('Task started successfully');
+                window.location.reload();
+            });
         } catch (err) {
             showError(err.message);
         }
@@ -1816,19 +2133,26 @@
             const task = taskList.find(t => t.TaskID === Number(taskId));
             if (!task) return showError('Task not found');
             
-            const res = await fetch(`/finish-task/${taskId}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    finishTime: new Date().toISOString(),
-                    workFlowHdrId: task.WorkFlowHdrID,
-                    processID: task.NumberOfProccessID
-                })
-            });
+            showDatePickerModal('Select Finish Date', async (selectedDate) => {
+                // Convert date string to local date at start of day
+                const [year, month, day] = selectedDate.split('-');
+                const localDate = new Date(year, month - 1, day, 0, 0, 0, 0);
+                const isoString = localDate.toISOString();
+                
+                const res = await fetch(`/finish-task/${taskId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        finishTime: isoString,
+                        workFlowHdrId: task.WorkFlowHdrID,
+                        processID: task.NumberOfProccessID
+                    })
+                });
 
-            if (!res.ok) throw new Error("Failed to finish task");
-            showSuccess('Task marked as finished');
-            window.location.reload();
+                if (!res.ok) throw new Error("Failed to finish task");
+                showSuccess('Task marked as finished');
+                window.location.reload();
+            });
         } catch (err) {
             showError(err.message);
         }
@@ -1952,7 +2276,7 @@
         const finishDate = task.TimeFinished ? new Date(task.TimeFinished).toLocaleDateString() : '';
         const startDate = task.TimeStarted ? new Date(task.TimeStarted).toLocaleDateString() : '';
         const delayReason = task.DelayReason || '';
-        const delayInputDisabled = !isOwnDepartment || !(task.TimeFinished && task.Delay > 0) ? 'disabled' : '';
+        const delayInputDisabled = !isOwnDepartment || !task.TimeFinished ? 'disabled' : '';
         
         let status = '';
         if (task.TimeStarted && !task.TimeFinished) {
@@ -2029,8 +2353,19 @@ if (!isAdmin && isOwnDepartment && !task.TimeFinished) {
     <td data-label="Status">${status}</td>
     <td data-label="Days Delay">${task.TimeFinished ? (task.Delay !== null && task.Delay > 0 ? task.Delay : 'On Time') : '-'}</td>
     <td data-label="Delay Reason">
-        <input type="text" value="${delayReason}" class="delay-reason-input" data-task-id="${task.TaskID}" 
-            ${delayInputDisabled} placeholder="${delayInputDisabled ? '' : 'Enter delay reason...'}">
+        ${!isOwnDepartment || !task.TimeFinished ? 
+            `<span style="color: var(--text-light); font-style: italic; font-size: 0.85rem;">Not available</span>` :
+            `<div class="delay-reason-cell">
+                <div class="delay-reason-display">
+                    <div class="delay-reason-text">
+                        ${delayReason ? `<strong style="color: var(--danger);">✓</strong> ${delayReason}` : `<span class="delay-reason-empty">No reason provided</span>`}
+                    </div>
+                    <button class="edit-reason-btn" data-task-id="${task.TaskID}" title="Edit delay reason">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                </div>
+            </div>`
+        }
     </td>
     <td data-label="Linked To">
         ${task.linkTasks ? (() => {
@@ -2087,6 +2422,17 @@ if (!isAdmin && isOwnDepartment && !task.TimeFinished) {
             return;
         }
         
+        // Edit delay reason button
+        if (e.target.classList.contains('edit-reason-btn') || e.target.closest('.edit-reason-btn')) {
+            const btn = e.target.classList.contains('edit-reason-btn') ? e.target : e.target.closest('.edit-reason-btn');
+            const taskId = btn.dataset.taskId;
+            const task = taskList.find(t => t.TaskID === Number(taskId));
+            if (task) {
+                showDelayReasonModal(taskId, task.DelayReason || '');
+            }
+            return;
+        }
+        
         // Edit days icon
         if (e.target.classList.contains('edit-days-icon')) {
             handleEditDaysClick(e);
@@ -2102,47 +2448,31 @@ if (!isAdmin && isOwnDepartment && !task.TimeFinished) {
         // Start task button
         if (e.target.classList.contains('task-start-btn')) {
             const taskId = e.target.dataset.taskId;
-            showConfirmation('Are you sure you want to start this task?', async () => {
-                const originalHTML = e.target.innerHTML;
-                e.target.innerHTML = '<i class="fas fa-spinner spinner"></i> Starting...';
-                e.target.disabled = true;
-                await startTask(taskId);
+            const originalHTML = e.target.innerHTML;
+            e.target.innerHTML = '<i class="fas fa-spinner spinner"></i> Starting...';
+            e.target.disabled = true;
+            startTask(taskId);
+            setTimeout(() => {
                 e.target.innerHTML = originalHTML;
                 e.target.disabled = false;
-            });
+            }, 500);
             return;
         }
         
         // Finish task button
         if (e.target.classList.contains('task-finish-btn')) {
-            const row = e.target.closest('tr');
             const taskId = e.target.dataset.taskId;
-          
-            showConfirmation('Are you sure you want to mark this task as finished and assign the selected user?', async () => {
-                const originalHTML = e.target.innerHTML;
-                e.target.innerHTML = '<i class="fas fa-spinner spinner"></i> Finishing...';
-                e.target.disabled = true;
-
-                await finishTask(taskId);
-                
+            const originalHTML = e.target.innerHTML;
+            e.target.innerHTML = '<i class="fas fa-spinner spinner"></i> Finishing...';
+            e.target.disabled = true;
+            finishTask(taskId);
+            setTimeout(() => {
                 e.target.innerHTML = originalHTML;
                 e.target.disabled = false;
-            });
+            }, 500);
+            return;
         }
 if (e.target.classList.contains('delay-reason-input')) {
-    const input = e.target;
-
-    if (input.disabled) {
-        input.disabled = false;
-        input.classList.add('editable');
-        input.focus();
-
-        input.addEventListener('blur', () => {
-            input.disabled = true;
-            input.classList.remove('editable');
-        }, { once: true }); 
-    }
-
     return;
 }
 

@@ -1249,6 +1249,7 @@ app.post("/addPackage", async (req, res) => {
 
 app.post('/add-task', ensureAuthenticated, async (req, res) => {
   const {
+    TaskName,
     TaskPlanned,
     PlannedDate,
     DaysRequired,
@@ -1400,6 +1401,7 @@ app.post('/add-task', ensureAuthenticated, async (req, res) => {
 
     // 9. Insert into tblTasks
     const insertRequest = poolConn.request()
+      .input('TaskName', sql.NVarChar(150), TaskName)
       .input('TaskPlanned', sql.NVarChar, TaskPlanned)
       .input('IsTaskSelected', sql.Bit, IsTaskSelected)
       .input('PlannedDate', sql.Date, PlannedDateToInsert)
@@ -1416,13 +1418,13 @@ app.post('/add-task', ensureAuthenticated, async (req, res) => {
 
     const insertResult = await insertRequest.query(`
       INSERT INTO tblTasks (
-        TaskPlanned, IsTaskSelected, PlannedDate,
+        TaskName, TaskPlanned, IsTaskSelected, PlannedDate,
         DepId, Priority, PredecessorID, DaysRequired, proccessID, IsFixed
         ${workflowHdrId ? ', WorkFlowHdrID' : ''}
       )
       OUTPUT INSERTED.TaskID
       VALUES (
-        @TaskPlanned, @IsTaskSelected, @PlannedDate,
+        @TaskName, @TaskPlanned, @IsTaskSelected, @PlannedDate,
         @DepId, @Priority, @PredecessorID, @DaysRequired, @ProcessID, @IsFixed
         ${workflowHdrId ? ', @WorkFlowHdrID' : ''}
       )
@@ -1881,7 +1883,7 @@ app.post('/update-task/:id', async (req, res) => {
 // PUT endpoint for updating task via modal with date recalculation
 app.put('/update-task/:taskId', async (req, res) => {
   const taskId = parseInt(req.params.taskId);
-  const { TaskPlanned, DaysRequired } = req.body;
+  const { TaskName, TaskPlanned, DaysRequired } = req.body;
 
   try {
     const poolConn = await sql.connect();
@@ -1911,11 +1913,12 @@ app.put('/update-task/:taskId', async (req, res) => {
       // Update the task
       let updateReq = transaction.request();
       updateReq.input('TaskID', sql.Int, taskId);
+      updateReq.input('TaskName', sql.NVarChar(150), TaskName);
       updateReq.input('TaskPlanned', sql.NVarChar, TaskPlanned);
       updateReq.input('DaysRequired', sql.Int, DaysRequired);
       await updateReq.query(`
         UPDATE tblTasks
-        SET TaskPlanned = @TaskPlanned, DaysRequired = @DaysRequired
+        SET TaskName = @TaskName, TaskPlanned = @TaskPlanned, DaysRequired = @DaysRequired
         WHERE TaskID = @TaskID
       `);
 
@@ -2421,7 +2424,7 @@ app.post("/updateProcess/:processId", isAdmin, async (req, res) => {
       .input("processId", sql.Int, parseInt(processId))
       .query(`
         SELECT NumberOfProccessID FROM tblProcess
-        WHERE NumberOfProcessID = @processId
+        WHERE NumberOfProccessID = @processId
       `);
 
     if (processCheck.recordset.length === 0) {
@@ -2447,6 +2450,14 @@ app.post("/updateProcess/:processId", isAdmin, async (req, res) => {
       .query(`
         DELETE FROM tblProcessDepartment
         WHERE ProcessID = @processId
+      `);
+
+    // Delete all tasks associated with this process
+    await pool.request()
+      .input("processId", sql.Int, parseInt(processId))
+      .query(`
+        DELETE FROM tblTasks
+        WHERE proccessID = @processId
       `);
 
     // Add new department assignments

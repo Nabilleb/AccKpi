@@ -604,6 +604,32 @@
         deleteModal.classList.remove('active');
       }
     });
+
+    // Form submission with task deletion warning
+    const editProcessForm = document.getElementById('editProcessForm');
+    editProcessForm.addEventListener('submit', (e) => {
+      const originalDepts = <%= JSON.stringify(currentDeptIds) %>;
+      const selectedDepts = Array.from(document.querySelectorAll('input[name="Departments"]:checked'))
+        .map(input => parseInt(input.value));
+      
+      // Check if departments have changed
+      const deptsChanged = originalDepts.length !== selectedDepts.length || 
+                          !originalDepts.every(d => selectedDepts.includes(d));
+      
+      if (deptsChanged) {
+        const confirmed = confirm(
+          '⚠️ WARNING!\n\n' +
+          'Changing the workflow departments will DELETE ALL TASKS in this process.\n\n' +
+          'You will need to recreate the tasks after saving.\n\n' +
+          'Are you sure you want to continue?'
+        );
+        
+        if (!confirmed) {
+          e.preventDefault();
+          return false;
+        }
+      }
+    });
   </script>
 </body>
 </html>

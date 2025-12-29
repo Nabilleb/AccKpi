@@ -558,6 +558,30 @@
       font-weight: bold;
     }
 
+    .edit-task-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background-color: #f59e0b;
+      color: white;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-size: 0.875rem;
+      cursor: pointer;
+      transition: var(--transition);
+      margin-left: 0.5rem;
+    }
+
+    .edit-task-btn:hover {
+      background-color: #d97706;
+      transform: translateY(-1px);
+    }
+
+    .edit-task-btn i {
+      font-size: 0.875rem;
+    }
+
     .empty-state {
       text-align: center;
       padding: var(--spacing-xl) var(--spacing-md);
@@ -1360,6 +1384,15 @@
           >
             Add Task
           </button>
+          <button
+            class="edit-task-btn"
+            data-process-id="<%= proc.NumberOfProccessID %>"
+            data-process-name="<%= proc.ProcessName %>"
+            data-steps='<%- JSON.stringify(steps) %>'
+            title="Edit Tasks for this process"
+          >
+            <i class="fas fa-edit"></i> Edit Tasks
+          </button>
         </td>
       </tr>
     <% }) %>
@@ -1744,6 +1777,13 @@
         }
         
         window.location.href = `/add-task?processId=${processId}&process=${processName}`;
+      });
+    });
+
+    document.querySelectorAll('.edit-task-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const processId = btn.dataset.processId;
+        window.location.href = `/editProcess/${processId}`;
       });
     });
 
