@@ -281,6 +281,11 @@
       </div>
       
       <div class="checkbox-group">
+        <input type="checkbox" id="IsSpecialUser" name="IsSpecialUser" value="1">
+        <label for="IsSpecialUser">Special User</label>
+      </div>
+      
+      <div class="checkbox-group">
         <input type="checkbox" id="AllowAccess" name="AllowAccess" value="1">
         <label for="AllowAccess">Allow Access</label>
       </div>
@@ -329,13 +334,45 @@
       }
     }
 
-    document.addEventListener('DOMContentLoaded', loadDepartments);
+    document.addEventListener('DOMContentLoaded', () => {
+      loadDepartments();
+      
+      // Handle admin and special user mutual exclusivity
+      const adminCheckbox = document.getElementById('usrAdmin');
+      const specialUserCheckbox = document.getElementById('IsSpecialUser');
+      
+      adminCheckbox?.addEventListener('change', function() {
+        if (this.checked && specialUserCheckbox.checked) {
+          specialUserCheckbox.checked = false;
+          alert('A user cannot be both Admin and Special User');
+        }
+        // If admin is checked, disable department selection
+        document.getElementById('departmentSelect').disabled = this.checked;
+        document.getElementById('departmentSelect').value = '';
+      });
+      
+      specialUserCheckbox?.addEventListener('change', function() {
+        if (this.checked && adminCheckbox.checked) {
+          adminCheckbox.checked = false;
+          alert('A user cannot be both Admin and Special User');
+        }
+      });
+    });
 
     // Form submission and success message
     const form = document.querySelector('.form-grid');
 
     form?.addEventListener('submit', async (e) => {
       e.preventDefault();
+      
+      // Validate that user is not both admin and special user
+      const isAdmin = document.getElementById('usrAdmin').checked;
+      const isSpecialUser = document.getElementById('IsSpecialUser').checked;
+      
+      if (isAdmin && isSpecialUser) {
+        alert('A user cannot be both Admin and Special User');
+        return;
+      }
       
       // Get form data as JSON
       const formData = new FormData(form);
@@ -344,13 +381,14 @@
         usrDesc: formData.get('usrDesc'),
         usrPWD: formData.get('usrPWD'),
         usrEmail: formData.get('usrEmail'),
-        DepartmentID: formData.get('DepartmentID'),
+        DepartmentID: isAdmin ? null : formData.get('DepartmentID'),
         usrSTID: formData.get('usrSTID') ? parseInt(formData.get('usrSTID')) : null,
         Export: formData.get('Export') ? parseInt(formData.get('Export')) : 0,
         usrReadPolicy: formData.get('usrReadPolicy') ? parseInt(formData.get('usrReadPolicy')) : 0,
         usrSignature: formData.get('usrSignature'),
         emailSignature: formData.get('emailSignature'),
-        usrAdmin: formData.get('usrAdmin') ? 1 : 0,
+        usrAdmin: isAdmin ? 1 : 0,
+        IsSpecialUser: isSpecialUser ? 1 : 0,
         AllowAccess: formData.get('AllowAccess') ? 1 : 0
       };
       

@@ -664,6 +664,7 @@
       min-height: 120px;
       max-height: 200px;
       transition: var(--transition);
+      margin-bottom: 0.75rem;
     }
 
     .delay-reason-textarea:focus {
@@ -675,8 +676,10 @@
     .delay-reason-counter {
       font-size: 0.8rem;
       color: var(--text-light);
-      margin-top: 0.5rem;
+      margin-top: 1rem;
+      margin-bottom: 1.5rem;
       text-align: right;
+      white-space: nowrap;
     }
 
     .delay-reason-counter.warning {
@@ -2464,14 +2467,16 @@ if (!isAdmin && isOwnDepartment && !task.TimeFinished) {
         // Finish task button
         if (e.target.classList.contains('task-finish-btn')) {
             const taskId = e.target.dataset.taskId;
-            const originalHTML = e.target.innerHTML;
-            e.target.innerHTML = '<i class="fas fa-spinner spinner"></i> Finishing...';
-            e.target.disabled = true;
-            finishTask(taskId);
-            setTimeout(() => {
-                e.target.innerHTML = originalHTML;
-                e.target.disabled = false;
-            }, 500);
+            const buttonElement = e.target;
+            const originalHTML = buttonElement.innerHTML;
+            buttonElement.innerHTML = '<i class="fas fa-spinner spinner"></i> Finishing...';
+            buttonElement.disabled = true;
+            
+            finishTask(taskId).catch(() => {
+                // Only re-enable button if there was an error
+                buttonElement.innerHTML = originalHTML;
+                buttonElement.disabled = false;
+            });
             return;
         }
 if (e.target.classList.contains('delay-reason-input')) {
