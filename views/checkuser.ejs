@@ -205,6 +205,12 @@
       color: #3730a3;
     }
 
+    .badge-special {
+      background-color: #fce7f3;
+      color: #831843;
+      font-weight: 600;
+    }
+
     .no-users {
       padding: 3rem 2rem;
       text-align: center;
@@ -330,6 +336,7 @@
               <th>User ID</th>
               <th>Name</th>
               <th>Role</th>
+              <th>Status</th>
               <th>Email</th>
               <th>Department</th>
               <th>Join Date</th>
@@ -351,6 +358,15 @@
                     <span class="badge badge-user">
                       <i class="fas fa-user"></i> User
                     </span>
+                  <% } %>
+                </td>
+                <td>
+                  <% if (u.IsSpecialUser) { %>
+                    <span class="badge badge-special">
+                      <i class="fas fa-star"></i> Special User
+                    </span>
+                  <% } else { %>
+                    <span style="color: var(--text-light);">Regular</span>
                   <% } %>
                 </td>
                 <td>

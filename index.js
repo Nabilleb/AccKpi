@@ -236,7 +236,7 @@ app.post("/login", loginLimiter, async (req, res) => {
       .input('username', sql.VarChar, username)
       .input('password', sql.VarChar, password)
       .query(`
-        SELECT usrID, usrDesc, DepartmentID, usrAdmin 
+        SELECT usrID, usrDesc, DepartmentID, usrAdmin, IsSpecialUser 
         FROM tblUsers 
         WHERE LOWER(usrEmail) = @username AND usrPWD = @password
       `);
@@ -248,7 +248,8 @@ app.post("/login", loginLimiter, async (req, res) => {
         id: user.usrID,
         name: user.usrDesc,
         usrAdmin: user.usrAdmin,
-        DepartmentId: user.DepartmentID
+        DepartmentId: user.DepartmentID,
+        IsSpecialUser: user.IsSpecialUser
       };
 
       return res.json({
@@ -998,7 +999,8 @@ app.get("/check-users", ensureAuthenticated, async (req, res) => {
         tu.usrEmail,
         td.DeptName,
         tu.DepartmentID,
-        tu.insertDate
+        tu.insertDate,
+        tu.IsSpecialUser
       FROM tblUsers tu
       LEFT JOIN tblDepartments td ON tu.DepartmentID = td.DepartmentID
       ORDER BY tu.usrID ASC
