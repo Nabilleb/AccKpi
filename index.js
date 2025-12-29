@@ -312,7 +312,69 @@ app.post("/addPackageForm", ensureAuthenticated, async (req, res) => {
       return res.status(400).json({ error: "All fields are required" });
     }
 
-    // 1️⃣ Insert workflow header and get the new workFlowID
+    // Validate processID is numeric
+    if (isNaN(processID)) {
+      return res.status(400).json({
+        error: 'Invalid processID: Must be a non-empty numeric value'
+      });
+    }
+
+    // 1️⃣ Confirm the process exists in tblTasks at all
+    const processCheck = await pool.request()
+      .input('processID', sql.Int, parseInt(processID))
+      .query(`
+        SELECT TOP 1 TaskID 
+        FROM tblTasks 
+        WHERE proccessID = @processID AND WorkFlowHdrID IS NULL
+      `);
+
+    if (processCheck.recordset.length === 0) {
+      return res.status(400).json({
+        error: 'No tasks found for the specified processID'
+      });
+    }
+
+    // 2️⃣ Get ALL departments for the process from tblProcessDepartment (without filtering IsActive)
+    const depRes = await pool.request()
+      .input('processID', sql.Int, parseInt(processID))
+      .query(`
+        SELECT DepartmentID
+        FROM tblProcessDepartment
+        WHERE ProcessID = @processID
+      `);
+
+    const expectedDeps = depRes.recordset.map(row => row.DepartmentID);
+
+    if (expectedDeps.length === 0) {
+      return res.status(400).json({
+        error: 'No departments are defined for this process in tblProcessDepartment'
+      });
+    }
+
+    // 3️⃣ For each DepartmentID, check that there is at least one task in tblTasks
+    const missingDeps = [];
+    for (const depId of expectedDeps) {
+      const taskCheck = await pool.request()
+        .input('processID', sql.Int, parseInt(processID))
+        .input('depId', sql.Int, depId)
+        .query(`
+          SELECT TOP 1 TaskID
+          FROM tblTasks
+          WHERE proccessID = @processID AND DepId = @depId AND WorkFlowHdrID IS NULL
+        `);
+      
+      if (taskCheck.recordset.length === 0) {
+        missingDeps.push(depId);
+      }
+    }
+
+    if (missingDeps.length > 0) {
+      return res.status(400).json({
+        error: `Cannot create workflow: No tasks found for department(s): ${missingDeps.join(', ')}`
+      });
+    }
+
+    // 4️⃣ Insert workflow header and get the new workFlowID
     const insertResult = await pool.request()
       .input('processID', sql.Int, parseInt(processID))
       .input('projectID', sql.Int, parseInt(projectID))
@@ -327,57 +389,95 @@ app.post("/addPackageForm", ensureAuthenticated, async (req, res) => {
 
     const newWorkflowID = insertResult.recordset[0].workFlowID;
 
-    // 2️⃣ Update tblTasks with the new WorkFlowHdrID for all tasks in this process
-    await pool.request()
-      .input('workflowID', sql.Int, newWorkflowID)
+    // 5️⃣ Get all ORIGINAL tasks for this process (not workflow copies)
+    const tasks = await pool.request()
       .input('processID', sql.Int, parseInt(processID))
       .query(`
-        UPDATE tblTasks
-        SET WorkFlowHdrID = @workflowID
-        WHERE proccessID = @processID
+        SELECT TaskID, TaskName, TaskPlanned, IsTaskSelected, PlannedDate, DepId, Priority, PredecessorID, DaysRequired, linkTasks, IsFixed
+        FROM tblTasks
+        WHERE proccessID = @processID AND WorkFlowHdrID IS NULL
       `);
 
-    // 3️⃣ Update existing workflow detail records
-    await pool.request()
-      .input('workflowID', sql.Int, newWorkflowID)
-      .input('processID', sql.Int, parseInt(processID))
-      .query(`
-        UPDATE d
-        SET d.workFlowHdrId = @workflowID
-        FROM tblWorkflowDtl d
-        INNER JOIN tblTasks t ON d.TaskID = t.TaskID
-        WHERE t.proccessID = @processID
-      `);
-
-    // 4️⃣ Insert new workflow detail records for tasks missing from workflow details
-    await pool.request()
-      .input('workflowID', sql.Int, newWorkflowID)
-      .input('processID', sql.Int, parseInt(processID))
-      .query(`
-        INSERT INTO tblWorkflowDtl (
-          workFlowHdrId,
-          TaskID,
-          WorkflowName,
-          TimeStarted,
-          TimeFinished,
-          DelayReason,
-          Delay,
-          assignUser
-        )
-        SELECT 
-          @workflowID,
-          t.TaskID,
-          t.TaskName,
-          NULL,
-          NULL,
-          NULL,
-          NULL,
-          NULL
-        FROM tblTasks t
-        LEFT JOIN tblWorkflowDtl d ON t.TaskID = d.TaskID
-        WHERE t.proccessID = @processID
-        AND d.TaskID IS NULL
-      `);
+    // 6️⃣ Insert new task copies with all properties and create workflow detail records
+    if (tasks.recordset.length > 0) {
+      for (const task of tasks.recordset) {
+        // Insert new task copy with all properties
+        const insertTaskResult = await pool.request()
+          .input('taskName', sql.VarChar, task.TaskName)
+          .input('taskPlanned', sql.VarChar, task.TaskPlanned)
+          .input('isTaskSelected', sql.Int, task.IsTaskSelected || 0)
+          .input('plannedDate', sql.DateTime2, task.PlannedDate)
+          .input('depId', sql.Int, task.DepId)
+          .input('priority', sql.Int, task.Priority)
+          .input('predecessorID', sql.Int, task.PredecessorID)
+          .input('daysRequired', sql.Int, task.DaysRequired)
+          .input('linkTasks', sql.VarChar, task.linkTasks)
+          .input('processID', sql.Int, parseInt(processID))
+          .input('workflowID', sql.Int, newWorkflowID)
+          .input('isFixed', sql.Int, task.IsFixed || 1)
+          .query(`
+            INSERT INTO tblTasks (
+              TaskName,
+              TaskPlanned,
+              IsTaskSelected,
+              PlannedDate,
+              DepId,
+              Priority,
+              PredecessorID,
+              DaysRequired,
+              linkTasks,
+              proccessID,
+              WorkFlowHdrID,
+              IsFixed
+            )
+            OUTPUT INSERTED.TaskID
+            VALUES (
+              @taskName,
+              @taskPlanned,
+              @isTaskSelected,
+              @plannedDate,
+              @depId,
+              @priority,
+              @predecessorID,
+              @daysRequired,
+              @linkTasks,
+              @processID,
+              @workflowID,
+              @isFixed
+            )
+          `);
+        
+        const newTaskID = insertTaskResult.recordset[0].TaskID;
+        
+        // Create workflow detail record for state tracking
+        await pool.request()
+          .input('workflowID', sql.Int, newWorkflowID)
+          .input('taskID', sql.Int, newTaskID)
+          .input('workflowName', sql.VarChar, task.TaskName)
+          .query(`
+            INSERT INTO tblWorkflowDtl (
+              workFlowHdrId,
+              TaskID,
+              WorkflowName,
+              TimeStarted,
+              TimeFinished,
+              DelayReason,
+              Delay,
+              assignUser
+            )
+            VALUES (
+              @workflowID,
+              @taskID,
+              @workflowName,
+              NULL,
+              NULL,
+              NULL,
+              NULL,
+              NULL
+            )
+          `);
+      }
+    }
 
     res.status(201).json({ 
       message: "Package added successfully!",
@@ -647,6 +747,7 @@ const tasksResult = await request1.query(`
   t.WorkFlowHdrID,
   t.linkTasks,
   d.WorkflowDtlId,
+  d.workFlowHdrId,
   d.WorkflowName,
   d.TimeStarted,
   d.TimeFinished,
@@ -1100,7 +1201,7 @@ app.get('/api/tasks', ensureAuthenticated, async (req, res) => {
           ON t.TaskID = wd.TaskID
         JOIN tblDepartments d 
           ON t.DepId = d.DepartmentID
-        WHERE t.proccessID = @processId
+        WHERE t.proccessID = @processId AND t.WorkFlowHdrID IS NULL
         ORDER BY t.DepId, t.Priority, t.TaskID
       `);
     res.json(result.recordset);
@@ -1338,7 +1439,7 @@ app.get("/logout", (req, res) => {
 // 📨 Assign user and send email
 app.post('/assign-user-to-task/:taskId', async (req, res) => {
   const { taskId } = req.params;
-  const { userId } = req.body;
+  const { userId, workFlowHdrId } = req.body;
 
   try {
     // 1️⃣ Get user email and name
@@ -1356,14 +1457,15 @@ app.post('/assign-user-to-task/:taskId', async (req, res) => {
 
     const assignedUser = userEmailResult.recordset[0];
 
-    // 2️⃣ Update the task
+    // 2️⃣ Update the task ONLY for this specific workflow
     await pool.request()
       .input('taskID', sql.Int, taskId)
+      .input('workFlowHdrId', sql.Int, workFlowHdrId)
       .input('userDesc', sql.NVarChar, assignedUser.usrDesc)
       .query(`
         UPDATE tblWorkflowDtl
         SET assignUser = @userDesc
-        WHERE TaskID = @taskID
+        WHERE TaskID = @taskID AND workFlowHdrId = @workFlowHdrId
       `);
 
     // 3️⃣ Send email
@@ -2334,22 +2436,7 @@ app.post('/api/workflows', async (req, res) => {
       });
     }
 
-    // 4️⃣ Check if workflow already exists
-    const existingWorkflow = await pool.request()
-      .input('processID', sql.Int, processID)
-      .query(`
-        SELECT workFlowID
-        FROM tblWorkflowHdr
-        WHERE processID = @processID
-      `);
-
-    if (existingWorkflow.recordset.length > 0) {
-      return res.status(400).json({
-        error: 'A workflow already exists for this process'
-      });
-    }
-
-    // 5️⃣ Insert workflow header
+    // 4️⃣ Insert workflow header (same process can be used in multiple workflows independently)
     const insertResult = await pool.request()
       .input('processID', sql.Int, processID)
       .input('projectID', sql.Int, projectID)
@@ -2375,66 +2462,95 @@ app.post('/api/workflows', async (req, res) => {
 
     const newWorkflowID = insertResult.recordset[0].workFlowID;
 
-    // 6️⃣ Update tblTasks with the new WorkFlowHdrID
-    await pool.request()
-      .input('workflowID', sql.Int, newWorkflowID)
-      .input('processID', sql.Int, processID)
-      .query(`
-        UPDATE tblTasks
-        SET WorkFlowHdrID = @workflowID
-        WHERE proccessID = @processID
-      `);
-
-    // 7️⃣ Get all tasks for this process to update workflow details
+    // 5️⃣ Get all ORIGINAL tasks for this process (not workflow copies)
     const tasks = await pool.request()
       .input('processID', sql.Int, processID)
       .query(`
-        SELECT TaskID, TaskName
+        SELECT TaskID, TaskName, TaskPlanned, IsTaskSelected, PlannedDate, DepId, Priority, PredecessorID, DaysRequired, linkTasks, IsFixed
         FROM tblTasks
-        WHERE proccessID = @processID
+        WHERE proccessID = @processID AND WorkFlowHdrID IS NULL
       `);
 
-    // 8️⃣ First update existing workflow detail records
-    await pool.request()
-      .input('workflowID', sql.Int, newWorkflowID)
-      .input('processID', sql.Int, processID)
-      .query(`
-        UPDATE d
-        SET d.workFlowHdrId = @workflowID
-        FROM tblWorkflowDtl d
-        INNER JOIN tblTasks t ON d.TaskID = t.TaskID
-        WHERE t.proccessID = @processID
-      `);
-
-    // 9️⃣ Then insert new records for any tasks missing from workflow details
-    await pool.request()
-      .input('workflowID', sql.Int, newWorkflowID)
-      .input('processID', sql.Int, processID)
-      .query(`
-        INSERT INTO tblWorkflowDtl (
-          workFlowHdrId,
-          TaskID,
-          WorkflowName,
-          TimeStarted,
-          TimeFinished,
-          DelayReason,
-          Delay,
-          assignUser
-        )
-        SELECT 
-          @workflowID,
-          t.TaskID,
-          t.TaskName,
-          NULL,
-          NULL,
-          NULL,
-          NULL,
-          NULL
-        FROM tblTasks t
-        LEFT JOIN tblWorkflowDtl d ON t.TaskID = d.TaskID
-        WHERE t.proccessID = @processID
-        AND d.TaskID IS NULL
-      `);
+    // 6️⃣ Insert new task copies with all properties and create workflow detail records
+    if (tasks.recordset.length > 0) {
+      for (const task of tasks.recordset) {
+        // Insert new task copy with all properties
+        const insertTaskResult = await pool.request()
+          .input('taskName', sql.VarChar, task.TaskName)
+          .input('taskPlanned', sql.VarChar, task.TaskPlanned)
+          .input('isTaskSelected', sql.Int, task.IsTaskSelected || 0)
+          .input('plannedDate', sql.DateTime2, task.PlannedDate)
+          .input('depId', sql.Int, task.DepId)
+          .input('priority', sql.Int, task.Priority)
+          .input('predecessorID', sql.Int, task.PredecessorID)
+          .input('daysRequired', sql.Int, task.DaysRequired)
+          .input('linkTasks', sql.VarChar, task.linkTasks)
+          .input('processID', sql.Int, processID)
+          .input('workflowID', sql.Int, newWorkflowID)
+          .input('isFixed', sql.Int, task.IsFixed || 1)
+          .query(`
+            INSERT INTO tblTasks (
+              TaskName,
+              TaskPlanned,
+              IsTaskSelected,
+              PlannedDate,
+              DepId,
+              Priority,
+              PredecessorID,
+              DaysRequired,
+              linkTasks,
+              proccessID,
+              WorkFlowHdrID,
+              IsFixed
+            )
+            OUTPUT INSERTED.TaskID
+            VALUES (
+              @taskName,
+              @taskPlanned,
+              @isTaskSelected,
+              @plannedDate,
+              @depId,
+              @priority,
+              @predecessorID,
+              @daysRequired,
+              @linkTasks,
+              @processID,
+              @workflowID,
+              @isFixed
+            )
+          `);
+        
+        const newTaskID = insertTaskResult.recordset[0].TaskID;
+        
+        // Create workflow detail record for state tracking
+        await pool.request()
+          .input('workflowID', sql.Int, newWorkflowID)
+          .input('taskID', sql.Int, newTaskID)
+          .input('workflowName', sql.VarChar, task.TaskName)
+          .query(`
+            INSERT INTO tblWorkflowDtl (
+              workFlowHdrId,
+              TaskID,
+              WorkflowName,
+              TimeStarted,
+              TimeFinished,
+              DelayReason,
+              Delay,
+              assignUser
+            )
+            VALUES (
+              @workflowID,
+              @taskID,
+              @workflowName,
+              NULL,
+              NULL,
+              NULL,
+              NULL,
+              NULL
+            )
+          `);
+      }
+    }
 
     res.status(201).json({
       message: 'Workflow created and tasks updated successfully',
@@ -3403,13 +3519,13 @@ app.post('/projects/add', async (req, res) => {
 
 app.post('/start-task/:taskId', async (req, res) => {
   const { taskId } = req.params;
-  const { startTime } = req.body;
+  const { startTime, workFlowHdrId } = req.body;
 
   try {
     const sqlTransaction = await pool.transaction();
     await sqlTransaction.begin();
 
-    // 1️⃣ Update the task start time
+    // 1️⃣ Update the task start time ONLY for this specific workflow
     // Format the date as YYYY-MM-DD HH:MM:SS for SQL Server
     const startTimeFormatted = startTime.includes('-') 
       ? startTime + ' 00:00:00'  // If it's YYYY-MM-DD format, add time
@@ -3418,51 +3534,55 @@ app.post('/start-task/:taskId', async (req, res) => {
     const reqUpdate = sqlTransaction.request();
     await reqUpdate
       .input('taskId', taskId)
+      .input('workFlowHdrId', sql.Int, workFlowHdrId)
       .input('startTime', sql.DateTime, startTimeFormatted)
       .query(`
         UPDATE tblWorkflowDtl
         SET TimeStarted = @startTime
-        WHERE TaskID = @taskId AND TimeStarted IS NULL
+        WHERE TaskID = @taskId 
+          AND workFlowHdrId = @workFlowHdrId
+          AND TimeStarted IS NULL
       `);
 
-    // 2️⃣ Retrieve WorkFlowHdrID via tblTasks
+    // 2️⃣ Verify the workflow exists and get its WorkFlowHdrID
     const reqHdr = sqlTransaction.request();
     const hdrResult = await reqHdr
-      .input('taskId', taskId)
+      .input('workFlowHdrId', sql.Int, workFlowHdrId)
       .query(`
-        SELECT t.WorkFlowHdrID
-        FROM tblTasks t
-        WHERE t.TaskID = @taskId
+        SELECT workFlowID
+        FROM tblWorkflowHdr
+        WHERE workFlowID = @workFlowHdrId
       `);
 
-    const workflowHdrId = hdrResult.recordset[0]?.WorkFlowHdrID;
+    if (!hdrResult.recordset.length) {
+      await sqlTransaction.rollback();
+      return res.status(404).json({ error: 'Workflow not found' });
+    }
 
-    if (workflowHdrId) {
-      // 3️⃣ Check if startDate is NULL
-      const reqStartDate = sqlTransaction.request();
-      const startDateResult = await reqStartDate
-        .input('workflowHdrId', workflowHdrId)
+    // 3️⃣ Check if startDate is NULL
+    const reqStartDate = sqlTransaction.request();
+    const startDateResult = await reqStartDate
+      .input('workFlowHdrId', sql.Int, workFlowHdrId)
+      .query(`
+        SELECT startDate
+        FROM tblWorkflowHdr
+        WHERE workFlowID = @workFlowHdrId
+      `);
+
+    const startDate = startDateResult.recordset[0]?.startDate;
+
+    if (!startDate) {
+      // 4️⃣ If startDate is NULL, set it
+      const reqUpdateHdr = sqlTransaction.request();
+      await reqUpdateHdr
+        .input('workFlowHdrId', sql.Int, workFlowHdrId)
         .query(`
-          SELECT startDate
-          FROM tblWorkflowHdr
-          WHERE workFlowID = @workflowHdrId
+          UPDATE tblWorkflowHdr
+          SET startDate = GETDATE()
+          WHERE workFlowID = @workFlowHdrId
         `);
 
-      const startDate = startDateResult.recordset[0]?.startDate;
-
-      if (!startDate) {
-        // 4️⃣ If startDate is NULL, set it
-        const reqUpdateHdr = sqlTransaction.request();
-        await reqUpdateHdr
-          .input('workflowHdrId', workflowHdrId)
-          .query(`
-            UPDATE tblWorkflowHdr
-            SET startDate = GETDATE()
-            WHERE workFlowID = @workflowHdrId
-          `);
-
-        console.log('✅ startDate set on tblWorkflowHdr');
-      }
+      console.log('✅ startDate set on tblWorkflowHdr');
     }
 
     // 5️⃣ Get DepId of the current task

@@ -2102,6 +2102,7 @@
         try {
             const task = taskList.find(t => t.TaskID === Number(taskId));
             if (!task) return showError('Task not found');
+            if (!task.workFlowHdrId) return showError('Workflow ID not found');
             
             showDatePickerModal('Select Start Date', async (selectedDate) => {
                 const res = await fetch(`/start-task/${taskId}`, {
@@ -2109,7 +2110,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
                         startTime: selectedDate,
-                        workFlowHdrId: task.WorkFlowHdrID,
+                        workFlowHdrId: task.workFlowHdrId,
                         processID: task.NumberOfProccessID
                     })
                 });
@@ -2127,6 +2128,7 @@
         try {
             const task = taskList.find(t => t.TaskID === Number(taskId));
             if (!task) return showError('Task not found');
+            if (!task.workFlowHdrId) return showError('Workflow ID not found');
             
             showDatePickerModal('Select Finish Date', async (selectedDate) => {
                 const res = await fetch(`/finish-task/${taskId}`, {
@@ -2134,7 +2136,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         finishTime: selectedDate,
-                        workFlowHdrId: task.WorkFlowHdrID,
+                        workFlowHdrId: task.workFlowHdrId,
                         processID: task.NumberOfProccessID
                     })
                 });
@@ -2150,10 +2152,15 @@
 
     const assignUserToTask = async (taskId, userId) => {
         try {
+            const task = taskList.find(t => t.TaskID === Number(taskId));
+            if (!task.workFlowHdrId) return showError('Workflow ID not found');
             const res = await fetch(`/assign-user-to-task/${taskId}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId })
+                body: JSON.stringify({ 
+                    userId,
+                    workFlowHdrId: task.workFlowHdrId
+                })
             });
 
             if (!res.ok) throw new Error("Assignment failed");
@@ -2177,17 +2184,20 @@
             (a.StepOrder - b.StepOrder) || (a.Priority - b.Priority) || (a.TaskID - b.TaskID));
         
         const activeIndex = sortedTasks.findIndex(t => t.IsTaskSelected);
+        const hdrId = sortedTasks[0]?.workFlowHdrId; // Get workflow header ID from any task
+        
         if (activeIndex !== -1) {
             for (let i = activeIndex + 1; i < sortedTasks.length; i++) {
                 const candidate = sortedTasks[i];
-                if (!candidate.IsTaskSelected && !candidate.TimeFinished) {
+                // Ensure next task is from same workflow and not selected/finished
+                if (!candidate.IsTaskSelected && !candidate.TimeFinished && candidate.workFlowHdrId === hdrId) {
                     nextTask = candidate;
                     break;
                 }
             }
         }
         
-        if (!nextTask) nextTask = sortedTasks.find(t => !t.IsTaskSelected && !t.TimeFinished);
+        if (!nextTask) nextTask = sortedTasks.find(t => !t.IsTaskSelected && !t.TimeFinished && t.workFlowHdrId === hdrId);
         if (activeIndex !== -1 && activeIndex !== sortedTasks.length - 1) await loadUsers(nextTask?.DepId);
 
         // Handle empty tasks
