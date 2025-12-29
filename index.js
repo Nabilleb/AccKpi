@@ -281,9 +281,10 @@ app.get("/workFlowDash",ensureAuthenticated ,async (req, res) => {
     const package1 = await pool.request().query("SELECT * FROM tblPackages");
     const process = await pool.request().query("SELECT * FROM tblProcess")
     const isAdmin = req.session.user.usrAdmin
+    const isSpecialUser = req.session.user.IsSpecialUser
  
 
-    res.render("workflowdashboard.ejs", { projects: projects.recordset, usrAdmin:isAdmin , packages: package1.recordset, processes:process.recordset });
+    res.render("workflowdashboard.ejs", { projects: projects.recordset, usrAdmin:isAdmin , packages: package1.recordset, processes:process.recordset, isSpecialUser: isSpecialUser });
   } catch (err) {
     console.error("Error loading projects:", err);
     res.status(500).send("Error loading dashboard");
