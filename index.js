@@ -33,7 +33,8 @@ const resend = new Resend(process.env.API_RESEND);
 const config = {
   user: process.env.DB_USER || 'sa',
   password: process.env.DB_PASSWORD || 'sa',
-  server: process.env.DB_SERVER || '10.10.2.123',
+  server: process.env.DB_SERVER || '10.10.2
+  .123',
   database: process.env.DB_DATABASE || 'AccDBF',
   options: {
     encrypt: false,
