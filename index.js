@@ -3198,10 +3198,15 @@ app.post('/start-task/:taskId', async (req, res) => {
     await sqlTransaction.begin();
 
     // 1️⃣ Update the task start time
+    // Format the date as YYYY-MM-DD HH:MM:SS for SQL Server
+    const startTimeFormatted = startTime.includes('-') 
+      ? startTime + ' 00:00:00'  // If it's YYYY-MM-DD format, add time
+      : startTime;  // Otherwise use as is
+    
     const reqUpdate = sqlTransaction.request();
     await reqUpdate
       .input('taskId', taskId)
-      .input('startTime', startTime)
+      .input('startTime', sql.DateTime, startTimeFormatted)
       .query(`
         UPDATE tblWorkflowDtl
         SET TimeStarted = @startTime
@@ -3317,20 +3322,30 @@ console.log(req.body)
       return res.status(404).json({ error: 'Task not found' });
     }
 const { PlannedDate, DepId, DaysRequired } = taskResult.recordset[0];
-const planned = new Date(PlannedDate);
 
-const plannedDateOnly = new Date(planned);
-const finishedDateOnly = new Date(finished);
+// Parse dates as local dates (not UTC)
+const plannedDateOnly = new Date(PlannedDate);
 plannedDateOnly.setHours(0, 0, 0, 0);
+
+const finishedDateOnly = new Date(finishTime);
 finishedDateOnly.setHours(0, 0, 0, 0);
 
-const delay = Math.max(0, Math.ceil((finishedDateOnly - plannedDateOnly) / (1000 * 60 * 60 * 24)));
+// Calculate delay in days
+const delayMs = finishedDateOnly.getTime() - plannedDateOnly.getTime();
+const delay = Math.max(0, Math.ceil(delayMs / (1000 * 60 * 60 * 24)));
+
+console.log('Planned:', plannedDateOnly, 'Finished:', finishedDateOnly, 'Delay:', delay);
 
 
     // Mark workflow detail as finished
+    // Format the date as YYYY-MM-DD HH:MM:SS for SQL Server
+    const finishTimeFormatted = finishTime.includes('-') 
+      ? finishTime + ' 00:00:00'  // If it's YYYY-MM-DD format, add time
+      : finishTime;  // Otherwise use as is
+    
     await pool.request()
       .input('taskId', taskId)
-      .input('finishTime', finishTime)
+      .input('finishTime', sql.DateTime, finishTimeFormatted)
       .input('delay', delay)
       .input('workFlowHdrId', workFlowHdrId)
       .query(`

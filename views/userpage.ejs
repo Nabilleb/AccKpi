@@ -2104,16 +2104,11 @@
             if (!task) return showError('Task not found');
             
             showDatePickerModal('Select Start Date', async (selectedDate) => {
-                // Convert date string to local date at start of day
-                const [year, month, day] = selectedDate.split('-');
-                const localDate = new Date(year, month - 1, day, 0, 0, 0, 0);
-                const isoString = localDate.toISOString();
-                
                 const res = await fetch(`/start-task/${taskId}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
-                        startTime: isoString,
+                        startTime: selectedDate,
                         workFlowHdrId: task.WorkFlowHdrID,
                         processID: task.NumberOfProccessID
                     })
@@ -2134,16 +2129,11 @@
             if (!task) return showError('Task not found');
             
             showDatePickerModal('Select Finish Date', async (selectedDate) => {
-                // Convert date string to local date at start of day
-                const [year, month, day] = selectedDate.split('-');
-                const localDate = new Date(year, month - 1, day, 0, 0, 0, 0);
-                const isoString = localDate.toISOString();
-                
                 const res = await fetch(`/finish-task/${taskId}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        finishTime: isoString,
+                        finishTime: selectedDate,
                         workFlowHdrId: task.WorkFlowHdrID,
                         processID: task.NumberOfProccessID
                     })
@@ -2355,6 +2345,8 @@ if (!isAdmin && isOwnDepartment && !task.TimeFinished) {
     <td data-label="Delay Reason">
         ${!isOwnDepartment || !task.TimeFinished ? 
             `<span style="color: var(--text-light); font-style: italic; font-size: 0.85rem;">Not available</span>` :
+            task.Delay <= 0 ?
+            `<span style="color: var(--success); font-style: italic; font-size: 0.85rem;">✓ On Time</span>` :
             `<div class="delay-reason-cell">
                 <div class="delay-reason-display">
                     <div class="delay-reason-text">
