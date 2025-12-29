@@ -118,12 +118,14 @@ app.use(session({
 }));
 
 const transporter = nodemailer.createTransport({
-  service: "gmail", 
+  host: process.env.EMAIL_HOST,
+  port: parseInt(process.env.EMAIL_PORT) || 587,
+  secure: false, // use TLS
   auth: {
-    user: "Nabilgreen500@gmail.com",
-    pass: "rxwh bhcn apnw bgmz",
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASSWORD,
   },
-}); // add email kpi here (Tareq)
+});
 
 app.use(flash());
 console.log("✅ Middleware setup completed");
