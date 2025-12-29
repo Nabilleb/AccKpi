@@ -1059,6 +1059,12 @@
 </button>
 
                 <% if (isSpecialUser) { %>
+                <button class="btn btn-outline" id="addPackageBtn" title="Add Package">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M19 13H13V19H11V13H5V11H11V5H13V11H19V13Z" fill="currentColor"/>
+                  </svg>
+                  Add Package
+                </button>
                 <button class="btn btn-outline" id="subpackbtn" title="Sub Package Management">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" fill="currentColor"/>
@@ -1455,6 +1461,14 @@ function setupEventListeners() {
     if (subpackbtn) {
         subpackbtn.addEventListener('click', () => {
             window.location.href = '/subpackage';
+        });
+    }
+
+    // Add Package button (Special User only)
+    const addPackageBtn = document.getElementById('addPackageBtn');
+    if (addPackageBtn) {
+        addPackageBtn.addEventListener('click', () => {
+            window.location.href = '/addPackageForm';
         });
     }
     

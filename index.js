@@ -274,6 +274,121 @@ res.render("packagefrom.ejs", {
 });
 });
 
+// Add Package Form Route (for special users)
+app.get("/addPackageForm", ensureAuthenticated, async (req, res) => {
+  try {
+    // Check if user is special user
+    if (!req.session.user.IsSpecialUser) {
+      return res.status(403).send("Forbidden: Special users only");
+    }
+
+    const projects = await pool.request().query("SELECT projectID, projectName FROM tblProject");
+    const packages = await pool.request().query("SELECT PkgeID, PkgeName FROM tblPackages");
+    const processes = await pool.request().query("SELECT NumberOfProccessID, ProcessName FROM tblProcess");
+
+    res.render("addPackageForm", {
+      projects: projects.recordset,
+      packages: packages.recordset,
+      processes: processes.recordset
+    });
+  } catch (err) {
+    console.error("Error loading package form:", err);
+    res.status(500).send("Error loading form");
+  }
+});
+
+// Add Package POST Route (for special users)
+app.post("/addPackageForm", ensureAuthenticated, async (req, res) => {
+  try {
+    // Check if user is special user
+    if (!req.session.user.IsSpecialUser) {
+      return res.status(403).json({ error: "Forbidden: Special users only" });
+    }
+
+    const { processID, projectID, packageID, startDate, status } = req.body;
+
+    // Validate required fields
+    if (!processID || !projectID || !packageID || !startDate) {
+      return res.status(400).json({ error: "All fields are required" });
+    }
+
+    // 1️⃣ Insert workflow header and get the new workFlowID
+    const insertResult = await pool.request()
+      .input('processID', sql.Int, parseInt(processID))
+      .input('projectID', sql.Int, parseInt(projectID))
+      .input('packageID', sql.Int, parseInt(packageID))
+      .input('startDate', sql.DateTime2, new Date(startDate))
+      .input('status', sql.VarChar, status || 'Pending')
+      .query(`
+        INSERT INTO tblWorkFlowHdr (processID, projectID, packageID, startDate, status, createdDate)
+        OUTPUT INSERTED.workFlowID
+        VALUES (@processID, @projectID, @packageID, @startDate, @status, GETDATE())
+      `);
+
+    const newWorkflowID = insertResult.recordset[0].workFlowID;
+
+    // 2️⃣ Update tblTasks with the new WorkFlowHdrID for all tasks in this process
+    await pool.request()
+      .input('workflowID', sql.Int, newWorkflowID)
+      .input('processID', sql.Int, parseInt(processID))
+      .query(`
+        UPDATE tblTasks
+        SET WorkFlowHdrID = @workflowID
+        WHERE proccessID = @processID
+      `);
+
+    // 3️⃣ Update existing workflow detail records
+    await pool.request()
+      .input('workflowID', sql.Int, newWorkflowID)
+      .input('processID', sql.Int, parseInt(processID))
+      .query(`
+        UPDATE d
+        SET d.workFlowHdrId = @workflowID
+        FROM tblWorkflowDtl d
+        INNER JOIN tblTasks t ON d.TaskID = t.TaskID
+        WHERE t.proccessID = @processID
+      `);
+
+    // 4️⃣ Insert new workflow detail records for tasks missing from workflow details
+    await pool.request()
+      .input('workflowID', sql.Int, newWorkflowID)
+      .input('processID', sql.Int, parseInt(processID))
+      .query(`
+        INSERT INTO tblWorkflowDtl (
+          workFlowHdrId,
+          TaskID,
+          WorkflowName,
+          TimeStarted,
+          TimeFinished,
+          DelayReason,
+          Delay,
+          assignUser
+        )
+        SELECT 
+          @workflowID,
+          t.TaskID,
+          t.TaskName,
+          NULL,
+          NULL,
+          NULL,
+          NULL,
+          NULL
+        FROM tblTasks t
+        LEFT JOIN tblWorkflowDtl d ON t.TaskID = d.TaskID
+        WHERE t.proccessID = @processID
+        AND d.TaskID IS NULL
+      `);
+
+    res.status(201).json({ 
+      message: "Package added successfully!",
+      success: true,
+      workflowID: newWorkflowID
+    });
+  } catch (err) {
+    console.error("Error adding package:", err);
+    res.status(500).json({ error: "Failed to add package: " + err.message });
+  }
+});
 
 app.get("/workFlowDash",ensureAuthenticated ,async (req, res) => {
   try {
