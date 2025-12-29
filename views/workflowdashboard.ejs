@@ -1442,8 +1442,7 @@ function setupEventListeners() {
     const subpackbtn = document.getElementById('subpackbtn');
     if (subpackbtn) {
         subpackbtn.addEventListener('click', () => {
-            showToast('Sub Package Management opened', 'info');
-            // Add your sub package management logic here
+            window.location.href = '/subpackage';
         });
     }
     
