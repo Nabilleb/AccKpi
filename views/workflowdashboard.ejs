@@ -1280,9 +1280,10 @@ const alertText = document.getElementById('alert-text');
 const mobileAddBtn = document.getElementById('mobileAddBtn');
 const mobileAddBtnBottom = document.getElementById('mobileAddBtnBottom');
 
-  setTimeout(() => {
-    window.location.href = "/login";
-  }, 5 * 60 * 1000);
+// Auto-logout disabled - was causing random page refreshes
+// setTimeout(() => {
+//   window.location.href = "/login";
+// }, 5 * 60 * 1000);
   
 // Initialize the dashboard
 document.addEventListener("DOMContentLoaded", async () => {
