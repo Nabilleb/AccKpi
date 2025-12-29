@@ -452,6 +452,10 @@ app.get("/api/workFlowDashData", ensureAuthenticated, async (req, res) => {
       LEFT JOIN tblProcess p ON hdr.ProcessID = p.NumberOfProccessID
       LEFT JOIN tblPackages pk ON hdr.PackageID = pk.PkgeID
       LEFT JOIN tblProject prj ON hdr.ProjectID = prj.ProjectID
+      WHERE EXISTS (
+        SELECT 1 FROM tblSubPackage sp
+        WHERE sp.PkgeID = hdr.PackageID
+      )
     `;
 
     const whereClauses = [];
@@ -474,7 +478,7 @@ app.get("/api/workFlowDashData", ensureAuthenticated, async (req, res) => {
     }
 
     if (whereClauses.length > 0) {
-      query += ' WHERE ' + whereClauses.join(' AND ');
+      query += ' AND ' + whereClauses.join(' AND ');
     }
 
     query += `

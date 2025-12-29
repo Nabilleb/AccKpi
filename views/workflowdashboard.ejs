@@ -1223,7 +1223,7 @@
                             <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 20C7.59 20 4 16.41 4 12C4 7.59 7.59 4 12 4C16.41 4 20 7.59 20 12C20 16.41 16.41 20 12 20ZM13 17H11V15H13V17ZM13 13H11V7H13V13Z" fill="currentColor"/>
                         </svg>
                     </div>
-                    <p>No workflows match your search criteria</p>
+                    <p id="noResultsText">No workflows match your search criteria</p>
                     <button class="btn btn-outline" id="resetNoResultsBtn">Reset Filters</button>
                 </div>
             </div>
@@ -1321,6 +1321,17 @@ async function loadWorkflowData() {
         if (!response.ok) throw new Error("Failed to fetch data");
         allWorkflows = await response.json();
         console.log("Loaded workflows:", allWorkflows);
+        
+        // Check if there are no workflows at all
+        if (allWorkflows.length === 0) {
+            document.getElementById('noResultsText').innerHTML = `
+                <strong>No workflows available</strong><br>
+                <span style="font-size: 0.9rem; color: var(--text-light);">
+                    Workflows are only available for packages that have sub packages defined. 
+                    Please add sub packages to enable workflows.
+                </span>
+            `;
+        }
         
         // Filter out Blocked and In Progress statuses from the data
         allWorkflows = allWorkflows.filter(workflow => 
