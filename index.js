@@ -22,8 +22,8 @@ dotenv.config();
 // File paths
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const PORT = 3000;
-const SERVER_IP = 'localhost';
+const PORT = process.env.PORT || 3000;
+const SERVER_IP = process.env.HOST || '0.0.0.0';
 
 // --- Express App ---
 const app = express();
@@ -31,10 +31,10 @@ const resend = new Resend(process.env.API_RESEND);
 
 // Database config
 const config = {
-  user: 'sa',
-  password: 'sa',
-  server: 'localhost',
-  database: 'AccDBF',
+  user: process.env.DB_USER || 'sa',
+  password: process.env.DB_PASSWORD || 'sa',
+  server: process.env.DB_SERVER || '10.10.2.123',
+  database: process.env.DB_DATABASE || 'AccDBF',
   options: {
     encrypt: false,
     trustServerCertificate: true
@@ -103,7 +103,7 @@ app.use(
     crossOriginEmbedderPolicy: false,
   })
 );
-app.use(cors({ origin: process.env.CORS_ORIGIN || 'http://localhost:3000', credentials: true }));
+app.use(cors({ origin: '*', credentials: true }));
 app.use(cookieParser());
 app.use(session({
   secret: process.env.SESSION_SECRET || "fallback-secret",
