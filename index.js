@@ -235,6 +235,18 @@ process.on("unhandledRejection", (reason, promise) => {
   console.error("💥 Unhandled Rejection at:", promise, "reason:", reason);
 });
 
+// Database connection middleware - check if pool is initialized
+app.use((req, res, next) => {
+  if (!pool) {
+    // Allow login page to load even if DB is down
+    if (req.path === '/login' || req.path === '/signup') {
+      return next();
+    }
+    return res.status(503).json({ success: false, message: "Database is temporarily unavailable. Please try again later." });
+  }
+  next();
+});
+
 // Start server
 startServer();
 
@@ -249,6 +261,12 @@ app.get('/login', checkIfInSession,(req, res) => {
 
 app.post("/login", loginLimiter, async (req, res) => {
   let { username, password } = req.body;
+
+  // Check if database is connected
+  if (!pool) {
+    console.error("❌ Database pool not initialized");
+    return res.status(503).json({ success: false, message: "Database connection failed. Please try again later." });
+  }
 
   // Simple sanitization
   if (typeof username !== "string" || typeof password !== "string") {
