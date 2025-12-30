@@ -37,6 +37,20 @@ const config = {
   database: process.env.DB_DATABASE || 'AccDBF',
   options: {
     encrypt: false,
+    trustServerCertificate: true,
+    connectionTimeout: 5000,
+    requestTimeout: 5000
+  }
+};
+
+// Fallback config for localhost
+const fallbackConfig = {
+  user: process.env.DB_USER || 'sa',
+  password: process.env.DB_PASSWORD || 'sa',
+  server: 'localhost',
+  database: process.env.DB_DATABASE || 'AccDBF',
+  options: {
+    encrypt: false,
     trustServerCertificate: true
   }
 };
@@ -48,13 +62,24 @@ let pool;
 async function initializeDatabase() {
   console.log("⏳ Initializing database connection...");
   try {
+    // Try to connect to server first
+    console.log(`🔗 Attempting to connect to ${config.server}...`);
     pool = await sql.connect(config);
-    console.log("✅ Database connected successfully");
+    console.log("✅ Database connected to server successfully");
   } catch (err) {
-    console.error("❌ Database connection failed:");
-    console.error("   ↳ Code:", err.code);
-    console.error("   ↳ Message:", err.message);
-    console.error("   ↳ Stack:", err.stack);
+    console.error("❌ Server connection failed, attempting fallback to localhost...");
+    console.error("   ↳ Error:", err.message);
+    
+    try {
+      // Fallback to localhost
+      console.log("🔄 Falling back to localhost...");
+      pool = await sql.connect(fallbackConfig);
+      console.log("✅ Database connected to localhost successfully");
+    } catch (fallbackErr) {
+      console.error("❌ Fallback connection also failed:");
+      console.error("   ↳ Code:", fallbackErr.code);
+      console.error("   ↳ Message:", fallbackErr.message);
+    }
   }
 }
 
