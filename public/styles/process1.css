@@ -1149,4 +1149,15 @@
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
     }
-  
+    /* Utility Classes */
+    .padding-left {
+      padding-left: 0.75rem;
+    }
+
+    .margin-right {
+      margin-right: 0.5rem;
+    }
+
+    .animate-delay-1 {
+      animation-delay: 0.1s;
+    }  

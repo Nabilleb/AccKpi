@@ -1,4 +1,9 @@
 // Global variables
+// Get EJS Variables from body data attributes
+const bodyEl = document.documentElement;
+const processId = bodyEl.getAttribute('data-process-id') || document.body.getAttribute('data-process-id');
+const processSteps = JSON.parse(bodyEl.getAttribute('data-process-steps') || document.body.getAttribute('data-process-steps') || '[]');
+
 let isLoading = false;
 let currentTasks = [];
 let currentPage = 1;
@@ -72,6 +77,48 @@ document.addEventListener('DOMContentLoaded', function() {
     const modal = document.getElementById('edit-task-modal');
     if (event.target === modal) {
       closeEditModal();
+    }
+    
+    // Close modal via close button
+    if (event.target.closest('[data-action="close-modal"]')) {
+      closeEditModal();
+    }
+    
+    // Retry load tasks button
+    if (event.target.closest('[data-action="retry-load"]')) {
+      loadTasks();
+    }
+    
+    // Pagination buttons
+    if (event.target.closest('.page-btn:not(.ellipsis)')) {
+      const pageBtn = event.target.closest('.page-btn');
+      const pageNum = parseInt(pageBtn.dataset.page);
+      if (!isNaN(pageNum) && pageBtn.offsetParent !== null) { // Check button is visible/enabled
+        changePage(pageNum);
+      }
+    }
+    
+    // Edit task button
+    if (event.target.closest('[data-action="edit-task"]')) {
+      const taskId = event.target.closest('[data-action="edit-task"]').dataset.taskId;
+      editTask(parseInt(taskId));
+    }
+    
+    // Delete task button
+    if (event.target.closest('[data-action="delete-task"]')) {
+      const taskId = event.target.closest('[data-action="delete-task"]').dataset.taskId;
+      deleteTask(parseInt(taskId));
+    }
+    
+    // Unlink task button
+    if (event.target.closest('[data-action="unlink-task"]')) {
+      const taskId = event.target.closest('[data-action="unlink-task"]').dataset.taskId;
+      unlinkTask(parseInt(taskId));
+    }
+    
+    // Link task select change
+    if (event.target.classList.contains('link-task-select')) {
+      linkTaskToOther(event.target);
     }
   });
 });
@@ -253,9 +300,9 @@ function loadTasks() {
       console.error('Error loading tasks:', error);
       loadingEl.innerHTML = `
         <div class="no-tasks">
-          <i class="fas fa-exclamation-circle" style="color:var(--danger);font-size:2rem;margin-bottom:1rem;"></i>
+          <i class="fas fa-exclamation-circle error-icon"></i>
           <p>Error loading tasks. Please try again.</p>
-          <button class="btn btn-primary" onclick="loadTasks()">
+          <button class="btn btn-primary" data-action="retry-load">
             <i class="fas fa-sync-alt"></i> Retry
           </button>
         </div>`;
@@ -383,7 +430,7 @@ function renderTasks(tasks) {
           <h3>${group.DeptName}</h3>
           <span class="task-count">${group.Tasks.length} tasks</span>
         </div>
-        <div style="overflow-x:auto;">
+        <div class="table-wrapper">
           <table class="tasks-table">
             <thead>
               <tr>
@@ -416,7 +463,7 @@ function renderTasks(tasks) {
           <td>${task.DaysRequired || '-'}</td>
           <td>${task.Priority ?? '-'}</td>
           <td>
-            <select class="link-task-select" data-task-id="${task.TaskID}" data-dept-id="${task.DepId}" onchange="linkTaskToOther(this)">
+            <select class="link-task-select" data-task-id="${task.TaskID}" data-dept-id="${task.DepId}">
               <option value="">-- Link Task --</option>
               ${currentTasks
                 .filter(t => {
@@ -429,13 +476,13 @@ function renderTasks(tasks) {
           </td>
           <td class="linked-task" data-task-id="${task.TaskID}">
             ${linkedTaskObj ? linkedTaskObj.TaskName + ' (' + linkedTaskObj.DeptName + ')' : '-'}
-            ${linkedTaskObj ? `<button class="btn-unlink" onclick="unlinkTask(${task.TaskID})" title="Remove link"><i class="fas fa-unlink"></i></button>` : ''}
+            ${linkedTaskObj ? `<button class="btn-unlink" data-action="unlink-task" data-task-id="${task.TaskID}" title="Remove link"><i class="fas fa-unlink"></i></button>` : ''}
           </td>
           <td class="action-buttons">
-            <button class="btn-edit" onclick="editTask(${task.TaskID})" title="Edit task">
+            <button class="btn-edit" data-action="edit-task" data-task-id="${task.TaskID}" title="Edit task">
               <i class="fas fa-edit"></i>
             </button>
-            <button class="btn-delete" onclick="deleteTask(${task.TaskID})" title="Delete task">
+            <button class="btn-delete" data-action="delete-task" data-task-id="${task.TaskID}" title="Delete task">
               <i class="fas fa-trash"></i>
             </button>
           </td>
@@ -474,7 +521,7 @@ function renderPagination(totalPages) {
   
   // Previous button
   html += `
-    <button class="page-btn" ${currentPage === 1 ? 'disabled' : ''} onclick="changePage(${currentPage - 1})">
+    <button class="page-btn" ${currentPage === 1 ? 'disabled' : ''} data-page="${currentPage - 1}">
       <i class="fas fa-chevron-left"></i>
     </button>`;
   
@@ -488,29 +535,29 @@ function renderPagination(totalPages) {
   }
   
   if (startPage > 1) {
-    html += `<button class="page-btn" onclick="changePage(1)">1</button>`;
+    html += `<button class="page-btn" data-page="1">1</button>`;
     if (startPage > 2) {
-      html += `<span class="page-btn" style="cursor:default;">...</span>`;
+      html += `<span class="page-btn ellipsis">...</span>`;
     }
   }
   
   for (let i = startPage; i <= endPage; i++) {
     html += `
-      <button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="changePage(${i})">
+      <button class="page-btn ${i === currentPage ? 'active' : ''}" data-page="${i}">
         ${i}
       </button>`;
   }
   
   if (endPage < totalPages) {
     if (endPage < totalPages - 1) {
-      html += `<span class="page-btn" style="cursor:default;">...</span>`;
+      html += `<span class="page-btn ellipsis">...</span>`;
     }
-    html += `<button class="page-btn" onclick="changePage(${totalPages})">${totalPages}</button>`;
+    html += `<button class="page-btn" data-page="${totalPages}">${totalPages}</button>`;
   }
   
   // Next button
   html += `
-    <button class="page-btn" ${currentPage === totalPages ? 'disabled' : ''} onclick="changePage(${currentPage + 1})">
+    <button class="page-btn" ${currentPage === totalPages ? 'disabled' : ''} data-page="${currentPage + 1}">
       <i class="fas fa-chevron-right"></i>
     </button>`;
   
@@ -733,15 +780,7 @@ function showToast(message, isError = false) {
   }, 3000);
 }
 
-// Add fadeOut animation to style
-const style = document.createElement('style');
-style.textContent = `
-  @keyframes fadeOut {
-    from { opacity: 1; transform: translateY(0); }
-    to { opacity: 0; transform: translateY(10px); }
-  }
-`;
-document.head.appendChild(style);
+// Animation styles are now in task.css
 
 // Set up character counters
 document.getElementById('TaskPlanned').addEventListener('input', function() {
