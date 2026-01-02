@@ -3003,6 +3003,7 @@ app.post("/addUser", async (req, res) => {
     usrDesc,
     usrPWD,
     usrAdmin,
+    IsSpecialUser,
     usrSTID,
     DepartmentID,
     AllowAccess,
@@ -3032,6 +3033,7 @@ app.post("/addUser", async (req, res) => {
       .input("usrDesc", sql.VarChar(40), usrDesc)
       .input("usrPWD", sql.VarChar(255), usrPWD)
       .input("usrAdmin", sql.Bit, usrAdmin ? 1 : 0)
+      .input("IsSpecialUser", sql.Bit, IsSpecialUser ? 1 : 0)
       .input("usrSTID", sql.SmallInt, usrSTID || null)
       .input("DepartmentID", sql.Int, parseInt(DepartmentID))
       .input("AllowAccess", sql.Bit, AllowAccess ? 1 : 0)
@@ -3044,12 +3046,12 @@ app.post("/addUser", async (req, res) => {
       .input("insertDate", sql.DateTime, insertDate)
       .query(`
         INSERT INTO tblUsers (
-          usrID, usrDesc, usrPWD, usrAdmin, usrSTID, DepartmentID,
+          usrID, usrDesc, usrPWD, usrAdmin, IsSpecialUser, usrSTID, DepartmentID,
           AllowAccess, Export, LastUpdate, usrEmail, usrSignature,
           emailSignature, usrReadPolicy, insertDate
         )
         VALUES (
-          @usrID, @usrDesc, @usrPWD, @usrAdmin, @usrSTID, @DepartmentID,
+          @usrID, @usrDesc, @usrPWD, @usrAdmin, @IsSpecialUser, @usrSTID, @DepartmentID,
           @AllowAccess, @Export, @LastUpdate, @usrEmail, @usrSignature,
           @emailSignature, @usrReadPolicy, @insertDate
         )
