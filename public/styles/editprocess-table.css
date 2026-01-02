@@ -1,0 +1,126 @@
+/* Disabled form state */
+.disabled-form {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* Workflow section separator */
+.workflow-separator {
+  margin: 2rem 0;
+  border: none;
+  border-top: 1px solid var(--border);
+}
+
+/* Workflow section container */
+.workflow-section {
+  margin-top: 2rem;
+}
+
+/* Workflow section title */
+.workflow-section-title {
+  color: var(--primary-dark);
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* Table wrapper for horizontal scrolling */
+.table-wrapper {
+  overflow-x: auto;
+}
+
+/* Workflow table styles */
+.workflow-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.workflow-table thead tr {
+  background-color: var(--primary-light);
+  border-bottom: 2px solid var(--primary);
+}
+
+.workflow-table th {
+  padding: 0.75rem;
+  text-align: left;
+  font-weight: 600;
+  color: var(--primary-dark);
+}
+
+.workflow-table tbody tr {
+  border-bottom: 1px solid var(--border);
+  transition: background-color 0.2s;
+}
+
+.workflow-table tbody tr:hover {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+.workflow-table td {
+  padding: 0.75rem;
+}
+
+.workflow-table td:first-child {
+  font-weight: 600;
+  color: var(--primary);
+}
+
+/* Status badge styles */
+.status-badge {
+  display: inline-block;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.status-badge-completed {
+  background-color: rgba(46, 125, 50, 0.1);
+  color: #2e7d32;
+}
+
+.status-badge-pending {
+  background-color: rgba(245, 158, 11, 0.1);
+  color: var(--warning);
+}
+
+/* Workflow info text */
+.workflow-info-text {
+  margin-top: 1rem;
+  color: var(--text-light);
+  font-size: 0.9rem;
+}
+
+/* Utility classes */
+.text-light {
+  color: var(--text-light);
+}
+
+.text-light-weight {
+  color: var(--text-light);
+  font-weight: 400;
+}
+
+.fw-normal {
+  font-weight: 400;
+}
+
+.link-primary {
+  color: var(--primary);
+  text-decoration: none;
+}
+
+.link-primary:hover {
+  text-decoration: underline;
+}
+
+.success-icon-lg {
+  font-size: 4rem;
+}
+
+.spinner-sm {
+  width: 2rem;
+  height: 2rem;
+}

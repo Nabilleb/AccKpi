@@ -6,6 +6,7 @@
   <title>Edit Process</title>
   <link rel="stylesheet" href="/css/all.min.css">
   <link rel="stylesheet" href="/styles/editprocess.css">
+  <link rel="stylesheet" href="/styles/editprocess-table.css">
 
 </head>
 <body data-process-id="<%= process.NumberOfProccessID %>" data-has-workflows="<%= hasWorkflows %>" data-current-dept-ids="<%= JSON.stringify(currentDeptIds) %>">
@@ -55,7 +56,7 @@
         </div>
       <% } %>
 
-      <form id="editProcessForm" action="/updateProcess/<%= process.NumberOfProccessID %>" method="POST" <%= hasWorkflows ? 'style="opacity: 0.6; pointer-events: none;"' : '' %>>
+      <form id="editProcessForm" action="/updateProcess/<%= process.NumberOfProccessID %>" method="POST" <%= hasWorkflows ? 'class="disabled-form"' : '' %>>
         <div class="form-group">
           <label for="ProcessName">Process Name</label>
           <input type="text" name="ProcessName" id="ProcessName" required 
@@ -122,45 +123,44 @@
       </form>
 
       <% if (hasWorkflows) { %>
-        <hr style="margin: 2rem 0; border: none; border-top: 1px solid var(--border);">
-        <div style="margin-top: 2rem;">
-          <h3 style="color: var(--primary-dark); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem;">
+        <hr class="workflow-separator">
+        <div class="workflow-section">
+          <h3 class="workflow-section-title">
             <i class="fas fa-sitemap"></i> Associated Workflows
           </h3>
-          <div style="overflow-x: auto;">
-            <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+          <div class="table-wrapper">
+            <table class="workflow-table">
               <thead>
-                <tr style="background-color: var(--primary-light); border-bottom: 2px solid var(--primary);">
-                  <th style="padding: 0.75rem; text-align: left; font-weight: 600; color: var(--primary-dark);">Workflow ID</th>
-                  <th style="padding: 0.75rem; text-align: left; font-weight: 600; color: var(--primary-dark);">Project</th>
-                  <th style="padding: 0.75rem; text-align: left; font-weight: 600; color: var(--primary-dark);">Package</th>
-                  <th style="padding: 0.75rem; text-align: left; font-weight: 600; color: var(--primary-dark);">Status</th>
-                  <th style="padding: 0.75rem; text-align: left; font-weight: 600; color: var(--primary-dark);">Created Date</th>
-                  <th style="padding: 0.75rem; text-align: left; font-weight: 600; color: var(--primary-dark);">Start Date</th>
-                  <th style="padding: 0.75rem; text-align: left; font-weight: 600; color: var(--primary-dark);">Completion Date</th>
+                <tr>
+                  <th>Workflow ID</th>
+                  <th>Project</th>
+                  <th>Package</th>
+                  <th>Status</th>
+                  <th>Created Date</th>
+                  <th>Start Date</th>
+                  <th>Completion Date</th>
                 </tr>
               </thead>
               <tbody>
                 <% associatedWorkflows.forEach(workflow => { %>
-                  <tr style="border-bottom: 1px solid var(--border); transition: background-color 0.2s;">
-                    <td style="padding: 0.75rem; font-weight: 600; color: var(--primary);"><%= workflow.WorkFlowID %></td>
-                    <td style="padding: 0.75rem;"><%= workflow.ProjectName || '-' %></td>
-                    <td style="padding: 0.75rem;"><%= workflow.PackageName || '-' %></td>
-                    <td style="padding: 0.75rem;">
-                      <span style="display: inline-block; padding: 0.35rem 0.75rem; border-radius: 999px; font-size: 0.85rem; font-weight: 600;
-                        <%= workflow.Status === 'Completed' ? 'background-color: rgba(46, 125, 50, 0.1); color: #2e7d32;' : 'background-color: rgba(245, 158, 11, 0.1); color: var(--warning);' %>">
+                  <tr>
+                    <td><%= workflow.WorkFlowID %></td>
+                    <td><%= workflow.ProjectName || '-' %></td>
+                    <td><%= workflow.PackageName || '-' %></td>
+                    <td>
+                      <span class="status-badge <%= workflow.Status === 'Completed' ? 'status-badge-completed' : 'status-badge-pending' %>">
                         <%= workflow.Status || '-' %>
                       </span>
                     </td>
-                    <td style="padding: 0.75rem;"><%= workflow.createdDate ? new Date(workflow.createdDate).toLocaleDateString() : '-' %></td>
-                    <td style="padding: 0.75rem;"><%= workflow.startDate ? new Date(workflow.startDate).toLocaleDateString() : '-' %></td>
-                    <td style="padding: 0.75rem;"><%= workflow.completionDate ? new Date(workflow.completionDate).toLocaleDateString() : '-' %></td>
+                    <td><%= workflow.createdDate ? new Date(workflow.createdDate).toLocaleDateString() : '-' %></td>
+                    <td><%= workflow.startDate ? new Date(workflow.startDate).toLocaleDateString() : '-' %></td>
+                    <td><%= workflow.completionDate ? new Date(workflow.completionDate).toLocaleDateString() : '-' %></td>
                   </tr>
                 <% }); %>
               </tbody>
             </table>
           </div>
-          <p style="margin-top: 1rem; color: var(--text-light); font-size: 0.9rem;">
+          <p class="workflow-info-text">
             <i class="fas fa-info-circle"></i> This process has <%= associatedWorkflows.length %> workflow<%= associatedWorkflows.length !== 1 ? 's' : '' %> currently running or completed. To edit or delete this process, all associated workflows must be completed first.
           </p>
         </div>

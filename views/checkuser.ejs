@@ -101,16 +101,16 @@
                       <i class="fas fa-star"></i> Special User
                     </span>
                   <% } else { %>
-                    <span style="color: var(--text-light);">Regular</span>
+                    <span class="text-light">Regular</span>
                   <% } %>
                 </td>
                 <td>
                   <% if (u.usrEmail) { %>
-                    <a href="mailto:<%= u.usrEmail %>" style="color: var(--primary); text-decoration: none;">
+                    <a href="mailto:<%= u.usrEmail %>" class="link-primary">
                       <%= u.usrEmail %>
                     </a>
                   <% } else { %>
-                    <span style="color: var(--text-light);">N/A</span>
+                    <span class=\"text-light\">N/A</span>
                   <% } %>
                 </td>
                 <td>
@@ -119,14 +119,14 @@
                       <%= u.DeptName %>
                     </span>
                   <% } else { %>
-                    <span style="color: var(--text-light);">No Department</span>
+                    <span class="text-light">No Department</span>
                   <% } %>
                 </td>
                 <td>
                   <% if (u.insertDate) { %>
                     <%= new Date(u.insertDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) %>
                   <% } else { %>
-                    <span style="color: var(--text-light);">N/A</span>
+                    <span class=\"text-light\">N/A</span>
                   <% } %>
                 </td>
               </tr>
