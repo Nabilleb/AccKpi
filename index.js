@@ -104,7 +104,7 @@ app.use(
       directives: {
         "default-src": ["'self'"],
 
-        "script-src": ["'self'"],
+        "script-src": ["'self'", "https://cdn.jsdelivr.net"],
 
         "style-src": [
           "'self'",

@@ -18,6 +18,22 @@ document.addEventListener('DOMContentLoaded', function() {
   const modalConfirmBtn = document.getElementById('modal-confirm-btn');
   const modalCancelBtn = document.getElementById('modal-cancel-btn');
 
+  // Button event listeners
+  const sidebarLogoutBtn = document.getElementById('sidebarLogoutBtn');
+  const backBtn = document.getElementById('backBtn');
+  
+  if (sidebarLogoutBtn) {
+    sidebarLogoutBtn.addEventListener('click', () => {
+      window.location.href = '/logout';
+    });
+  }
+  
+  if (backBtn) {
+    backBtn.addEventListener('click', () => {
+      window.location.href = '/workFlowDash';
+    });
+  }
+
   // Idle timeout configuration
   const IDLE_TIMEOUT = 5 * 60 * 1000; // 5 minutes
   let idleTimer = null;
@@ -97,8 +113,8 @@ const showDatePickerModal = (title, callback) => {
             <div class="modal-title">
                 <i class="fas fa-calendar"></i> ${title}
             </div>
-            <div style="margin: 1.5rem 0;">
-                <input type="date" id="date-picker-input" style="padding: 0.75rem; font-size: 1rem; border: 1px solid var(--border); border-radius: var(--radius-sm); width: 100%; max-width: 250px;">
+            <div class="date-picker-margin">
+                <input type="date" id="date-picker-input" class="date-picker-input">
             </div>
             <div class="modal-actions">
                 <button class="modal-cancel-btn" id="date-cancel-btn">Cancel</button>
@@ -142,7 +158,7 @@ const showDelayReasonModal = (taskId, currentReason) => {
             <div class="delay-reason-modal-title">
                 <i class="fas fa-exclamation-circle"></i> Delay Reason
             </div>
-            <p style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 1rem;">
+            <p class="modal-description">
                 Please explain why this task was delayed:
             </p>
             <textarea class="delay-reason-textarea" maxlength="500" placeholder="Explain the reason for this delay... (max 500 characters)">${currentReason}</textarea>
@@ -580,7 +596,7 @@ const renderTaskRow = (task) => {
             }
             console.log('Task:', task.TaskName, 'IsFixed:', task.IsFixed, 'TimeFinished:', task.TimeFinished, 'isOwnDepartment:', isOwnDepartment, 'IsLocked:', isLocked);
             return isLocked ? 
-                `<span class="days-fixed" title="${lockReason}">${task.DaysRequired} <i class="fas fa-lock" style="margin-left:0.5rem;color:var(--danger);"></i></span>` :
+                `<span class="days-fixed" title="${lockReason}">${task.DaysRequired} <i class="fas fa-lock lock-icon"></i></span>` :
                 `<input type="number" value="${task.DaysRequired}" class="days-required-input" data-task-id="${task.TaskID}" min="1" placeholder="Days required">`;
         })()}
     </td>
@@ -590,13 +606,13 @@ const renderTaskRow = (task) => {
     <td data-label="Days Delay">${task.TimeFinished ? (task.Delay !== null && task.Delay > 0 ? task.Delay : 'On Time') : '-'}</td>
     <td data-label="Delay Reason">
         ${!isOwnDepartment || !task.TimeFinished ? 
-            `<span style="color: var(--text-light); font-style: italic; font-size: 0.85rem;">Not available</span>` :
+            `<span class="status-text-unavailable">Not available</span>` :
             task.Delay <= 0 ?
-            `<span style="color: var(--success); font-style: italic; font-size: 0.85rem;">✓ On Time</span>` :
+            `<span class="status-text-on-time">✓ On Time</span>` :
             `<div class="delay-reason-cell">
                 <div class="delay-reason-display">
                     <div class="delay-reason-text">
-                        ${delayReason ? `<strong style="color: var(--danger);">✓</strong> ${delayReason}` : `<span class="delay-reason-empty">No reason provided</span>`}
+                        ${delayReason ? `<strong class="delay-reason-emphasis">✓</strong> ${delayReason}` : `<span class="delay-reason-empty">No reason provided</span>`}
                     </div>
                     <button class="edit-reason-btn" data-task-id="${task.TaskID}" title="Edit delay reason">
                         <i class="fas fa-edit"></i>
@@ -620,32 +636,6 @@ const renderTaskRow = (task) => {
 renderTasks(taskList);
 renderTaskTimeline(taskList);
 updateStatusCounts(taskList);
-
-document.addEventListener('click', handleClickEvents);
-document.addEventListener('keydown', handleKeyEvents);
-document.addEventListener('focusin', handleFocusEvents);
-document.addEventListener('focusout', handleFocusEvents);
-
-// Modal event handlers
-modalConfirmBtn?.addEventListener('click', async () => {
-    if (currentAction) await currentAction();
-    closeModal();
-});
-
-modalCancelBtn?.addEventListener('click', closeModal);
-modal?.addEventListener('click', (e) => e.target === modal && closeModal());
-
-// Filter and search events
-const statusFilter = document.getElementById('status-filter');
-const sortFilter = document.getElementById('sort-filter');
-const searchBtn = document.getElementById('search-btn');
-const taskSearch = document.getElementById('task-search');
-
-    statusFilter?.addEventListener('change', (e) => filterTasks(e.target.value));
-    sortFilter?.addEventListener('change', (e) => sortTasks(e.target.value));
-    searchBtn?.addEventListener('click', () => searchTasks(taskSearch?.value));
-    taskSearch?.addEventListener('keyup', (e) => e.key === 'Enter' && searchTasks(e.target.value));
-});
 
 // Optimized event handlers
 const handleClickEvents = async (e) => {
@@ -723,117 +713,14 @@ const handleEditDaysClick = (e) => {
     const currentValue = parseInt(span?.textContent.trim() || '1', 10);
     
     cell.innerHTML = `
-        <input type="number" class="editable-days" 
+        <input type="number" class="editable-days days-input-small" 
                value="${currentValue}" 
                min="1" 
-               style="width: 60px;"
                data-task-id="${e.target.closest('tr')?.querySelector('.row-save-btn')?.dataset.taskId || ''}">
     `;
     
     const input = cell.querySelector('.editable-days');
     input?.focus();
-    
-    input?.addEventListener('blur', () => {
-        if (!input.value || parseInt(input.value) <= 0) {
-            showError("Invalid days value");
-            return;
-        }
-        
-        cell.innerHTML = `
-            <span class="days-display">${input.value}</span>
-            <i class="fas fa-pencil-alt edit-days-icon" title="Edit days required" style="cursor:pointer; margin-left: 6px;"></i>
-        `;
-    });
-    
-    input?.addEventListener('keydown', (event) => {
-        if (event.key === 'Enter') {
-            input.blur();
-            const saveBtn = e.target.closest('tr')?.querySelector('.row-save-btn');
-            if (saveBtn) saveBtn.click();
-        }
-    });
-};
-
-const handleSaveClick = async (e) => {
-    const button = e.target;
-    const originalHTML = button.innerHTML;
-    const row = button.closest('tr');
-    const taskId = button.dataset.taskId;
-    const updates = [];
-    
-    try {
-        button.innerHTML = '<i class="fas fa-spinner spinner"></i> Saving...';
-        
-        // Collect all updates
-        const delayInput = row?.querySelector('.delay-reason-input');
-        const daysCell = row?.querySelector('td[data-label="Days Required"]');
-        const daysInput = daysCell?.querySelector('.days-required-input');
-        
-        // Delay reason update
-        if (delayInput && !delayInput.disabled && delayInput.value.trim() !== '') {
-            updates.push({
-                taskId,
-                field: 'delayReason',
-                value: delayInput.value.trim(),
-                usrID: userId,
-            });
-        }
-        
-        // Days required update
-        if (daysInput) {
-            const newDays = parseInt(daysInput.value);
-            if (!isNaN(newDays) && newDays > 0) {
-                updates.push({
-                    taskId,
-                    field: 'daysRequired',
-                    value: newDays,
-                    usrID: userId,
-                });
-            }
-        }
-
-        if (updates.length === 0) {
-            showError("No changes to save");
-            return;
-        }
-
-        // Save updates
-        const response = await saveTaskUpdates(taskId, updates);
-        
-        if (response && response.success && response.updatedTasks && response.updatedTasks[0]) {
-            const updatedTask = response.updatedTasks[0];
-            
-            // Update Planned Date if it changed
-            if (updatedTask.PlannedDate) {
-                const plannedDate = new Date(updatedTask.PlannedDate);
-                const day = String(plannedDate.getDate()).padStart(2, '0');
-                const month = String(plannedDate.getMonth() + 1).padStart(2, '0');
-                const year = plannedDate.getFullYear();
-                const formattedDate = `${day}/${month}/${year}`;
-                
-                const plannedDateCell = row.querySelector('td[data-label="Planned Date"]');
-                if (plannedDateCell) plannedDateCell.textContent = formattedDate;
-            }
-            
-            // Update Days Required if it was changed
-            const daysCell = row?.querySelector('td[data-label="Days Required"]');
-            const daysInput = daysCell?.querySelector('.days-required-input');
-            if (daysInput) {
-                daysInput.value = updatedTask.DaysRequired;
-            }
-            
-            // Disable delay input if saved
-            if (delayInput && delayInput.value.trim() !== '') {
-                delayInput.disabled = true;
-            }
-            
-            showSuccess('Changes saved successfully');
-        }
-    } catch (err) {
-        showError("Error saving changes: " + err.message);
-    } finally {
-        button.innerHTML = originalHTML;
-    }
 };
 
 const handleKeyEvents = (e) => {
@@ -858,4 +745,29 @@ const handleFocusEvents = (e) => {
         row.classList.remove('keyboard-focus');
     }
 };
-}); // End DOMContentLoaded
+
+document.addEventListener('click', handleClickEvents);
+document.addEventListener('keydown', handleKeyEvents);
+document.addEventListener('focusin', handleFocusEvents);
+document.addEventListener('focusout', handleFocusEvents);
+
+// Modal event handlers
+modalConfirmBtn?.addEventListener('click', async () => {
+    if (currentAction) await currentAction();
+    closeModal();
+});
+
+modalCancelBtn?.addEventListener('click', closeModal);
+modal?.addEventListener('click', (e) => e.target === modal && closeModal());
+
+// Filter and search events
+const statusFilter = document.getElementById('status-filter');
+const sortFilter = document.getElementById('sort-filter');
+const searchBtn = document.getElementById('search-btn');
+const taskSearch = document.getElementById('task-search');
+
+    statusFilter?.addEventListener('change', (e) => filterTasks(e.target.value));
+    sortFilter?.addEventListener('change', (e) => sortTasks(e.target.value));
+    searchBtn?.addEventListener('click', () => searchTasks(taskSearch?.value));
+    taskSearch?.addEventListener('keyup', (e) => e.key === 'Enter' && searchTasks(e.target.value));
+});

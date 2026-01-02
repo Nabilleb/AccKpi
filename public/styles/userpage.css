@@ -1521,3 +1521,47 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     width: 100%;
   }
 }
+/* Utility classes for inline style removal */
+.date-picker-margin {
+  margin: 1.5rem 0;
+}
+
+.date-picker-input {
+  padding: 0.75rem;
+  font-size: 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  width: 100%;
+  max-width: 250px;
+}
+
+.modal-description {
+  color: var(--text-light);
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.status-text-unavailable {
+  color: var(--text-light);
+  font-style: italic;
+  font-size: 0.85rem;
+}
+
+.status-text-on-time {
+  color: var(--success);
+  font-style: italic;
+  font-size: 0.85rem;
+}
+
+.delay-reason-emphasis {
+  color: var(--danger);
+}
+
+.lock-icon {
+  margin-left: 0.5rem;
+  color: var(--danger);
+}
+
+.days-input-small {
+  width: 60px;
+}
