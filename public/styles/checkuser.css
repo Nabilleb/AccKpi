@@ -262,3 +262,48 @@
       color: var(--text-light);
       margin-top: 0.5rem;
     }
+    /* Toast Notifications */
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      padding: 16px 20px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+      min-width: 300px;
+      animation: slideIn 0.3s ease-out;
+      z-index: 9999;
+    }
+
+    .toast-success {
+      border-left: 4px solid var(--success);
+      color: var(--success);
+    }
+
+    .toast-error {
+      border-left: 4px solid var(--danger);
+      color: var(--danger);
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateX(400px);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    @keyframes slideOut {
+      from {
+        transform: translateX(0);
+        opacity: 1;
+      }
+      to {
+        transform: translateX(400px);
+        opacity: 0;
+      }
+    }
