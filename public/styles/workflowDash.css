@@ -338,3 +338,34 @@
           flex-wrap: wrap;
         }
       }
+      /* Utility classes for inline style removal */
+      .skeleton-small {
+        width: 60px;
+      }
+
+      .text-small {
+        font-size: 0.9rem;
+      }
+
+      .text-light {
+        color: var(--text-light);
+      }
+
+      .progress-fill {
+        width: var(--progress-width, 0%);
+        transition: width 0.3s ease;
+      }
+
+      .error-cell {
+        text-align: center;
+        padding: 2rem;
+        color: var(--danger);
+      }
+
+      .error-icon {
+        margin-bottom: 0.5rem;
+      }
+
+      .btn-retry {
+        margin-top: 0.5rem;
+      }

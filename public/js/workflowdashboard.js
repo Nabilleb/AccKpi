@@ -82,7 +82,7 @@ async function loadWorkflowData() {
         if (allWorkflows.length === 0) {
             document.getElementById('noResultsText').innerHTML = `
                 <strong>No workflows available</strong><br>
-                <span style="font-size: 0.9rem; color: var(--text-light);">
+                <span class="text-small text-light">
                     Workflows are only available for packages that have sub packages defined. 
                     Please add sub packages to enable workflows.
                 </span>
@@ -116,7 +116,7 @@ function showSkeletonLoading() {
             <td><div class="skeleton skeleton-text"></div></td>
             <td><div class="skeleton skeleton-text"></div></td>
             <td><div class="skeleton skeleton-text"></div></td>
-            <td><div class="skeleton skeleton-text" style="width: 60px;"></div></td>
+            <td><div class="skeleton skeleton-text skeleton-small"></div></td>
         </tr>
     `).join('');
     
@@ -149,7 +149,7 @@ function updateStats() {
             <div class="stat-value">${completionRate}%</div>
             <div class="stat-label">Completion Rate</div>
             <div class="progress-bar">
-                <div class="progress-fill" style="width: ${completionRate}%"></div>
+                <div class="progress-fill" data-progress="${completionRate}"></div>
             </div>
             <div class="progress-labels">
                 <span>0%</span>
@@ -157,6 +157,12 @@ function updateStats() {
             </div>
         </div>
     `;
+
+    // Set the progress width using custom property
+    const progressFill = statsContainer.querySelector('.progress-fill');
+    if (progressFill) {
+        progressFill.style.setProperty('--progress-width', completionRate + '%');
+    }
 }
 
 // Set up event listeners
@@ -187,6 +193,14 @@ function setupEventListeners() {
     // Reset filters button
     resetFiltersBtn.addEventListener('click', resetFilters);
     resetNoResultsBtn.addEventListener('click', resetFilters);
+    
+    // Logout button
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', () => {
+            window.location.href = '/logout';
+        });
+    }
     
     // Mobile add buttons
     mobileAddBtn.addEventListener('click', () => {
@@ -681,12 +695,12 @@ function hideLoading() {
 function showError(message) {
     workflowTableBody.innerHTML = `
         <tr>
-            <td colspan="9" style="text-align: center; padding: 2rem; color: var(--danger);">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" style="margin-bottom: 0.5rem;">
+            <td colspan="9" class="error-cell">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" class="error-icon">
                     <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM13 17H11V15H13V17ZM13 13H11V7H13V13Z" fill="currentColor"/>
                 </svg>
                 <p>${message}</p>
-                <button class="btn btn-outline" onclick="loadWorkflowData()" style="margin-top: 0.5rem;">
+                <button class="btn btn-outline btn-retry" onclick="loadWorkflowData()">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4C7.58 4 4 7.58 4 12C4 16.42 7.58 20 12 20C15.73 20 18.84 17.45 19.73 14H17.65C16.83 16.33 14.61 18 12 18C8.69 18 6 15.31 6 12C6 8.69 8.69 6 12 6C13.66 6 15.14 6.69 16.22 7.78L13 11H20V4L17.65 6.35Z" fill="currentColor"/>
                     </svg>
