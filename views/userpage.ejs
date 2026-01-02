@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="/styles/userpage.css">
 
 </head>
-<body>
+<body data-user-id="<%= user.id %>" data-dept-id="<%= user.DepartmentId %>" data-task-list="<%= JSON.stringify(tasks) %>" data-is-admin="<%= user.usrAdmin || false %>">
   <!-- Sidebar Navigation -->
   <aside class="sidebar">
     <div class="sidebar-header">
@@ -225,14 +225,7 @@
       </div>
     </div>
   </div>
-
   <!-- EJS Variables for External JavaScript -->
-  <script>
-    const userId = "<%= user.id %>";
-    const deptId = "<%= user.DepartmentId %>";
-    const taskList = <%- JSON.stringify(tasks) %>;
-    const isAdmin = <%= user.usrAdmin || false %>;
-  </script>
 
   <script src="/js/userpage.js"></script>
 </body>

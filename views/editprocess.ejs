@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="/styles/editprocess.css">
 
 </head>
-<body>
+<body data-process-id="<%= process.NumberOfProccessID %>" data-has-workflows="<%= hasWorkflows %>" data-current-dept-ids="<%= JSON.stringify(currentDeptIds) %>">
   <header class="dashboard-header">
     <img src="/images/accNewLog.webp" alt="Company Logo" class="logo" />
     <div class="header-right">
@@ -185,11 +185,6 @@
     </div>
   </div>
 
-  <script>
-    window.processId = <%= process.NumberOfProccessID %>;
-    window.hasWorkflows = <%= hasWorkflows ? 'true' : 'false' %>;
-    window.currentDeptIds = <%= JSON.stringify(currentDeptIds) %>;
-  </script>
   <script src="/js/editprocess.js"></script>
 </body>
 </html>

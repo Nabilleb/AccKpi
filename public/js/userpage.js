@@ -1,23 +1,30 @@
 // Cache DOM elements and initial data
-// (userId, deptId, taskList, isAdmin are injected by EJS in userpage.ejs)
-const container = document.getElementById('department-tables-container');
-const timelineContainer = document.getElementById('task-timeline');
-const errorEl = document.getElementById('error-message');
-const errorText = document.getElementById('error-text');
-const successEl = document.getElementById('success-message');
-const successText = document.getElementById('success-text');
-const modal = document.getElementById('confirmation-modal');
-const modalMessage = document.getElementById('modal-message');
-const modalConfirmBtn = document.getElementById('modal-confirm-btn');
-const modalCancelBtn = document.getElementById('modal-cancel-btn');
+document.addEventListener('DOMContentLoaded', function() {
+  // Read data from body attributes (injected by EJS in userpage.ejs)
+  const body = document.body;
+  const userId = body.dataset.userId;
+  const deptId = body.dataset.deptId;
+  const taskList = JSON.parse(body.dataset.taskList || '[]');
+  const isAdmin = body.dataset.isAdmin === 'true';
+  
+  const container = document.getElementById('department-tables-container');
+  const timelineContainer = document.getElementById('task-timeline');
+  const errorEl = document.getElementById('error-message');
+  const errorText = document.getElementById('error-text');
+  const successEl = document.getElementById('success-message');
+  const successText = document.getElementById('success-text');
+  const modal = document.getElementById('confirmation-modal');
+  const modalMessage = document.getElementById('modal-message');
+  const modalConfirmBtn = document.getElementById('modal-confirm-btn');
+  const modalCancelBtn = document.getElementById('modal-cancel-btn');
 
-// Idle timeout configuration
-const IDLE_TIMEOUT = 5 * 60 * 1000; // 5 minutes
-let idleTimer = null;
-let idleWarningTimer = null;
+  // Idle timeout configuration
+  const IDLE_TIMEOUT = 5 * 60 * 1000; // 5 minutes
+  let idleTimer = null;
+  let idleWarningTimer = null;
 
-const resetIdleTimer = () => {
-    // Clear existing timers
+  const resetIdleTimer = () => {
+      // Clear existing timers
     if (idleTimer) clearTimeout(idleTimer);
     if (idleWarningTimer) clearTimeout(idleWarningTimer);
     
@@ -606,31 +613,30 @@ const renderTaskRow = (task) => {
 };
 
 // Initialize the page with optimized event delegation
-document.addEventListener('DOMContentLoaded', () => {
-    renderTasks(taskList);
-    renderTaskTimeline(taskList);
-    updateStatusCounts(taskList);
-    
-    document.addEventListener('click', handleClickEvents);
-    document.addEventListener('keydown', handleKeyEvents);
-    document.addEventListener('focusin', handleFocusEvents);
-    document.addEventListener('focusout', handleFocusEvents);
-    
-    // Modal event handlers
-    modalConfirmBtn?.addEventListener('click', async () => {
-        if (currentAction) await currentAction();
-        closeModal();
-    });
+renderTasks(taskList);
+renderTaskTimeline(taskList);
+updateStatusCounts(taskList);
 
-    modalCancelBtn?.addEventListener('click', closeModal);
-    modal?.addEventListener('click', (e) => e.target === modal && closeModal());
-    
-    // Filter and search events
-    const statusFilter = document.getElementById('status-filter');
-    const sortFilter = document.getElementById('sort-filter');
-    const searchBtn = document.getElementById('search-btn');
-    const taskSearch = document.getElementById('task-search');
-    
+document.addEventListener('click', handleClickEvents);
+document.addEventListener('keydown', handleKeyEvents);
+document.addEventListener('focusin', handleFocusEvents);
+document.addEventListener('focusout', handleFocusEvents);
+
+// Modal event handlers
+modalConfirmBtn?.addEventListener('click', async () => {
+    if (currentAction) await currentAction();
+    closeModal();
+});
+
+modalCancelBtn?.addEventListener('click', closeModal);
+modal?.addEventListener('click', (e) => e.target === modal && closeModal());
+
+// Filter and search events
+const statusFilter = document.getElementById('status-filter');
+const sortFilter = document.getElementById('sort-filter');
+const searchBtn = document.getElementById('search-btn');
+const taskSearch = document.getElementById('task-search');
+
     statusFilter?.addEventListener('change', (e) => filterTasks(e.target.value));
     sortFilter?.addEventListener('change', (e) => sortTasks(e.target.value));
     searchBtn?.addEventListener('click', () => searchTasks(taskSearch?.value));
@@ -848,3 +854,4 @@ const handleFocusEvents = (e) => {
         row.classList.remove('keyboard-focus');
     }
 };
+}); // End DOMContentLoaded
