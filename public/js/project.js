@@ -60,4 +60,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Auto-focus first field
   document.getElementById('projectName').focus();
+  
+  // Back button handler
+  document.addEventListener('click', function(event) {
+    if (event.target.closest('[data-action="go-back"]')) {
+      window.history.back();
+    }
+  });
 });

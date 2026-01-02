@@ -51,4 +51,11 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     });
   });
+  
+  // Cancel button handler
+  document.addEventListener('click', function(event) {
+    if (event.target.closest('[data-action="cancel-edit-task"]')) {
+      window.location.href = '/adminpage';
+    }
+  });
 });

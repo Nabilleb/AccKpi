@@ -116,6 +116,11 @@ document.addEventListener('DOMContentLoaded', function() {
       unlinkTask(parseInt(taskId));
     }
     
+    // Save task button
+    if (event.target.closest('[data-action="save-task"]')) {
+      saveTaskChanges();
+    }
+    
     // Link task select change
     if (event.target.classList.contains('link-task-select')) {
       linkTaskToOther(event.target);
