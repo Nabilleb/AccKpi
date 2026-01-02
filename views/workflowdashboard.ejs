@@ -7,6 +7,7 @@
 <link rel="stylesheet" href="/css/all.min.css">
 <link rel="stylesheet" href="/fonts/inter/inter.css">
     <link rel="stylesheet" href="/styles/workflowdashboard.css">
+    <link rel="stylesheet" href="/styles/utils.css">
 </head>
 <body>
         <% if (usrAdmin) { %>
@@ -48,7 +49,7 @@
             Add New Workflow
         </h1>
 
-        <div id="alert-message" class="alert" style="display: none;">
+        <div id="alert-message" class="alert hidden">
             <i class="fas fa-check-circle"></i>
             <span id="alert-text"></span>
         </div>
@@ -336,7 +337,7 @@
     </div>
 
     <!-- Floating action button for mobile -->
-    <button class="fab" id="mobileAddBtnBottom" title="Add New Workflow" style="display: none;">
+    <button class="fab hidden" id="mobileAddBtnBottom" title="Add New Workflow">
         <i class="fas fa-plus"></i>
     </button>
 

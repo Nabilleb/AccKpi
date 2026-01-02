@@ -248,23 +248,21 @@ function validateField(field) {
 }
 
 function showError(field, errorElement, message) {
-  field.style.borderColor = 'var(--danger)';
-  field.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.15)';
+  field.classList.add('border-danger', 'shadow-danger');
   
   if (errorElement) {
     errorElement.textContent = message;
-    errorElement.style.display = 'block';
+    errorElement.classList.add('visible');
   }
   
   return false;
 }
 
 function clearError(field, errorElement) {
-  field.style.borderColor = '';
-  field.style.boxShadow = '';
+  field.classList.remove('border-danger', 'shadow-danger');
   
   if (errorElement) {
-    errorElement.style.display = 'none';
+    errorElement.classList.remove('visible');
   }
   
   return true;
@@ -280,9 +278,9 @@ function loadTasks() {
   const paginationEl = document.getElementById('pagination');
 
   // Show loading state
-  loadingEl.style.display = 'block';
-  contentEl.style.display = 'none';
-  paginationEl.style.display = 'none';
+  loadingEl.classList.remove('hidden');
+  contentEl.classList.add('hidden');
+  paginationEl.classList.add('hidden');
   
   // Show loading skeleton
   loadingEl.innerHTML = `
@@ -375,9 +373,9 @@ function renderPaginatedTasks(tasks) {
         <i class="fas fa-inbox"></i>
         <p>No tasks found matching your criteria.</p>
       </div>`;
-    loadingEl.style.display = 'none';
-    contentEl.style.display = 'block';
-    paginationEl.style.display = 'none';
+    loadingEl.classList.add('hidden');
+    contentEl.classList.remove('hidden');
+    paginationEl.classList.add('hidden');
     return;
   }
   
@@ -397,9 +395,9 @@ function renderPaginatedTasks(tasks) {
   renderPagination(totalPages);
   
   // Update UI
-  loadingEl.style.display = 'none';
-  contentEl.style.display = 'block';
-  paginationEl.style.display = 'flex';
+  loadingEl.classList.add('hidden');
+  contentEl.classList.remove('hidden');
+  paginationEl.classList.remove('hidden');
 }
 
 function renderTasks(tasks) {
@@ -505,7 +503,7 @@ function renderTasks(tasks) {
     const headers = table.querySelectorAll('th');
     headers.forEach((header, index) => {
       if (header.textContent.trim() !== 'Status') {
-        header.style.cursor = 'pointer';
+        header.classList.add('cursor-pointer');
         header.addEventListener('click', () => {
           sortTable(table, index);
         });
@@ -518,7 +516,7 @@ function renderPagination(totalPages) {
   const paginationEl = document.getElementById('pagination');
   
   if (totalPages <= 1) {
-    paginationEl.style.display = 'none';
+    paginationEl.classList.add('hidden');
     return;
   }
   
@@ -627,8 +625,7 @@ function sortTable(table, columnIndex) {
     if (i === columnIndex) {
       const icon = document.createElement('i');
       icon.className = 'fas';
-      icon.classList.add(isAscending ? 'fa-arrow-up' : 'fa-arrow-down');
-      icon.style.marginLeft = '0.5rem';
+      icon.classList.add(isAscending ? 'fa-arrow-up' : 'fa-arrow-down', 'margin-left-sm');
       header.appendChild(icon);
     }
   });
@@ -759,20 +756,7 @@ function unlinkTask(taskId) {
 
 function showToast(message, isError = false) {
   const toast = document.createElement('div');
-  toast.style.position = 'fixed';
-  toast.style.bottom = '1rem';
-  toast.style.right = '1rem';
-  toast.style.padding = '1rem 1.5rem';
-  toast.style.background = isError ? 'var(--danger)' : 'var(--success)';
-  toast.style.color = 'white';
-  toast.style.borderRadius = '6px';
-  toast.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
-  toast.style.fontSize = '0.95rem';
-  toast.style.zIndex = '9999';
-  toast.style.display = 'flex';
-  toast.style.alignItems = 'center';
-  toast.style.gap = '0.5rem';
-  toast.style.animation = 'fadeIn 0.3s ease forwards';
+  toast.className = `toast ${isError ? 'toast-error' : 'toast-success'}`;
   toast.innerHTML = `
     <i class="fas ${isError ? 'fa-exclamation-triangle' : 'fa-check-circle'}"></i>
     ${message}
@@ -780,7 +764,7 @@ function showToast(message, isError = false) {
   document.body.appendChild(toast);
   
   setTimeout(() => {
-    toast.style.animation = 'fadeOut 0.3s ease forwards';
+    toast.classList.add('animate-slide-out');
     setTimeout(() => toast.remove(), 300);
   }, 3000);
 }

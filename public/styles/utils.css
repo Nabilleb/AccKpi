@@ -1,0 +1,137 @@
+/* Utility classes for managing visibility and display states */
+
+/* Display utilities */
+.hidden {
+  display: none !important;
+}
+
+.visible {
+  display: block !important;
+}
+
+.inline {
+  display: inline-block !important;
+}
+
+.inline-flex {
+  display: inline-flex !important;
+}
+
+.flex-display {
+  display: flex !important;
+}
+
+/* Opacity utilities */
+.opacity-0 {
+  opacity: 0;
+}
+
+.opacity-80 {
+  opacity: 0.8;
+}
+
+.opacity-100 {
+  opacity: 1;
+}
+
+/* Transform utilities */
+.translate-y-0 {
+  transform: translateY(0);
+}
+
+.translate-y-minus-full {
+  transform: translateY(-20px);
+}
+
+.translate-y-10 {
+  transform: translateY(10px);
+}
+
+/* Cursor utilities */
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.cursor-default {
+  cursor: default;
+}
+
+/* Border utilities */
+.border-danger {
+  border-color: var(--danger);
+}
+
+/* Box shadow utilities */
+.shadow-danger {
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+}
+
+/* Margin utilities */
+.margin-left-sm {
+  margin-left: 0.5rem;
+}
+
+/* Animation utilities */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s forwards;
+}
+
+.animate-slide-out {
+  animation: slideOut 0.3s ease-in-out;
+}
+
+/* Position utilities */
+.position-fixed {
+  position: fixed;
+}
+
+.bottom-4 {
+  bottom: 1rem;
+}
+
+.right-4 {
+  right: 1rem;
+}
+
+/* Toast notification styles */
+.toast {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  padding: 1rem 1.5rem;
+  color: white;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  font-size: 0.95rem;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  animation: fadeIn 0.3s ease forwards;
+}
+
+.toast-success {
+  background-color: var(--success);
+}
+
+.toast-error {
+  background-color: var(--danger);
+}

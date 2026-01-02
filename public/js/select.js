@@ -31,16 +31,20 @@ document.addEventListener('DOMContentLoaded', function() {
                              row.textContent.toLowerCase().includes(searchValue);
         
         const shouldShow = matchesDepartment && matchesStatus && matchesPriority && matchesSearch;
-        row.style.display = shouldShow ? '' : 'none';
-        if (shouldShow) visibleRows++;
+        if (shouldShow) {
+          row.classList.remove('hidden');
+          visibleRows++;
+        } else {
+          row.classList.add('hidden');
+        }
       });
       
       // Show/hide entire department section based on visible rows
       if (visibleRows > 0) {
-        section.style.display = '';
+        section.classList.remove('hidden');
         visibleDepartments++;
       } else {
-        section.style.display = 'none';
+        section.classList.add('hidden');
       }
     });
     

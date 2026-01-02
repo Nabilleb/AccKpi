@@ -7,6 +7,7 @@
 <link rel="stylesheet" href="/css/all.min.css">
 <link rel="stylesheet" href="/fonts/inter/inter.css">
   <link rel="stylesheet" href="/styles/userpage.css">
+  <link rel="stylesheet" href="/styles/utils.css">
 
 </head>
 <body data-user-id="<%= user.id %>" data-dept-id="<%= user.DepartmentId %>" data-task-list="<%= JSON.stringify(tasks) %>" data-is-admin="<%= user.usrAdmin || false %>">
@@ -106,7 +107,7 @@
           <div class="progress-indicator">
             <span>Task Completion:</span>
             <div class="progress-bar">
-              <div class="progress-fill" id="completion-progress" style="width: 0%"></div>
+              <div class="progress-fill" id="completion-progress"></div>
             </div>
             <span id="completion-percentage">0%</span>
           </div>

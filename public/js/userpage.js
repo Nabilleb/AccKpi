@@ -245,7 +245,7 @@ const updateStatusCounts = (tasks) => {
     
     const completedPercentage = totalTasks > 0 ? Math.round((counts.completed / totalTasks) * 100) : 0;
     const progressBar = document.getElementById('completion-progress');
-    progressBar.style.width = `${completedPercentage}%`;
+    progressBar.style.setProperty('--progress-width', `${completedPercentage}%`);
     document.getElementById('completion-percentage').textContent = `${completedPercentage}%`;
 };
 
@@ -295,7 +295,11 @@ const filterTasks = (status) => {
             (status === 'overdue' && row.querySelector('.status-overdue')) ||
             !status ? '' : 'none';
         
-        row.style.display = displayStyle;
+        if (displayStyle === 'none') {
+          row.classList.add('hidden');
+        } else {
+          row.classList.remove('hidden');
+        }
     });
 };
 

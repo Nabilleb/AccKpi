@@ -6,9 +6,9 @@ document.getElementById('userSearch').addEventListener('input', function(e) {
   rows.forEach(row => {
     const searchText = row.getAttribute('data-searchtext');
     if (searchText.includes(searchTerm)) {
-      row.style.display = '';
+      row.classList.remove('hidden');
     } else {
-      row.style.display = 'none';
+      row.classList.add('hidden');
     }
   });
 });
@@ -52,30 +52,15 @@ function showToast(message, type = 'info') {
   const toast = document.createElement('div');
   toast.className = `toast toast-${type}`;
   toast.textContent = message;
-  
-  const styles = {
-    position: 'fixed',
-    top: '20px',
-    right: '20px',
-    padding: '1rem 1.5rem',
-    borderRadius: '6px',
-    color: 'white',
-    zIndex: '9999',
-    animation: 'slideIn 0.3s ease-in-out',
-    fontSize: '0.95rem'
-  };
-
-  const typeStyles = {
-    success: { backgroundColor: '#10b981' },
-    error: { backgroundColor: '#ef4444' },
-    info: { backgroundColor: '#3b82f6' }
-  };
-
-  Object.assign(toast.style, styles, typeStyles[type] || typeStyles.info);
   document.body.appendChild(toast);
 
+  // Trigger animation via class
+  requestAnimationFrame(() => {
+    toast.classList.add('show');
+  });
+
   setTimeout(() => {
-    toast.style.animation = 'slideOut 0.3s ease-in-out';
+    toast.classList.add('animate-slide-out');
     setTimeout(() => toast.remove(), 300);
   }, 3000);
 }
@@ -83,6 +68,30 @@ function showToast(message, type = 'info') {
 // CSS for toast animations
 const style = document.createElement('style');
 style.textContent = `
+  .toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 1rem 1.5rem;
+    border-radius: 6px;
+    color: white;
+    z-index: 9999;
+    font-size: 0.95rem;
+    animation: slideIn 0.3s ease-in-out;
+  }
+
+  .toast-success {
+    background-color: #10b981;
+  }
+
+  .toast-error {
+    background-color: #ef4444;
+  }
+
+  .toast-info {
+    background-color: #3b82f6;
+  }
+
   @keyframes slideIn {
     from {
       transform: translateX(400px);

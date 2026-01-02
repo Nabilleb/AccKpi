@@ -163,3 +163,47 @@
         grid-template-columns: 1fr;
       }
     }
+    /* Success and error message styles */
+    .success-message {
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%) translateY(120px);
+      background: #10b981;
+      color: white;
+      padding: 1rem 1.5rem;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);
+      z-index: 9999;
+      transition: transform 0.3s ease;
+    }
+
+    .error-message {
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%) translateY(120px);
+      background: #ef4444;
+      color: white;
+      padding: 1rem 1.5rem;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      box-shadow: 0 10px 25px rgba(239, 68, 68, 0.3);
+      z-index: 9999;
+      transition: transform 0.3s ease;
+    }
+
+    .success-message.show,
+    .error-message.show {
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .success-message i,
+    .error-message i {
+      font-size: 1.25rem;
+    }
