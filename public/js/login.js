@@ -8,8 +8,8 @@ document.addEventListener('DOMContentLoaded', () => {
     togglePassword.addEventListener('click', () => {
         const isPassword = passwordInput.type === 'password';
         passwordInput.type = isPassword ? 'text' : 'password';
-        document.querySelector('.fa-eye').style.display = isPassword ? 'none' : 'block';
-        document.querySelector('.fa-eye-slash').style.display = isPassword ? 'block' : 'none';
+        document.querySelector('.fa-eye').classList.toggle('hidden');
+        document.querySelector('.fa-eye-slash').classList.toggle('hidden');
     });
 
     loginForm.addEventListener('submit', async (e) => {
@@ -32,8 +32,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Set loading state
         loginButton.disabled = true;
-        document.querySelector('.button-text').style.display = 'none';
-        document.querySelector('.spinner').style.display = 'inline-block';
+        document.querySelector('.button-text').classList.add('hidden');
+        document.querySelector('.spinner').classList.remove('hidden');
         
         try {
             const formData = new FormData(loginForm);
@@ -66,8 +66,8 @@ document.addEventListener('DOMContentLoaded', () => {
         } finally {
             // Reset button state
             loginButton.disabled = false;
-            document.querySelector('.button-text').style.display = 'inline-block';
-            document.querySelector('.spinner').style.display = 'none';
+            document.querySelector('.button-text').classList.remove('hidden');
+            document.querySelector('.spinner').classList.add('hidden');
         }
     });
 

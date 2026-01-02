@@ -85,6 +85,37 @@ document.addEventListener('DOMContentLoaded', () => {
   
   setupTableSorting();
 
+  // Event delegation for process table
+  const processTableBody = document.querySelector('.process-table tbody');
+  if (processTableBody) {
+    processTableBody.addEventListener('click', (e) => {
+      const row = e.target.closest('.process-row');
+      if (!row) return;
+
+      const processId = row.dataset.processId;
+      const processName = row.dataset.processName;
+      const action = e.target.closest('[data-action]')?.dataset.action;
+
+      if (!action) {
+        // Clicked on row but not a button - view flow
+        viewProcessFlow(processId, processName);
+        return;
+      }
+
+      switch(action) {
+        case 'view-flow':
+          viewProcessFlow(processId, processName);
+          break;
+        case 'edit':
+          window.editProcess(processId);
+          break;
+        case 'task':
+          window.goToTask(processId);
+          break;
+      }
+    });
+  }
+
   // Search and filter functionality
   const searchInput = document.getElementById('taskSearchInput');
   const statusFilter = document.getElementById('statusFilter');
@@ -354,3 +385,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 500);
   }
 });
+
+// Make these functions globally accessible
+window.editProcess = function(processID) {
+  // Navigate to the edit process page
+  window.location.href = `/editProcess/${processID}`;
+};
+
+window.goToTask = function(processID) {
+  // Navigate to add-task page with process ID
+  window.location.href = `/add-task?processId=${processID}`;
+};

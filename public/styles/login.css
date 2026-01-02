@@ -359,3 +359,16 @@ input:focus:invalid {
     background-color: #4a90e2;
     color: white;
 }
+
+/* Utility classes for visibility */
+.hidden {
+    display: none;
+}
+
+.visible {
+    display: block;
+}
+
+.inline {
+    display: inline-block;
+}

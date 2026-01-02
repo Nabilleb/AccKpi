@@ -74,19 +74,19 @@
         </thead>
         <tbody>
           <% processes.forEach(process => { %>
-          <tr onclick="viewProcessFlow(<%= process.NumberOfProccessID %>, '<%= process.ProcessName %>')">
+          <tr class="process-row" data-process-id="<%= process.NumberOfProccessID %>" data-process-name="<%= process.ProcessName %>">
             <td class="process-id">#<%= process.NumberOfProccessID %></td>
             <td class="process-name"><%= process.ProcessName %></td>
             <td class="process-desc"><%= process.processDesc || 'No description provided.' %></td>
-            <td onclick="event.stopPropagation()">
+            <td class="actions-cell">
               <div class="action-buttons">
-                <button class="view-process-btn" onclick="viewProcessFlow(<%= process.NumberOfProccessID %>, '<%= process.ProcessName %>')">
+                <button class="view-process-btn" data-action="view-flow">
                   <i class="fas fa-project-diagram"></i> View Flow
                 </button>
-                <button class="edit-btn" onclick="editProcess(<%= process.NumberOfProccessID %>)">
+                <button class="edit-btn" data-action="edit">
                   <i class="fas fa-edit"></i> Edit
                 </button>
-                <button class="task-btn" onclick="goToTask(<%= process.NumberOfProccessID %>)">
+                <button class="task-btn" data-action="task">
                   <i class="fas fa-tasks"></i> Task
                 </button>
               </div>
@@ -96,7 +96,7 @@
         </tbody>
       </table>
       <div class="departmentFlow">
-        <h3 id="selectedProcessTitle" style="margin-top: 2rem;"></h3>
+        <h3 id="selectedProcessTitle" class="margin-top"></h3>
         <div id="departmentFlowGrid" class="department-flow-grid" data-department-id=""></div>
       </div>
     </section>
@@ -139,16 +139,5 @@
     </section>
   </main>
 <script src="/js/adminpage.js"></script>
-<script>
-  function editProcess(processID) {
-    // Navigate to the edit process page
-    window.location.href = `/editProcess/${processID}`;
-  }
-
-  function goToTask(processID) {
-    // Navigate to add-task page with process ID
-    window.location.href = `/add-task?processId=${processID}`;
-  }
-</script>
 </body>
 </html>

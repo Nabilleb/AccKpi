@@ -1,6 +1,18 @@
 const form = document.getElementById('add-package-form');
 const alertMessage = document.getElementById('alert-message');
 const alertText = document.getElementById('alert-text');
+const backBtn = document.getElementById('back-btn');
+const cancelBtn = document.getElementById('cancel-btn');
+
+// Back button handler
+if (backBtn) {
+    backBtn.addEventListener('click', () => window.history.back());
+}
+
+// Cancel button handler
+if (cancelBtn) {
+    cancelBtn.addEventListener('click', () => window.history.back());
+}
 
 // Set today's date as default for start date
 const now = new Date();

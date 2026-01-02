@@ -104,12 +104,10 @@ app.use(
       directives: {
         "default-src": ["'self'"],
 
-        "script-src": ["'self'", "'unsafe-inline'"],
-        "script-src-attr": ["'unsafe-inline'"],
+        "script-src": ["'self'"],
 
         "style-src": [
           "'self'",
-          "'unsafe-inline'",
           "https://cdnjs.cloudflare.com",      
         ],
 
