@@ -218,24 +218,6 @@ body {
     width: 100%;
 }
 
-/* Add these to your existing login.css */
-.password-wrapper {
-    position: relative;
-}
-
-.toggle-password {
-    position: absolute;
-    right: 10px;
-    top: 50%;
-    transform: translateY(-50%);
-    cursor: pointer;
-    color: #666;
-}
-
-.toggle-password:hover {
-    color: #333;
-}
-
 /* Loading spinner */
 .spinner {
     margin-left: 8px;

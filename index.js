@@ -100,7 +100,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(
   helmet({
     contentSecurityPolicy: {
-      useDefaults: true,
+      useDefaults: false,
       directives: {
         "default-src": ["'self'"],
 
@@ -3000,60 +3000,45 @@ app.post("/postWorkflow", async (req, res) => {
 app.post("/addUser", async (req, res) => {
   const {
     usrID,
-    usrDesc,
     usrPWD,
+    usrEmail,
     usrAdmin,
     IsSpecialUser,
-    usrSTID,
-    DepartmentID,
-    AllowAccess,
-    Export,
-    usrEmail,
-    usrSignature,
-    emailSignature,
-    usrReadPolicy
+    DepartmentID
   } = req.body;
 
   // Basic validation
-  if (!usrID || !usrDesc || !usrPWD || !DepartmentID) {
-    return res.status(400).json({ error: "usrID, usrDesc, usrPWD, and DepartmentID are required." });
+  if (!usrID || !usrPWD || !usrEmail) {
+    return res.status(400).json({ error: "usrID, usrPWD, and usrEmail are required." });
   }
 
-  if (usrDesc.length > 40) return res.status(400).json({ error: "usrDesc exceeds 40 characters." });
-  if (usrEmail && usrEmail.length > 50) return res.status(400).json({ error: "usrEmail exceeds 50 characters." });
-  if (usrSignature && usrSignature.length > 100) return res.status(400).json({ error: "usrSignature exceeds 100 characters." });
+  // Department is required if user is not admin
+  if (!usrAdmin && !DepartmentID) {
+    return res.status(400).json({ error: "DepartmentID is required for non-admin users." });
+  }
 
   const insertDate = new Date();
   const lastUpdate = new Date();
 
   try {
-    // Insert user with plain password (no hashing for now)
+    // Insert user with only essential fields
     await pool.request()
       .input("usrID", sql.VarChar(10), usrID)
-      .input("usrDesc", sql.VarChar(40), usrDesc)
       .input("usrPWD", sql.VarChar(255), usrPWD)
+      .input("usrEmail", sql.VarChar(255), usrEmail)
       .input("usrAdmin", sql.Bit, usrAdmin ? 1 : 0)
       .input("IsSpecialUser", sql.Bit, IsSpecialUser ? 1 : 0)
-      .input("usrSTID", sql.SmallInt, usrSTID || null)
-      .input("DepartmentID", sql.Int, parseInt(DepartmentID))
-      .input("AllowAccess", sql.Bit, AllowAccess ? 1 : 0)
-      .input("Export", sql.SmallInt, Export || 0)
+      .input("DepartmentID", sql.Int, DepartmentID ? parseInt(DepartmentID) : null)
       .input("LastUpdate", sql.DateTime, lastUpdate)
-      .input("usrEmail", sql.VarChar(50), usrEmail || null)
-      .input("usrSignature", sql.VarChar(100), usrSignature || null)
-      .input("emailSignature", sql.Text, emailSignature || null)
-      .input("usrReadPolicy", sql.TinyInt, usrReadPolicy || 0)
       .input("insertDate", sql.DateTime, insertDate)
       .query(`
         INSERT INTO tblUsers (
-          usrID, usrDesc, usrPWD, usrAdmin, IsSpecialUser, usrSTID, DepartmentID,
-          AllowAccess, Export, LastUpdate, usrEmail, usrSignature,
-          emailSignature, usrReadPolicy, insertDate
+          usrID, usrPWD, usrEmail, usrAdmin, IsSpecialUser, DepartmentID,
+          LastUpdate, insertDate
         )
         VALUES (
-          @usrID, @usrDesc, @usrPWD, @usrAdmin, @IsSpecialUser, @usrSTID, @DepartmentID,
-          @AllowAccess, @Export, @LastUpdate, @usrEmail, @usrSignature,
-          @emailSignature, @usrReadPolicy, @insertDate
+          @usrID, @usrPWD, @usrEmail, @usrAdmin, @IsSpecialUser, @DepartmentID,
+          @LastUpdate, @insertDate
         )
       `);
 

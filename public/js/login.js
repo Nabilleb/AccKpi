@@ -8,8 +8,8 @@ document.addEventListener('DOMContentLoaded', () => {
     togglePassword.addEventListener('click', () => {
         const isPassword = passwordInput.type === 'password';
         passwordInput.type = isPassword ? 'text' : 'password';
-        document.querySelector('.fa-eye').classList.toggle('hidden');
-        document.querySelector('.fa-eye-slash').classList.toggle('hidden');
+        document.getElementById('toggleIcon').classList.toggle('fa-eye');
+        document.getElementById('toggleIcon').classList.toggle('fa-eye-slash');
     });
 
     loginForm.addEventListener('submit', async (e) => {
