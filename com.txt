@@ -1,0 +1,1 @@
+cd C:\inetpub\wwwroot\KPI && dir node_modules\express && echo "✅ express found!" || echo "❌ express NOT found!"

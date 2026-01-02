@@ -43,10 +43,10 @@ const config = {
   }
 };
 
-// Fallback config for localhost
+// Fallback config for localhost (for local development)
 const fallbackConfig = {
-  user: process.env.DB_USER || 'sa',
-  password: process.env.DB_PASSWORD || 'sa',
+  user: 'sa',
+  password: 'sa',
   server: 'localhost',
   database: process.env.DB_DATABASE || 'AccDBF',
   options: {
