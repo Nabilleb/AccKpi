@@ -6,257 +6,7 @@
   <title>Add New Project</title>
   <link rel="stylesheet" href="/css/bootstrap.min.css">
   <link rel="stylesheet" href="/css/all.min.css">
-  <style>
-    :root {
-      --primary: #3b82f6;
-      --primary-light: #dbeafe;
-      --primary-dark: #2563eb;
-      --secondary: #64748b;
-      --success: #10b981;
-      --danger: #ef4444;
-      --warning: #f59e0b;
-      --text: #1e293b;
-      --text-light: #64748b;
-      --border: #e2e8f0;
-      --background: #f8fafc;
-      --white: #ffffff;
-      --radius-sm: 4px;
-      --radius-md: 8px;
-      --radius-lg: 12px;
-      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-      --transition: all 0.2s ease;
-    }
-
-    * {
-      box-sizing: border-box;
-    }
-
-    body {
-      font-family: 'Inter', system-ui, -apple-system, sans-serif;
-      background-color: var(--background);
-      margin-left: 250px;
-      -webkit-font-smoothing: antialiased;
-    }
-
-    /* Navbar Styles */
-    .dashboard-nav {
-      background: var(--white);
-      height: 100vh;
-      width: 250px;
-      position: fixed;
-      left: 0;
-      top: 0;
-      box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
-      display: flex;
-      flex-direction: column;
-      z-index: 1000;
-    }
-
-    .nav-header {
-      padding: 1.5rem;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-    }
-
-    .nav-header i {
-      font-size: 1.5rem;
-      color: var(--primary);
-    }
-
-    .nav-header h2 {
-      margin: 0;
-      font-size: 1.25rem;
-      color: var(--text);
-      font-weight: 600;
-    }
-
-    .nav-links {
-      list-style: none;
-      padding: 1rem 0;
-      flex-grow: 1;
-      overflow-y: auto;
-    }
-
-    .nav-item {
-      margin: 0.25rem 0;
-    }
-
-    .nav-item a {
-      display: flex;
-      align-items: center;
-      padding: 0.75rem 1.5rem;
-      color: var(--text-light);
-      text-decoration: none;
-      transition: var(--transition);
-    }
-
-    .nav-item a:hover {
-      background: var(--primary-light);
-      color: var(--primary);
-    }
-
-    .nav-item a i {
-      margin-right: 0.75rem;
-      width: 20px;
-      text-align: center;
-    }
-
-    .nav-footer {
-      padding: 1rem;
-      border-top: 1px solid var(--border);
-    }
-
-    .logout-btn {
-      display: flex;
-      align-items: center;
-      padding: 0.75rem 1.5rem;
-      color: var(--text-light);
-      text-decoration: none;
-      transition: var(--transition);
-      border-radius: 6px;
-    }
-
-    .logout-btn:hover {
-      background: #fee2e2;
-      color: #dc2626;
-    }
-
-    .logout-btn i {
-      margin-right: 0.75rem;
-      width: 20px;
-      text-align: center;
-    }
-
-    .project-form-container {
-      max-width: 800px;
-      margin: 2rem auto;
-      padding: 2rem;
-      background-color: var(--white);
-      border-radius: var(--radius-lg);
-      box-shadow: var(--shadow-md);
-    }
-
-    .form-header {
-      margin-bottom: 2rem;
-      padding-bottom: 1rem;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .form-header h2 {
-      color: var(--primary-dark);
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-    }
-
-    .form-header i {
-      color: var(--primary);
-    }
-
-    .form-label {
-      font-weight: 500;
-      margin-bottom: 0.5rem;
-      color: var(--text);
-    }
-
-    .form-control, .form-select {
-      padding: 0.75rem 1rem;
-      border-radius: var(--radius-sm);
-      border: 1px solid var(--border);
-      transition: var(--transition);
-    }
-
-    .form-control:focus, .form-select:focus {
-      border-color: var(--primary);
-      box-shadow: 0 0 0 0.25rem rgba(59, 130, 246, 0.25);
-    }
-
-    .btn-primary {
-      background-color: var(--primary);
-      border-color: var(--primary);
-      padding: 0.75rem 1.5rem;
-      font-weight: 500;
-      transition: var(--transition);
-    }
-
-    .btn-primary:hover {
-      background-color: var(--primary-dark);
-      border-color: var(--primary-dark);
-      transform: translateY(-1px);
-    }
-
-    .btn-primary:active {
-      transform: translateY(0);
-    }
-
-    @media (max-width: 768px) {
-      body {
-        margin-left: 0;
-      }
-
-      .dashboard-nav {
-        width: 100%;
-        height: auto;
-        position: relative;
-        flex-direction: row;
-        flex-wrap: wrap;
-      }
-
-      .nav-header {
-        width: 100%;
-      }
-
-      .nav-links {
-        display: flex;
-        flex-wrap: wrap;
-        padding: 0;
-        flex-grow: 0;
-      }
-
-      .nav-item {
-        flex: 1;
-        min-width: 120px;
-        margin: 0;
-      }
-
-      .nav-footer {
-        width: 100%;
-      }
-    }
-
-    .btn i {
-      margin-right: 0.5rem;
-    }
-
-    /* Custom select dropdown arrow */
-    .form-select {
-      background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
-      background-repeat: no-repeat;
-      background-position: right 0.75rem center;
-      background-size: 16px 12px;
-    }
-
-    /* Toast notification */
-    .toast-container {
-      position: fixed;
-      top: 1rem;
-      right: 1rem;
-      z-index: 1100;
-    }
-
-    /* Responsive adjustments */
-    @media (max-width: 768px) {
-      .project-form-container {
-        margin: 1rem;
-        padding: 1.5rem;
-      }
-    }
-  </style>
+  <link rel="stylesheet" href="/styles/project.css">
 </head>
 <body>
   <nav class="dashboard-nav">
@@ -345,32 +95,6 @@
         <div class="invalid-feedback">Please provide a project name.</div>
       </div>
 
-      <div class="mb-4">
-        <label for="packageID" class="form-label">Select Package</label>
-        <select class="form-select" id="packageID" name="packageID" required>
-          <option value="" selected disabled>Choose a package...</option>
-          <% packages.forEach(pkg => { %>
-            <option value="<%= pkg.PkgeID %>" data-duration="<%= pkg.Duration %>">
-              <%= pkg.PkgeName %> - <%= pkg.Division %> (Duration: <%= pkg.Duration %> days)
-            </option>
-          <% }) %>
-        </select>
-        <div class="invalid-feedback">Please select a package.</div>
-      </div>
-
-      <div class="mb-4">
-        <label for="processID" class="form-label">Select Process</label>
-        <select class="form-select" id="processID" name="processID" required>
-          <option value="" selected disabled>Choose a process...</option>
-          <% processes.forEach(proc => { %>
-            <option value="<%= proc.NumberOfProccessID %>">
-              <%= proc.ProcessName %> <% if (proc.processDesc) { %> - <%= proc.processDesc %> <% } %>
-            </option>
-          <% }) %>
-        </select>
-        <div class="invalid-feedback">Please select a process.</div>
-      </div>
-
       <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
         <button type="button" class="btn btn-outline-secondary" onclick="window.history.back()">
           <i class="fas fa-arrow-left"></i> Cancel
@@ -395,70 +119,25 @@
     </div>
   </div>
 
+  <!-- Success Modal -->
+  <div class="modal fade" id="successModal" tabindex="-1" aria-labelledby="successModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-body text-center py-5">
+          <div class="mb-4">
+            <i class="fas fa-check-circle text-success" style="font-size: 4rem;"></i>
+          </div>
+          <h4 class="modal-title mb-3" id="successModalLabel">Success!</h4>
+          <p class="text-muted mb-4">Project has been added successfully. You will be redirected shortly.</p>
+          <div class="spinner-border text-success" role="status" style="width: 2rem; height: 2rem;">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      const form = document.getElementById('addProjectForm');
-      const submitBtn = document.getElementById('submitBtn');
-      const successToast = new bootstrap.Toast(document.getElementById('successToast'));
-      
-      // Real-time validation
-      form.addEventListener('submit', function(e) {
-        if (!form.checkValidity()) {
-          e.preventDefault();
-          e.stopPropagation();
-        }
-        
-        form.classList.add('was-validated');
-      });
-
-      // Enhanced form submission
-      form.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        
-        if (!form.checkValidity()) {
-          form.classList.add('was-validated');
-          return;
-        }
-
-        // Set loading state
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Processing...';
-
-        try {
-          const formData = new FormData(form);
-          const response = await fetch(form.action, {
-            method: 'POST',
-            body: formData
-          });
-
-          if (response.ok) {
-            // Show success toast
-            document.getElementById('toastMessage').textContent = 'Project added successfully!';
-            successToast.show();
-            
-            // Reset form after successful submission
-            setTimeout(() => {
-              form.reset();
-              form.classList.remove('was-validated');
-              submitBtn.disabled = false;
-              submitBtn.innerHTML = '<i class="fas fa-plus-circle me-2"></i> Add Project';
-            }, 1500);
-          } else {
-            const error = await response.json();
-            throw new Error(error.message || 'Failed to add project');
-          }
-        } catch (error) {
-          // Show error message (you could add an error toast as well)
-          alert(error.message);
-          submitBtn.disabled = false;
-          submitBtn.innerHTML = '<i class="fas fa-plus-circle me-2"></i> Add Project';
-        }
-      });
-
-      // Auto-focus first field
-      document.getElementById('projectName').focus();
-    });
-  </script>
+  <script src="/js/project.js"></script>
 </body>
 </html>

@@ -3522,15 +3522,7 @@ app.put('/api/link-task/:taskId/:linkedTaskId', async (req, res) => {
 
 app.get('/addProject', async (req, res) => {
   try {
-    const [packagesResult, processesResult] = await Promise.all([
-      pool.request().query("SELECT * FROM tblPackages WHERE Selected = 1"),
-      pool.request().query("SELECT * FROM tblProcess") 
-    ]);
-
-    res.render('project.ejs', {
-      packages: packagesResult.recordset,
-      processes: processesResult.recordset
-    });
+    res.render('project.ejs');
   } catch (err) {
     console.error('Error loading data:', err);
     res.status(500).send('Server error');
@@ -3538,7 +3530,7 @@ app.get('/addProject', async (req, res) => {
 });
 
 app.post('/projects/add', async (req, res) => {
-  const { projectName, packageID, processID } = req.body;
+  const { projectName } = req.body;
 
   try {
     const insertProject = await pool.request()
@@ -3546,13 +3538,6 @@ app.post('/projects/add', async (req, res) => {
       .query('INSERT INTO tblProject (projectName) OUTPUT INSERTED.projectID VALUES (@projectName)');
 
     const newProjectID = insertProject.recordset[0].projectID;
-
-    await pool.request()
-      .input('processID', sql.Int, processID)
-      .input('projectID', sql.Int, newProjectID)
-      .input('packageID', sql.Int, packageID)
-      .query(`INSERT INTO tblProcessWorkflow (processID, projectID, packageID)
-              VALUES (@processID, @projectID, @packageID)`);
 
     res.redirect('/adminpage');
   } catch (err) {
