@@ -584,24 +584,23 @@ app.post("/api/subpackage/add", ensureAuthenticated, async (req, res) => {
       return res.status(403).json({ message: "Forbidden: Special users only" });
     }
 
-    const { itemDescription, packageId, supplierName, supplierContractorType, supplierContractorName, awardValue, currency } = req.body;
+    const { itemDescription, packageId, supplierContractorType, supplierContractorName, awardValue, currency } = req.body;
 
     // Validate required fields
-    if (!itemDescription || !packageId || !supplierName || !supplierContractorType || !supplierContractorName || !awardValue || !currency) {
+    if (!itemDescription || !packageId || !supplierContractorType || !supplierContractorName || !awardValue || !currency) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
     const result = await pool.request()
       .input('itemDescription', sql.NVarChar, itemDescription)
       .input('packageId', sql.Int, parseInt(packageId))
-      .input('supplierName', sql.VarChar, supplierName)
       .input('supplierContractorType', sql.VarChar, supplierContractorType)
       .input('supplierContractorName', sql.VarChar, supplierContractorName)
       .input('awardValue', sql.Decimal(18, 2), parseFloat(awardValue))
       .input('currency', sql.VarChar, currency)
       .query(`
-        INSERT INTO tblSubPackage (ItemDescription, PkgeID, SupplierName, SupplierContractorType, SupplierContractorName, AwardValue, Currency, CreatedDate, UpdatedDate)
-        VALUES (@itemDescription, @packageId, @supplierName, @supplierContractorType, @supplierContractorName, @awardValue, @currency, GETDATE(), GETDATE())
+        INSERT INTO tblSubPackage (ItemDescription, PkgeID, SupplierContractorType, SupplierContractorName, AwardValue, Currency, CreatedDate, UpdatedDate)
+        VALUES (@itemDescription, @packageId, @supplierContractorType, @supplierContractorName, @awardValue, @currency, GETDATE(), GETDATE())
       `);
 
     res.json({ success: true, message: "Sub Package added successfully" });

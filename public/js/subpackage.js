@@ -37,7 +37,6 @@ form.addEventListener('submit', async (e) => {
     const formData = {
         itemDescription: document.getElementById('itemDescription').value,
         packageId: document.getElementById('packageId').value,
-        supplierName: document.getElementById('supplierName').value,
         supplierContractorType: document.getElementById('supplierContractorType').value,
         supplierContractorName: document.getElementById('supplierContractorName').value,
         awardValue: document.getElementById('awardValue').value,
