@@ -75,13 +75,19 @@
               <th>Email</th>
               <th>Department</th>
               <th>Join Date</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody id="usersTableBody">
-            <% users.forEach(u => { %>
-              <tr class="user-row" data-searchtext="<%= (u.usrID + ' ' + u.usrDesc + ' ' + (u.usrEmail || '') + ' ' + (u.DeptName || '')).toLowerCase() %>">
+            <% users.forEach(u => { 
+              const isCurrentUser = String(u.usrID) === String(currentUserId);
+            %>
+              <tr class="user-row <%= isCurrentUser ? 'current-user' : '' %>" data-searchtext="<%= (u.usrID + ' ' + u.usrDesc + ' ' + (u.usrEmail || '') + ' ' + (u.DeptName || '')).toLowerCase() %>">
                 <td>
                   <strong><%= u.usrID %></strong>
+                  <% if (isCurrentUser) { %>
+                    <span style="margin-left: 0.5rem; background-color: #fbbf24; color: #78350f; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">YOU</span>
+                  <% } %>
                 </td>
                 <td><%= u.usrDesc %></td>
                 <td>
@@ -96,12 +102,16 @@
                   <% } %>
                 </td>
                 <td>
-                  <% if (u.IsSpecialUser) { %>
+                  <% if (u.usrAdmin) { %>
+                    <span class="badge badge-admin">
+                      <i class="fas fa-shield-alt"></i> Admin
+                    </span>
+                  <% } else if (u.IsSpecialUser) { %>
                     <span class="badge badge-special">
                       <i class="fas fa-star"></i> Special User
                     </span>
                   <% } else { %>
-                    <span class="text-light">Regular</span>
+                    <span class="text-dark">Regular</span>
                   <% } %>
                 </td>
                 <td>
@@ -119,7 +129,7 @@
                       <%= u.DeptName %>
                     </span>
                   <% } else { %>
-                    <span class="text-light">No Department</span>
+                    <span class="text-dark">No Department</span>
                   <% } %>
                 </td>
                 <td>
@@ -127,6 +137,32 @@
                     <%= new Date(u.insertDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) %>
                   <% } else { %>
                     <span class=\"text-light\">N/A</span>
+                  <% } %>
+                </td>
+                <td class="actions-column">
+                  <% if (!isCurrentUser) { %>
+                    <% if (!u.usrAdmin && !u.IsSpecialUser) { %>
+                      <button class="btn-action btn-admin" data-action="grant-admin" data-userid="<%= u.usrID %>" data-username="<%= u.usrDesc %>">
+                        <i class="fas fa-crown"></i> Make Admin
+                      </button>
+                    <% } else if (u.usrAdmin) { %>
+                      <button class="btn-action btn-danger" data-action="revoke-admin" data-userid="<%= u.usrID %>" data-username="<%= u.usrDesc %>">
+                        <i class="fas fa-times"></i> Remove Admin
+                      </button>
+                    <% } %>
+                    <% if (!u.usrAdmin) { %>
+                      <% if (!u.IsSpecialUser) { %>
+                        <button class="btn-action btn-special" data-action="grant-special" data-userid="<%= u.usrID %>" data-username="<%= u.usrDesc %>">
+                          <i class="fas fa-star"></i> Special
+                        </button>
+                      <% } else { %>
+                        <button class="btn-action btn-secondary" data-action="revoke-special" data-userid="<%= u.usrID %>" data-username="<%= u.usrDesc %>">
+                          <i class="fas fa-times"></i> Regular
+                        </button>
+                      <% } %>
+                    <% } %>
+                  <% } else { %>
+                    <span class="text-light">-</span>
                   <% } %>
                 </td>
               </tr>
@@ -142,6 +178,7 @@
     </div>
   </div>
 
+  <script src="/js/permissions.js"></script>
   <script src="/js/checkuser.js"></script>
 </body>
 </html>

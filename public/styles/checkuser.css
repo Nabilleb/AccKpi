@@ -307,3 +307,84 @@
         opacity: 0;
       }
     }
+
+    .text-dark {
+      color: var(--text);
+    }
+
+    .actions-column {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .btn-action {
+      padding: 0.4rem 0.7rem;
+      border: none;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .btn-action i {
+      font-size: 0.7rem;
+    }
+
+    .btn-admin {
+      background-color: #fbbf24;
+      color: #78350f;
+    }
+
+    .btn-admin:hover {
+      background-color: #f59e0b;
+    }
+
+    .btn-special {
+      background-color: #ec4899;
+      color: white;
+    }
+
+    .btn-special:hover {
+      background-color: #db2777;
+    }
+
+    .btn-secondary {
+      background-color: #6b7280;
+      color: white;
+    }
+
+    .btn-secondary:hover {
+      background-color: #4b5563;
+    }
+
+    .btn-danger {
+      background-color: #ef4444;
+      color: white;
+    }
+
+    .btn-danger:hover {
+      background-color: #dc2626;
+    }
+
+    .users-table tbody tr.current-user {
+      background-color: #fef3c7;
+      font-weight: 500;
+    }
+
+    .users-table tbody tr.current-user:hover {
+      background-color: #fde68a;
+    }
+
+    .users-table tbody tr.current-user td:first-child::before {
+      content: '★';
+      color: var(--primary);
+      margin-right: 0.5rem;
+      font-size: 1.1rem;
+    }

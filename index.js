@@ -1353,6 +1353,8 @@ app.get("/check-users", ensureAuthenticated, async (req, res) => {
     return res.status(403).send("Forbidden: Admins only");
   }
 
+  const currentUserId = String(user.usrID || '');
+
   try {
     const request = pool.request();
     const result = await request.query(`
@@ -1373,11 +1375,46 @@ app.get("/check-users", ensureAuthenticated, async (req, res) => {
     res.render("checkuser.ejs", {
       user,
       desc_user,
-      users: result.recordset
+      users: result.recordset,
+      currentUserId
     });
   } catch (err) {
     console.error("Error fetching users:", err);
     res.status(500).send("Server error");
+  }
+});
+
+// Update user permissions
+app.post("/update-permission", ensureAuthenticated, isAdmin, async (req, res) => {
+  const { usrID, permission, value } = req.body;
+  const currentUserId = String(req.session.user.usrID);
+  const targetUserId = String(usrID);
+  
+  if (!usrID || !permission) {
+    return res.json({ success: false, error: "Missing parameters" });
+  }
+
+  // Prevent admin from removing their own admin status
+  if (permission === "admin" && value === false && targetUserId === currentUserId) {
+    return res.json({ success: false, error: "You cannot remove your own admin privileges" });
+  }
+
+  try {
+    const request = pool.request();
+    request.input("usrID", targetUserId);
+
+    if (permission === "admin") {
+      request.input("usrAdmin", value ? 1 : 0);
+      await request.query("UPDATE tblUsers SET usrAdmin = @usrAdmin WHERE usrID = @usrID");
+    } else if (permission === "special") {
+      request.input("IsSpecialUser", value ? 1 : 0);
+      await request.query("UPDATE tblUsers SET IsSpecialUser = @IsSpecialUser WHERE usrID = @usrID");
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Error updating permission:", err);
+    res.json({ success: false, error: "Failed to update" });
   }
 });
 
