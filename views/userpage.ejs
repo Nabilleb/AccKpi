@@ -18,7 +18,7 @@
     </div>
     
     <div class="sidebar-user">
-      <div class="sidebar-user-avatar">RK</div>
+      <div class="sidebar-user-avatar"><%= user.name.split(' ').map(word => word.charAt(0).toUpperCase()).slice(0, 2).join('') %></div>
       <div class="sidebar-user-info">
         <h4><%=user.name %></h4>
 <p>
