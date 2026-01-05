@@ -3515,9 +3515,14 @@ app.get('/addProject', async (req, res) => {
 });
 
 app.post('/projects/add', async (req, res) => {
-  const { projectName } = req.body;
-
   try {
+    // Handle both form-data and JSON requests
+    const projectName = req.body?.projectName;
+
+    if (!projectName) {
+      return res.status(400).json({ error: "Project name is required." });
+    }
+
     const insertProject = await pool.request()
       .input('projectName', sql.VarChar, projectName)
       .query('INSERT INTO tblProject (projectName) OUTPUT INSERTED.projectID VALUES (@projectName)');

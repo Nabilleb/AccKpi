@@ -5,16 +5,6 @@ document.addEventListener('DOMContentLoaded', function() {
   const successModal = new bootstrap.Modal(document.getElementById('successModal'));
   
   // Real-time validation
-  form.addEventListener('submit', function(e) {
-    if (!form.checkValidity()) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
-    
-    form.classList.add('was-validated');
-  });
-
-  // Enhanced form submission
   form.addEventListener('submit', async function(e) {
     e.preventDefault();
     
@@ -31,7 +21,7 @@ document.addEventListener('DOMContentLoaded', function() {
       const formData = new FormData(form);
       const response = await fetch(form.action, {
         method: 'POST',
-        body: formData
+        body: new URLSearchParams(formData)  // Convert FormData to URLSearchParams
       });
 
       if (response.ok) {
