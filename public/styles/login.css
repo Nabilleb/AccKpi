@@ -41,9 +41,17 @@ body {
 /* Refined Header Styles */
 /* ==================== */
 .login-header .logo {
-    width: 90px;
-    margin-bottom: 15px;
-    filter: drop-shadow(0 2px 4px rgba(0, 35, 102, 0.1));
+    width: 75px;
+    height: auto;
+    margin-bottom: 20px;
+    filter: drop-shadow(0 2px 8px rgba(0, 35, 102, 0.15));
+    object-fit: contain;
+    transition: all 0.3s ease;
+}
+
+.login-header .logo:hover {
+    transform: translateY(-4px) scale(1.05);
+    filter: drop-shadow(0 4px 12px rgba(0, 35, 102, 0.25));
 }
 
 .login-header h1 {

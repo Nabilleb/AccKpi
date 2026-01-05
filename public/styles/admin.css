@@ -47,8 +47,17 @@
     }
 
     .logo {
-      height: 50px;
+      height: 40px;
+      width: auto;
       flex-shrink: 0;
+      object-fit: contain;
+      padding: 0.25rem;
+      border-radius: 4px;
+      transition: transform 0.3s ease;
+    }
+
+    .logo:hover {
+      transform: scale(1.05);
     }
 
     .header-right {
