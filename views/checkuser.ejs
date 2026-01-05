@@ -82,7 +82,7 @@
             <% users.forEach(u => { 
               const isCurrentUser = String(u.usrID) === String(currentUserId);
             %>
-              <tr class="user-row <%= isCurrentUser ? 'current-user' : '' %>" data-searchtext="<%= (u.usrID + ' ' + u.usrDesc + ' ' + (u.usrEmail || '') + ' ' + (u.DeptName || '')).toLowerCase() %>">
+              <tr class="user-row <%= isCurrentUser ? 'current-user' : '' %>" data-userid="<%= u.usrID %>" data-searchtext="<%= (u.usrID + ' ' + u.usrDesc + ' ' + (u.usrEmail || '') + ' ' + (u.DeptName || '')).toLowerCase() %>">
                 <td>
                   <strong><%= u.usrID %></strong>
                   <% if (isCurrentUser) { %>
@@ -141,25 +141,23 @@
                 </td>
                 <td class="actions-column">
                   <% if (!isCurrentUser) { %>
-                    <% if (!u.usrAdmin && !u.IsSpecialUser) { %>
+                    <% if (!u.usrAdmin) { %>
                       <button class="btn-action btn-admin" data-action="grant-admin" data-userid="<%= u.usrID %>" data-username="<%= u.usrDesc %>">
                         <i class="fas fa-crown"></i> Make Admin
                       </button>
-                    <% } else if (u.usrAdmin) { %>
+                    <% } else { %>
                       <button class="btn-action btn-danger" data-action="revoke-admin" data-userid="<%= u.usrID %>" data-username="<%= u.usrDesc %>">
                         <i class="fas fa-times"></i> Remove Admin
                       </button>
                     <% } %>
-                    <% if (!u.usrAdmin) { %>
-                      <% if (!u.IsSpecialUser) { %>
-                        <button class="btn-action btn-special" data-action="grant-special" data-userid="<%= u.usrID %>" data-username="<%= u.usrDesc %>">
-                          <i class="fas fa-star"></i> Special
-                        </button>
-                      <% } else { %>
-                        <button class="btn-action btn-secondary" data-action="revoke-special" data-userid="<%= u.usrID %>" data-username="<%= u.usrDesc %>">
-                          <i class="fas fa-times"></i> Regular
-                        </button>
-                      <% } %>
+                    <% if (!u.IsSpecialUser) { %>
+                      <button class="btn-action btn-special" data-action="grant-special" data-userid="<%= u.usrID %>" data-username="<%= u.usrDesc %>">
+                        <i class="fas fa-star"></i> Special
+                      </button>
+                    <% } else { %>
+                      <button class="btn-action btn-secondary" data-action="revoke-special" data-userid="<%= u.usrID %>" data-username="<%= u.usrDesc %>">
+                        <i class="fas fa-times"></i> Regular
+                      </button>
                     <% } %>
                   <% } else { %>
                     <span class="text-light">-</span>

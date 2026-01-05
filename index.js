@@ -1387,7 +1387,7 @@ app.get("/check-users", ensureAuthenticated, async (req, res) => {
 // Update user permissions
 app.post("/update-permission", ensureAuthenticated, isAdmin, async (req, res) => {
   const { usrID, permission, value } = req.body;
-  const currentUserId = String(req.session.user.usrID);
+  const currentUserId = String(req.session.user.id || '');
   const targetUserId = String(usrID);
   
   if (!usrID || !permission) {
@@ -1405,10 +1405,22 @@ app.post("/update-permission", ensureAuthenticated, isAdmin, async (req, res) =>
 
     if (permission === "admin") {
       request.input("usrAdmin", value ? 1 : 0);
-      await request.query("UPDATE tblUsers SET usrAdmin = @usrAdmin WHERE usrID = @usrID");
+      // If making admin, remove special user status
+      if (value === true) {
+        request.input("IsSpecialUser", 0);
+        await request.query("UPDATE tblUsers SET usrAdmin = @usrAdmin, IsSpecialUser = @IsSpecialUser WHERE usrID = @usrID");
+      } else {
+        await request.query("UPDATE tblUsers SET usrAdmin = @usrAdmin WHERE usrID = @usrID");
+      }
     } else if (permission === "special") {
       request.input("IsSpecialUser", value ? 1 : 0);
-      await request.query("UPDATE tblUsers SET IsSpecialUser = @IsSpecialUser WHERE usrID = @usrID");
+      // If making special user, remove admin status
+      if (value === true) {
+        request.input("usrAdmin", 0);
+        await request.query("UPDATE tblUsers SET IsSpecialUser = @IsSpecialUser, usrAdmin = @usrAdmin WHERE usrID = @usrID");
+      } else {
+        await request.query("UPDATE tblUsers SET IsSpecialUser = @IsSpecialUser WHERE usrID = @usrID");
+      }
     }
 
     res.json({ success: true });
