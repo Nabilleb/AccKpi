@@ -193,6 +193,32 @@ function isAdmin(req, res, next) {
   console.log("✅ Admin access granted");
   next();
 }
+
+function isNotAdmin(req, res, next) {
+  if (!req.session || !req.session.user) {
+    console.log("🔓 Unauthenticated access blocked");
+    return res.redirect("/");
+  }
+  if (req.session.user.usrAdmin) {
+    console.log("⛔ Admin cannot access user pages");
+    return res.redirect("/adminpage");
+  }
+  console.log("✅ User page access granted");
+  next();
+}
+
+function isSpecialUser(req, res, next) {
+  if (!req.session || !req.session.user) {
+    console.log("🔓 Unauthenticated access blocked");
+    return res.redirect("/");
+  }
+  if (!req.session.user.IsSpecialUser) {
+    console.log("⛔ Special user check failed");
+    return res.status(403).send("Forbidden: Special users only");
+  }
+  console.log("✅ Special user access granted");
+  next();
+}
 // --- Routes ---
 app.get("/", (req, res) => {
   if (req.session && req.session.user) {
@@ -318,13 +344,8 @@ res.render("packagefrom.ejs", {
 });
 
 // Add Package Form Route (for special users)
-app.get("/addPackageForm", ensureAuthenticated, async (req, res) => {
+app.get("/addPackageForm", isSpecialUser, async (req, res) => {
   try {
-    // Check if user is special user
-    if (!req.session.user.IsSpecialUser) {
-      return res.status(403).send("Forbidden: Special users only");
-    }
-
     const projects = await pool.request().query("SELECT projectID, projectName FROM tblProject");
     const packages = await pool.request().query("SELECT PkgeID, PkgeName FROM tblPackages");
     const processes = await pool.request().query("SELECT NumberOfProccessID, ProcessName FROM tblProcess");
@@ -341,13 +362,8 @@ app.get("/addPackageForm", ensureAuthenticated, async (req, res) => {
 });
 
 // Add Package POST Route (for special users)
-app.post("/addPackageForm", ensureAuthenticated, async (req, res) => {
+app.post("/addPackageForm", isSpecialUser, async (req, res) => {
   try {
-    // Check if user is special user
-    if (!req.session.user.IsSpecialUser) {
-      return res.status(403).json({ error: "Forbidden: Special users only" });
-    }
-
     const { processID, projectID, packageID, startDate, status } = req.body;
 
     // Validate required fields
@@ -550,13 +566,8 @@ app.get("/workFlowDash",ensureAuthenticated ,async (req, res) => {
 });
 
 // Subpackage Management Route
-app.get("/subpackage", ensureAuthenticated, async (req, res) => {
+app.get("/subpackage", isSpecialUser, async (req, res) => {
   try {
-    // Check if user is special user
-    if (!req.session.user.IsSpecialUser) {
-      return res.status(403).send("Forbidden: Special users only");
-    }
-
     const packageResult = await pool.request().query("SELECT PkgeID, PkgeName FROM tblPackages");
     const subpackageResult = await pool.request().query(`
       SELECT sp.*, p.PkgeName
@@ -976,7 +987,7 @@ app.get("/addUser", isAdmin, async (req, res) => {
   }
 });
 
-app.get('/userpage', ensureAuthenticated, async (req, res) => {
+app.get('/userpage', isNotAdmin, async (req, res) => {
     const sessionUserId = req.session.user.id
     try {
         const userResult = await pool
@@ -1281,7 +1292,7 @@ app.get('/department/:departmentId/tasks', async (req, res) => {
 
 
  
-app.get("/getWorkflow", async (req, res) => {
+app.get("/getWorkflow", ensureAuthenticated, async (req, res) => {
   const { TaskID, PkgeID } = req.query;
 
   if (!TaskID || !PkgeID) {
@@ -1370,7 +1381,7 @@ app.get("/check-users", ensureAuthenticated, async (req, res) => {
   }
 });
 
-app.get("/process/:id/departments", async (req, res) => {
+app.get("/process/:id/departments", ensureAuthenticated, async (req, res) => {
   const processId = req.params.id;
   try {
     const request = pool.request();
@@ -1394,7 +1405,7 @@ app.get("/process/:id/departments", async (req, res) => {
   }
 });
 
-app.get("/api/departments", async (req, res) => {
+app.get("/api/departments", ensureAuthenticated, async (req, res) => {
   try {
     const result = await pool.request().query(`
       SELECT DepartmentID, DeptName FROM tblDepartments
@@ -1564,7 +1575,7 @@ app.post('/tasks/:id/update', async (req, res) => {
 
 
 
-app.post("/addPackage", async (req, res) => {
+app.post("/addPackage", isAdmin, async (req, res) => {
   const {
     packageName,
     duration,
@@ -2388,7 +2399,7 @@ app.put('/update-task/:taskId', async (req, res) => {
   }
 });
 
-app.get("/workflow/new", async (req, res) => {
+app.get("/workflow/new", isAdmin, async (req, res) => {
   try {
     const [processes, projects, packages] = await Promise.all([
       pool.request().query("SELECT NumberOfProccessID AS ProcessID, ProcessName FROM tblProcess"),
@@ -2614,7 +2625,7 @@ app.post('/api/workflows', async (req, res) => {
 
 
 
-app.post("/postProcess", async (req, res) => {
+app.post("/postProcess", isAdmin, async (req, res) => {
   const { ProcessName, Steps } = req.body;
 
   if (!Steps || Steps.length === 0) {
@@ -2914,7 +2925,7 @@ app.delete("/deleteProcess/:processId", isAdmin, async (req, res) => {
 
 
 
-app.post("/postWorkflow", async (req, res) => {
+app.post("/postWorkflow", isAdmin, async (req, res) => {
   const { WorkflowName, usrID, TaskID, PkgeID, TimeStarted, TimeFinished } = req.body;
   if (!WorkflowName || !TaskID || !PkgeID || !TimeStarted) {
     return res.status(400).send({ error: 'Missing required fields' });
@@ -2996,7 +3007,7 @@ app.post("/postWorkflow", async (req, res) => {
 
 
 
-app.post("/addUser", async (req, res) => {
+app.post("/addUser", isAdmin, async (req, res) => {
   const {
     usrID,
     usrPWD,
