@@ -237,7 +237,7 @@ function validateField(field) {
   }
   
   // Specific validations
-  if (field.id === 'DaysRequired' && (isNaN(field.value) || field.value < 1)) {
+  if (field.id === 'DaysRequired' && (isNaN(field.value) || field.value < 0)) {
     showError(field, errorElement, 'Please enter a valid number of days');
     return false;
   }
@@ -463,7 +463,7 @@ function renderTasks(tasks) {
           <td>${task.TaskName || '-'}</td>
           <td>${task.TaskPlanned || '-'}</td>
           <td>${task.PlannedDate ? formatDate(task.PlannedDate) : '-'}</td>
-          <td>${task.DaysRequired || '-'}</td>
+          <td>${task.DaysRequired !== null && task.DaysRequired !== undefined ? task.DaysRequired : '-'}</td>
           <td>${task.Priority ?? '-'}</td>
           <td>
             <select class="link-task-select" data-task-id="${task.TaskID}" data-dept-id="${task.DepId}">
