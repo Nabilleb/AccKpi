@@ -769,14 +769,16 @@ app.get("/api/workFlowDashData", ensureAuthenticated, async (req, res) => {
         hdr.completionDate,
         hdr.startDate,
         hdr.DaysDone,
-        hdr.createdDate
+        hdr.createdDate,
+        sp.SupplierContractorName
       FROM tblWorkflowHdr hdr
       LEFT JOIN tblProcess p ON hdr.ProcessID = p.NumberOfProccessID
       LEFT JOIN tblPackages pk ON hdr.PackageID = pk.PkgeID
       LEFT JOIN tblProject prj ON hdr.ProjectID = prj.ProjectID
+      LEFT JOIN tblSubPackage sp ON hdr.PackageID = sp.PkgeID
       WHERE EXISTS (
-        SELECT 1 FROM tblSubPackage sp
-        WHERE sp.PkgeID = hdr.PackageID
+        SELECT 1 FROM tblSubPackage sp2
+        WHERE sp2.PkgeID = hdr.PackageID
       )
     `;
 

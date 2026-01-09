@@ -477,6 +477,7 @@ function updateTable() {
                 <td>${workflow.ProcessName || '-'}</td>
                 <td>${workflow.PackageName || '-'}</td>
                 <td>${workflow.ProjectName || '-'}</td>
+                <td>${workflow.SupplierContractorName || '-'}</td>
                 <td>
                     <span class="status-badge status-${workflow.Status ? workflow.Status.toLowerCase().replace(' ', '-') : ''}">
                         ${getStatusIcon(workflow.Status)}
