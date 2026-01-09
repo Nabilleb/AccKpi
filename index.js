@@ -25,6 +25,26 @@ const __dirname = dirname(__filename);
 const PORT = process.env.PORT || 3000;
 const SERVER_IP = process.env.HOST || '0.0.0.0';
 
+// Logging utility function for serverfile.txt
+function logToServerFile(message, error = null) {
+  const timestamp = new Date().toISOString();
+  let logMessage = `[${timestamp}] ${message}`;
+  
+  if (error) {
+    logMessage += `\nError: ${error.message || error}`;
+    if (error.stack) {
+      logMessage += `\nStack: ${error.stack}`;
+    }
+  }
+  
+  logMessage += '\n---\n';
+  
+  const serverFilePath = path.join(__dirname, 'serverfile.txt');
+  fs.appendFile(serverFilePath, logMessage, (err) => {
+    if (err) console.error('Failed to write to serverfile.txt:', err);
+  });
+}
+
 // --- Express App ---
 const app = express();
 const resend = new Resend(process.env.API_RESEND);
@@ -825,19 +845,25 @@ app.get("/userpage/:hdrId", async (req, res) => {
   const hdrId = req.params.hdrId;
   const sessionUser = req.session.user;
 
+  logToServerFile(`[/userpage/:hdrId] Request received with hdrId: ${hdrId}`);
+
  if (!sessionUser) {
+  logToServerFile(`[/userpage/:hdrId] No session user found`);
   return res.status(401).send("Unauthorized or session expired");
 }
 
 if (!sessionUser.usrAdmin && !sessionUser.DepartmentId) {
+  logToServerFile(`[/userpage/:hdrId] User not admin and no department set - UserId: ${sessionUser.id}`);
   return res.status(401).send("Unauthorized: Department not set for non-admin user");
 }
-
 
   const DepId = sessionUser.DepartmentId;
   const usrId = sessionUser.id;
 
+  logToServerFile(`[/userpage/:hdrId] Loading page for UserId: ${usrId}, DepId: ${DepId}, HdrId: ${hdrId}`);
+
   try {
+    logToServerFile(`[/userpage/:hdrId] Executing first database query for tasks...`);
     const request1 = pool.request();
     request1.input('HdrID', sql.Int, hdrId);
     request1.input('DepId', sql.Int, DepId);
@@ -883,6 +909,9 @@ ORDER BY pd.StepOrder ASC, t.Priority ASC
 
 `);
 
+    logToServerFile(`[/userpage/:hdrId] First query completed - Found ${tasksResult.recordset.length} tasks`);
+
+    logToServerFile(`[/userpage/:hdrId] Executing second database query for department...`);
     const request2 = pool.request();
     request2.input('DepartmentID', sql.Int, DepId);
 
@@ -891,6 +920,8 @@ ORDER BY pd.StepOrder ASC, t.Priority ASC
       FROM tblDepartments 
       WHERE DepartmentID = @DepartmentID
     `);
+
+    logToServerFile(`[/userpage/:hdrId] Department query completed`);
 
     const department = departmentResult.recordset[0] || { DeptName: 'Admin' };
 
@@ -902,15 +933,20 @@ ORDER BY pd.StepOrder ASC, t.Priority ASC
       DeptName: department.DeptName
     };
 
+    logToServerFile(`[/userpage/:hdrId] Rendering userpage.ejs with ${tasksResult.recordset.length} tasks`);
 
     res.render("userpage.ejs", {
       tasks: tasksResult.recordset,
       hdrId,
       user
     });
+
+    logToServerFile(`[/userpage/:hdrId] Page rendered successfully`);
+
   } catch (err) {
     console.error("Error loading user page with department info:", err.message);
     console.error("Full error:", err);
+    logToServerFile("Error loading user page with department info (GET /userpage/:hdrId)", err);
     res.status(500).send("Failed to load user page: " + err.message);
   }
 });
@@ -1103,6 +1139,7 @@ app.get('/userpage', isNotAdmin, async (req, res) => {
 
     } catch (error) {
         console.error(error);
+        logToServerFile("Error loading user page (GET /userpage)", error);
         res.status(500).send('Server error');
     }
 });
