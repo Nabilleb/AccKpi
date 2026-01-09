@@ -336,3 +336,41 @@ select.form-control {
     margin-top: 0;
 }
 
+/* Trade checkboxes */
+.trade-checkboxes {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+    margin: 10px 0;
+}
+
+.checkbox-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.checkbox-item input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: var(--primary);
+}
+
+.checkbox-item label {
+    cursor: pointer;
+    margin-bottom: 0;
+    user-select: none;
+}
+
+.error-message {
+    color: var(--danger);
+    font-size: 0.875rem;
+    margin-top: 5px;
+    display: block;
+}
+
+.error-message.hidden {
+    display: none;
+}
+

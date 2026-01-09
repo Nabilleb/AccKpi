@@ -88,13 +88,30 @@
                         </div>
 
                         <div class="form-group">
-                            <label for="newPackageTrade">Trade *</label>
-                            <input 
-                                type="text" 
-                                id="newPackageTrade" 
-                                class="form-control" 
-                                placeholder="Enter trade"
-                            >
+                            <label>Trade *</label>
+                            <div class="trade-checkboxes">
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="tradeStructure" name="trade" value="Structure">
+                                    <label for="tradeStructure">Structure</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="tradeArchitecture" name="trade" value="Architecture">
+                                    <label for="tradeArchitecture">Architecture</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="tradeLandscape" name="trade" value="Landscape">
+                                    <label for="tradeLandscape">Landscape</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="tradeElectrical" name="trade" value="Electrical">
+                                    <label for="tradeElectrical">Electrical</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="tradeMechanical" name="trade" value="Mechanical">
+                                    <label for="tradeMechanical">Mechanical</label>
+                                </div>
+                            </div>
+                            <span id="tradeError" class="error-message hidden">Please select at least one trade</span>
                         </div>
 
                         <div class="form-group">

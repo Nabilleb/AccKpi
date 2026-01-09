@@ -37,12 +37,22 @@ form.addEventListener('submit', async (e) => {
     // Validate new package fields
     const newPackageName = document.getElementById('newPackageName').value.trim();
     const newPackageDivision = document.getElementById('newPackageDivision').value.trim();
-    const newPackageTrade = document.getElementById('newPackageTrade').value.trim();
-
-    if (!newPackageName || !newPackageDivision || !newPackageTrade) {
+    
+    // Get selected trades
+    const selectedTrades = Array.from(document.querySelectorAll('input[name="trade"]:checked'))
+        .map(checkbox => checkbox.value);
+    
+    const tradeError = document.getElementById('tradeError');
+    
+    if (!newPackageName || !newPackageDivision || selectedTrades.length === 0) {
+        if (selectedTrades.length === 0) {
+            tradeError.classList.remove('hidden');
+        }
         showAlert('Please fill in all required package fields', 'error');
         return;
     }
+    
+    tradeError.classList.add('hidden');
 
     const formData = {
         itemDescription: document.getElementById('itemDescription').value,
@@ -54,7 +64,7 @@ form.addEventListener('submit', async (e) => {
         newPackage: {
             packageName: newPackageName,
             division: newPackageDivision,
-            trade: newPackageTrade,
+            trade: selectedTrades.join(', '),
             filePath: document.getElementById('newPackageFilePath').value || null
         }
     };
