@@ -108,6 +108,7 @@ app.use(
 
         "style-src": [
           "'self'",
+          "'unsafe-inline'",
           "https://cdnjs.cloudflare.com",      
         ],
 
@@ -130,7 +131,7 @@ app.use(cors({ origin: '*', credentials: true }));
 app.use(cookieParser());
 app.use(session({
   secret: process.env.SESSION_SECRET || "fallback-secret",
-  resave: false,
+  resave: true,
   saveUninitialized: true,
   cookie: {
     httpOnly: true,
@@ -139,6 +140,31 @@ app.use(session({
     maxAge: 60 * 60 * 1000  // 1 hour for testing (change to 5 * 60 * 1000 for production)
   }
 }));
+
+// Idle timeout middleware - 15 minutes of inactivity
+const IDLE_TIMEOUT = 15 * 60 * 1000; // 15 minutes
+
+app.use((req, res, next) => {
+  if (req.session && req.session.user) {
+    const now = Date.now();
+    const lastActivity = req.session.lastActivity || now;
+    
+    console.log(`⏰ Checking idle for user ${req.session.user.id}: ${now - lastActivity}ms idle`);
+    
+    // Check if user has been idle for too long
+    if (now - lastActivity > IDLE_TIMEOUT) {
+      console.log(`⏱️  User ${req.session.user.id} session expired due to inactivity`);
+      return req.session.destroy((err) => {
+        if (err) console.error('Session destruction error:', err);
+        res.redirect('/');
+      });
+    } else {
+      // Update last activity timestamp
+      req.session.lastActivity = now;
+    }
+  }
+  next();
+});
 
 const transporter = nodemailer.createTransport({
   host: process.env.EMAIL_HOST,
@@ -180,7 +206,8 @@ function ensureAuthenticated(req, res, next) {
 function checkIfInSession(req, res, next) {
   if(req.session && req.session.user) {
     console.log(`👤 User already in session: ID=${req.session.user.id}`);
-    return res.redirect(req.session.user.usrAdmin ? "/adminpage" : `/userpage?id=${req.session.user.id}`);
+    const referrer = req.get('referer') || (req.session.user.usrAdmin ? "/adminpage" : "/workFlowDash");
+    return res.redirect(referrer);
   }
   next();
 }
@@ -595,16 +622,40 @@ app.post("/api/subpackage/add", ensureAuthenticated, async (req, res) => {
       return res.status(403).json({ message: "Forbidden: Special users only" });
     }
 
-    const { itemDescription, packageId, supplierContractorType, supplierContractorName, awardValue, currency } = req.body;
+    const { itemDescription, packageId, supplierContractorType, supplierContractorName, awardValue, currency, newPackage } = req.body;
 
     // Validate required fields
     if (!itemDescription || !packageId || !supplierContractorType || !supplierContractorName || !awardValue || !currency) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
+    let finalPackageId = packageId;
+
+    // If creating a new package
+    if (packageId === 'new') {
+      if (!newPackage || !newPackage.packageName || !newPackage.division || !newPackage.trade) {
+        return res.status(400).json({ message: "Package details are required when creating a new package" });
+      }
+
+      // Insert new package
+      const packageResult = await pool.request()
+        .input('packageName', sql.NVarChar, newPackage.packageName)
+        .input('division', sql.NVarChar, newPackage.division)
+        .input('trade', sql.NVarChar, newPackage.trade)
+        .input('filePath', sql.NVarChar, newPackage.filePath || null)
+        .query(`
+          INSERT INTO tblPackages (PkgeName, Division, Trade, FilePath, insertDate)
+          VALUES (@packageName, @division, @trade, @filePath, GETDATE());
+          SELECT SCOPE_IDENTITY() as PkgeID
+        `);
+
+      finalPackageId = packageResult.recordset[0].PkgeID;
+    }
+
+    // Insert sub package with the package ID (either existing or newly created)
     const result = await pool.request()
       .input('itemDescription', sql.NVarChar, itemDescription)
-      .input('packageId', sql.Int, parseInt(packageId))
+      .input('packageId', sql.Int, parseInt(finalPackageId))
       .input('supplierContractorType', sql.VarChar, supplierContractorType)
       .input('supplierContractorName', sql.VarChar, supplierContractorName)
       .input('awardValue', sql.Decimal(18, 2), parseFloat(awardValue))
@@ -816,13 +867,13 @@ const tasksResult = await request1.query(`
   pd.StepOrder 
 FROM tblWorkflowDtl d
 INNER JOIN tblTasks t ON d.TaskID = t.TaskID
-INNER JOIN tblWorkflowHdr hdr ON d.workFLowHdrId = hdr.WorkFlowID
+INNER JOIN tblWorkflowHdr hdr ON d.workFlowHdrId = hdr.WorkFlowID
 INNER JOIN tblProcess pr ON hdr.ProcessID = pr.NumberOfProccessID
 INNER JOIN tblProject pj ON hdr.ProjectID = pj.ProjectID
 INNER JOIN tblPackages pk ON pk.PkgeId = hdr.packageID
 INNER JOIN tblDepartments dp ON dp.DepartmentID = t.DepId
 INNER JOIN tblProcessDepartment pd ON pd.DepartmentID = t.DepId AND pd.ProcessID = pr.NumberOfProccessID 
-WHERE d.workFLowHdrId = @HdrID
+WHERE d.workFlowHdrId = @HdrID
 ORDER BY pd.StepOrder ASC, t.Priority ASC
 
 `);
@@ -853,8 +904,9 @@ ORDER BY pd.StepOrder ASC, t.Priority ASC
       user
     });
   } catch (err) {
-    console.error("Error loading user page with department info:", err);
-    res.status(500).send("Failed to load user page.");
+    console.error("Error loading user page with department info:", err.message);
+    console.error("Full error:", err);
+    res.status(500).send("Failed to load user page: " + err.message);
   }
 });
 
@@ -1022,6 +1074,11 @@ app.get('/userpage', isNotAdmin, async (req, res) => {
                                  .query('SELECT * FROM tblProject');
         const projects = getProjects.recordset;
 
+        const getTasks = await pool
+                              .request()
+                              .query('SELECT TaskID, TaskName FROM tblTasks');
+        const tasks = getTasks.recordset;
+
         const user = {
           id: sessionUserId,
           name: usrDesc,
@@ -1035,6 +1092,7 @@ app.get('/userpage', isNotAdmin, async (req, res) => {
             usrDesc,
             department: deptDetails.DepartmentID,
             projects,
+            tasks,
             user
         });
 
@@ -1134,7 +1192,7 @@ if (!isActive) {
   }
 });
 
-app.get('/add-task', ensureAuthenticated, async (req, res) => {
+app.get('/add-task', isAdmin, async (req, res) => {
   const processId = parseInt(req.query.processId, 10);
   const processName = req.query.process;
 

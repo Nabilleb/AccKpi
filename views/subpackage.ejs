@@ -64,17 +64,48 @@
                         ></textarea>
                     </div>
 
-                    <!-- Package Selection -->
-                    <div class="form-group">
-                        <label for="packageId">Package *</label>
-                        <select id="packageId" class="form-control" required>
-                            <option value="">Select a Package</option>
-                            <% if (packages && packages.length > 0) { %>
-                                <% packages.forEach(pkg => { %>
-                                    <option value="<%= pkg.PkgeID %>"><%= pkg.PkgeName %></option>
-                                <% }) %>
-                            <% } %>
-                        </select>
+                    <!-- New Package Form -->
+                    <div id="newPackageSection" class="new-package-form">
+                        
+                        <div class="form-group">
+                            <label for="newPackageName">Package Name *</label>
+                            <input 
+                                type="text" 
+                                id="newPackageName" 
+                                class="form-control" 
+                                placeholder="Enter package name"
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="newPackageDivision">Division *</label>
+                            <input 
+                                type="text" 
+                                id="newPackageDivision" 
+                                class="form-control" 
+                                placeholder="Enter division"
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="newPackageTrade">Trade *</label>
+                            <input 
+                                type="text" 
+                                id="newPackageTrade" 
+                                class="form-control" 
+                                placeholder="Enter trade"
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="newPackageFilePath">File Path</label>
+                            <input 
+                                type="text" 
+                                id="newPackageFilePath" 
+                                class="form-control" 
+                                placeholder="Enter file path (optional)"
+                            >
+                        </div>
                     </div>
 
                     <!-- Supplier/Contractor Type -->

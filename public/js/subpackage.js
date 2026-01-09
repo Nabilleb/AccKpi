@@ -34,13 +34,29 @@ function showAlert(message, type = 'success') {
 form.addEventListener('submit', async (e) => {
     e.preventDefault();
 
+    // Validate new package fields
+    const newPackageName = document.getElementById('newPackageName').value.trim();
+    const newPackageDivision = document.getElementById('newPackageDivision').value.trim();
+    const newPackageTrade = document.getElementById('newPackageTrade').value.trim();
+
+    if (!newPackageName || !newPackageDivision || !newPackageTrade) {
+        showAlert('Please fill in all required package fields', 'error');
+        return;
+    }
+
     const formData = {
         itemDescription: document.getElementById('itemDescription').value,
-        packageId: document.getElementById('packageId').value,
+        packageId: 'new',
         supplierContractorType: document.getElementById('supplierContractorType').value,
         supplierContractorName: document.getElementById('supplierContractorName').value,
         awardValue: document.getElementById('awardValue').value,
-        currency: document.getElementById('currency').value
+        currency: document.getElementById('currency').value,
+        newPackage: {
+            packageName: newPackageName,
+            division: newPackageDivision,
+            trade: newPackageTrade,
+            filePath: document.getElementById('newPackageFilePath').value || null
+        }
     };
 
     try {

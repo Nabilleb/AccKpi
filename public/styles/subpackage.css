@@ -316,3 +316,23 @@ select.form-control {
         padding: 1.5rem;
     }
 }
+
+/* Package form styles */
+.package-selector {
+    display: flex;
+    gap: 10px;
+}
+
+.new-package-form {
+    border: 1px solid #ddd;
+    padding: 15px;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+    margin-bottom: 15px;
+    margin-top: 15px;
+}
+
+.new-package-title {
+    margin-top: 0;
+}
+
