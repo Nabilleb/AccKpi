@@ -79,6 +79,7 @@ form.addEventListener('submit', async (e) => {
         });
 
         if (response.ok) {
+            const data = await response.json();
             // Show success alert
             showAlert('✓ Sub Package added successfully!', 'success');
             showToast('Sub Package added successfully', 'success');
@@ -89,9 +90,9 @@ form.addEventListener('submit', async (e) => {
             // Scroll to top to show alert
             window.scrollTo({ top: 0, behavior: 'smooth' });
             
-            // Redirect after 3 seconds
+            // Redirect after 3 seconds with package ID
             setTimeout(() => {
-                window.location.href = '/subpackage';
+                window.location.href = `/addPackageForm?pkgeID=${data.packageId}`;
             }, 3000);
         } else {
             const error = await response.json();

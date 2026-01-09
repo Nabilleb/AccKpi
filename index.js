@@ -377,10 +377,13 @@ app.get("/addPackageForm", isSpecialUser, async (req, res) => {
     const packages = await pool.request().query("SELECT PkgeID, PkgeName FROM tblPackages");
     const processes = await pool.request().query("SELECT NumberOfProccessID, ProcessName FROM tblProcess");
 
+    const selectedPackageId = req.query.pkgeID || null;
+
     res.render("addPackageForm", {
       projects: projects.recordset,
       packages: packages.recordset,
-      processes: processes.recordset
+      processes: processes.recordset,
+      selectedPackageId: selectedPackageId
     });
   } catch (err) {
     console.error("Error loading package form:", err);
@@ -665,7 +668,7 @@ app.post("/api/subpackage/add", ensureAuthenticated, async (req, res) => {
         VALUES (@itemDescription, @packageId, @supplierContractorType, @supplierContractorName, @awardValue, @currency, GETDATE(), GETDATE())
       `);
 
-    res.json({ success: true, message: "Sub Package added successfully" });
+    res.json({ success: true, message: "Sub Package added successfully", packageId: finalPackageId });
   } catch (err) {
     console.error("Error adding sub package:", err);
     res.status(500).json({ message: "Error adding sub package", error: err.message });

@@ -53,7 +53,7 @@
                 <select id="package-id" class="form-control" required>
                     <option value="">Select Package</option>
                     <% packages.forEach(pkg => { %>
-                        <option value="<%= pkg.PkgeID %>"><%= pkg.PkgeName %></option>
+                        <option value="<%= pkg.PkgeID %>" <% if(typeof selectedPackageId !== 'undefined' && selectedPackageId == pkg.PkgeID) { %>selected<% } %>><%= pkg.PkgeName %></option>
                     <% }) %>
                 </select>
             </div>
