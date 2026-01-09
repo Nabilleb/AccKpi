@@ -54,9 +54,9 @@ form.addEventListener('submit', async (e) => {
         if (response.ok) {
             showAlert('Package added successfully!', 'success');
             form.reset();
-            // Reload the page after alert fades
+            // Redirect to workflow dashboard after alert
             setTimeout(() => {
-                location.reload();
+                window.location.href = '/workFlowDash';
             }, 3000);
         } else {
             showAlert(data.error || 'Failed to add package. Please try again.', 'danger');

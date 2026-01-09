@@ -29,9 +29,9 @@
 
         <form id="add-package-form">
             <div class="form-group">
-                <label for="process-id">Process</label>
+                <label for="process-id">Workflow</label>
                 <select id="process-id" class="form-control" required>
-                    <option value="">Select Process</option>
+                    <option value="">Select Workflow</option>
                     <% processes.forEach(process => { %>
                         <option value="<%= process.NumberOfProccessID %>"><%= process.ProcessName %></option>
                     <% }) %>
@@ -78,7 +78,7 @@
                 </button>
                 <button type="submit" class="btn btn-primary">
                     <i class="fas fa-save"></i>
-                    Save Package
+                    Save workflow
                 </button>
             </div>
         </form>
