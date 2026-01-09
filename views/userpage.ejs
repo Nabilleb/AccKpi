@@ -18,9 +18,9 @@
     </div>
     
     <div class="sidebar-user">
-      <div class="sidebar-user-avatar"><%= user.name.split(' ').map(word => word.charAt(0).toUpperCase()).slice(0, 2).join('') %></div>
+      <div class="sidebar-user-avatar"><%= (user.name && user.name.split(' ').map(word => word.charAt(0).toUpperCase()).slice(0, 2).join('')) || 'U' %></div>
       <div class="sidebar-user-info">
-        <h4><%=user.name %></h4>
+        <h4><%= user.name || 'User' %></h4>
 <p>
   <% if (user.DeptName) { %>
     <%= user.DeptName %> Department

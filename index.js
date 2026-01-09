@@ -8,6 +8,7 @@ import dotenv from 'dotenv';
 import session from 'express-session';
 import flash from 'connect-flash';
 import helmet from 'helmet';
+import { getUserById, getDepartmentById, getWorkflowTasks, getAllPackages, getAllProcesses, getAllProjects, getAllDepartments, getProcessDepartments, buildUserObject } from './databaseHelpers.js';
 import cors from 'cors';
 import rateLimit from "express-rate-limit";
 import cookieParser from 'cookie-parser';
@@ -845,108 +846,40 @@ app.get("/userpage/:hdrId", async (req, res) => {
   const hdrId = req.params.hdrId;
   const sessionUser = req.session.user;
 
-  logToServerFile(`[/userpage/:hdrId] Request received with hdrId: ${hdrId}`);
+  if (!sessionUser) {
+    return res.status(401).send("Unauthorized or session expired");
+  }
 
- if (!sessionUser) {
-  logToServerFile(`[/userpage/:hdrId] No session user found`);
-  return res.status(401).send("Unauthorized or session expired");
-}
-
-if (!sessionUser.usrAdmin && !sessionUser.DepartmentId) {
-  logToServerFile(`[/userpage/:hdrId] User not admin and no department set - UserId: ${sessionUser.id}`);
-  return res.status(401).send("Unauthorized: Department not set for non-admin user");
-}
-
-  const DepId = sessionUser.DepartmentId;
-  const usrId = sessionUser.id;
-
-  logToServerFile(`[/userpage/:hdrId] Loading page for UserId: ${usrId}, DepId: ${DepId}, HdrId: ${hdrId}`);
+  if (!sessionUser.usrAdmin && !sessionUser.DepartmentId) {
+    return res.status(401).send("Unauthorized: Department not set for non-admin user");
+  }
 
   try {
-    logToServerFile(`[/userpage/:hdrId] Executing first database query for tasks...`);
-    const request1 = pool.request();
-    request1.input('HdrID', sql.Int, hdrId);
-    request1.input('DepId', sql.Int, DepId);
-const tasksResult = await request1.query(`
-  SELECT 
-  t.TaskID,
-  t.TaskName,
-  t.TaskPlanned,
-  t.IsTaskSelected,
-  t.PlannedDate,
-  t.DepId,
-  t.Priority,
-  t.PredecessorID,
-  t.DaysRequired,
-  t.IsFixed,
-  t.WorkFlowHdrID,
-  t.linkTasks,
-  d.WorkflowDtlId,
-  d.workFlowHdrId,
-  d.WorkflowName,
-  d.TimeStarted,
-  d.TimeFinished,
-  d.DelayReason,
-  d.Delay,
-  d.assignUser,
-  pr.NumberOfProccessID,
-  pr.ProcessName,
-  pj.ProjectID,
-  pj.ProjectName,
-  pk.PkgeName,
-  dp.DeptName,
-  pd.StepOrder 
-FROM tblWorkflowDtl d
-INNER JOIN tblTasks t ON d.TaskID = t.TaskID
-INNER JOIN tblWorkflowHdr hdr ON d.workFlowHdrId = hdr.WorkFlowID
-INNER JOIN tblProcess pr ON hdr.ProcessID = pr.NumberOfProccessID
-INNER JOIN tblProject pj ON hdr.ProjectID = pj.ProjectID
-INNER JOIN tblPackages pk ON pk.PkgeId = hdr.packageID
-INNER JOIN tblDepartments dp ON dp.DepartmentID = t.DepId
-INNER JOIN tblProcessDepartment pd ON pd.DepartmentID = t.DepId AND pd.ProcessID = pr.NumberOfProccessID 
-WHERE d.workFlowHdrId = @HdrID
-ORDER BY pd.StepOrder ASC, t.Priority ASC
+    // Use helper functions for cleaner, faster code
+    const [tasks, department, userInfo] = await Promise.all([
+      getWorkflowTasks(pool, hdrId),
+      getDepartmentById(pool, sessionUser.DepartmentId),
+      sessionUser.name ? Promise.resolve(null) : getUserById(pool, sessionUser.id)
+    ]);
 
-`);
+    // Get user name (from session or database)
+    const userName = sessionUser.name || userInfo?.usrDesc || 'User';
 
-    logToServerFile(`[/userpage/:hdrId] First query completed - Found ${tasksResult.recordset.length} tasks`);
-
-    logToServerFile(`[/userpage/:hdrId] Executing second database query for department...`);
-    const request2 = pool.request();
-    request2.input('DepartmentID', sql.Int, DepId);
-
-    const departmentResult = await request2.query(`
-      SELECT DepartmentID, DeptName 
-      FROM tblDepartments 
-      WHERE DepartmentID = @DepartmentID
-    `);
-
-    logToServerFile(`[/userpage/:hdrId] Department query completed`);
-
-    const department = departmentResult.recordset[0] || { DeptName: 'Admin' };
-
-    const user = {
-      id: usrId,
-      name: sessionUser.name,
-      usrAdmin: sessionUser.usrAdmin,
-      DepartmentId: sessionUser.DepartmentId,
-      DeptName: department.DeptName
-    };
-
-    logToServerFile(`[/userpage/:hdrId] Rendering userpage.ejs with ${tasksResult.recordset.length} tasks`);
+    // Build user object using helper
+    const user = buildUserObject({ 
+      ...sessionUser, 
+      name: userName 
+    }, department);
 
     res.render("userpage.ejs", {
-      tasks: tasksResult.recordset,
+      tasks,
       hdrId,
       user
     });
 
-    logToServerFile(`[/userpage/:hdrId] Page rendered successfully`);
-
   } catch (err) {
-    console.error("Error loading user page with department info:", err.message);
-    console.error("Full error:", err);
-    logToServerFile("Error loading user page with department info (GET /userpage/:hdrId)", err);
+    console.error("Error loading user page:", err);
+    logToServerFile("Error loading user page (GET /userpage/:hdrId)", err);
     res.status(500).send("Failed to load user page: " + err.message);
   }
 });

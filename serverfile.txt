@@ -1,0 +1,202 @@
+[2026-01-09T13:43:19.479Z] [/userpage/:hdrId] Executing first database query for tasks...
+---
+[2026-01-09T13:43:19.479Z] [/userpage/:hdrId] Request received with hdrId: 1008
+---
+[2026-01-09T13:43:19.479Z] [/userpage/:hdrId] Loading page for UserId: t999, DepId: 11, HdrId: 1008
+---
+[2026-01-09T13:43:19.734Z] [/userpage/:hdrId] Executing second database query for department...
+---
+[2026-01-09T13:43:19.734Z] [/userpage/:hdrId] First query completed - Found 65 tasks
+---
+[2026-01-09T13:43:19.739Z] [/userpage/:hdrId] Department query completed
+---
+[2026-01-09T13:43:19.739Z] [/userpage/:hdrId] Rendering userpage.ejs with 65 tasks
+---
+[2026-01-09T13:43:19.745Z] [/userpage/:hdrId] Page rendered successfully
+---
+[2026-01-09T13:46:42.303Z] [/userpage/:hdrId] ========== REQUEST START ==========
+---
+[2026-01-09T13:46:42.304Z] [/userpage/:hdrId] Request received with hdrId: 1008
+---
+[2026-01-09T13:46:42.304Z] [/userpage/:hdrId] VALIDATION ERROR: No session user found
+---
+[2026-01-09T13:47:08.386Z] [/userpage/:hdrId] ========== REQUEST START ==========
+---
+[2026-01-09T13:47:08.386Z] [/userpage/:hdrId] Request received with hdrId: 3
+---
+[2026-01-09T13:47:08.386Z] [/userpage/:hdrId] VALID SESSION: UserId: t999, DepId: 11, HdrId: 3
+---
+[2026-01-09T13:47:08.386Z] [/userpage/:hdrId] STEP 1: Inputs - HdrID: 3, DepId: 11
+---
+[2026-01-09T13:47:08.386Z] [/userpage/:hdrId] STEP 1: Starting first database query for tasks...
+---
+[2026-01-09T13:47:08.820Z] [/userpage/:hdrId] STEP 1 SUCCESS: Tasks query completed - Found 65 tasks
+---
+[2026-01-09T13:47:08.821Z] [/userpage/:hdrId] STEP 2: Starting department database query...
+---
+[2026-01-09T13:47:08.821Z] [/userpage/:hdrId] STEP 2: Input - DepartmentID: 11
+---
+[2026-01-09T13:47:08.837Z] [/userpage/:hdrId] STEP 2: Department name retrieved: Accounting
+---
+[2026-01-09T13:47:08.837Z] [/userpage/:hdrId] STEP 3 SUCCESS: User object created - {"id":"t999","name":"sepci user","usrAdmin":false,"DepartmentId":11,"DeptName":"Accounting"}
+---
+[2026-01-09T13:47:08.837Z] [/userpage/:hdrId] STEP 3: Building user object...
+---
+[2026-01-09T13:47:08.837Z] [/userpage/:hdrId] STEP 2 SUCCESS: Department query completed
+---
+[2026-01-09T13:47:08.837Z] [/userpage/:hdrId] STEP 4: Attempting to render userpage.ejs with 65 tasks...
+---
+[2026-01-09T13:47:08.847Z] [/userpage/:hdrId] STEP 4 SUCCESS: Page rendered successfully
+---
+[2026-01-09T13:47:08.847Z] [/userpage/:hdrId] ========== REQUEST COMPLETE (SUCCESS) ==========
+---
+[2026-01-09T13:48:03.643Z] [/userpage/:hdrId] ========== REQUEST START ==========
+---
+[2026-01-09T13:48:03.643Z] [/userpage/:hdrId] Request received with hdrId: 5
+---
+[2026-01-09T13:48:03.643Z] [/userpage/:hdrId] VALID SESSION: UserId: t999, DepId: 11, HdrId: 5
+---
+[2026-01-09T13:48:03.643Z] [/userpage/:hdrId] STEP 1: Starting first database query for tasks...
+---
+[2026-01-09T13:48:03.643Z] [/userpage/:hdrId] STEP 1: Inputs - HdrID: 5, DepId: 11
+---
+[2026-01-09T13:48:04.008Z] [/userpage/:hdrId] STEP 2: Starting department database query...
+---
+[2026-01-09T13:48:04.007Z] [/userpage/:hdrId] STEP 1 SUCCESS: Tasks query completed - Found 65 tasks
+---
+[2026-01-09T13:48:04.009Z] [/userpage/:hdrId] STEP 2: Input - DepartmentID: 11
+---
+[2026-01-09T13:48:04.015Z] [/userpage/:hdrId] STEP 2 SUCCESS: Department query completed
+---
+[2026-01-09T13:48:04.015Z] [/userpage/:hdrId] STEP 3: Building user object...
+---
+[2026-01-09T13:48:04.015Z] [/userpage/:hdrId] STEP 3 SUCCESS: User object created - {"id":"t999","name":"sepci user","usrAdmin":false,"DepartmentId":11,"DeptName":"Accounting"}
+---
+[2026-01-09T13:48:04.015Z] [/userpage/:hdrId] STEP 2: Department name retrieved: Accounting
+---
+[2026-01-09T13:48:04.015Z] [/userpage/:hdrId] STEP 4: Attempting to render userpage.ejs with 65 tasks...
+---
+[2026-01-09T13:48:04.020Z] [/userpage/:hdrId] STEP 4 SUCCESS: Page rendered successfully
+---
+[2026-01-09T13:48:04.020Z] [/userpage/:hdrId] ========== REQUEST COMPLETE (SUCCESS) ==========
+---
+[2026-01-09T13:48:07.263Z] [/userpage/:hdrId] ========== REQUEST START ==========
+---
+[2026-01-09T13:48:07.263Z] [/userpage/:hdrId] VALID SESSION: UserId: t999, DepId: 11, HdrId: 1
+---
+[2026-01-09T13:48:07.263Z] [/userpage/:hdrId] Request received with hdrId: 1
+---
+[2026-01-09T13:48:07.263Z] [/userpage/:hdrId] STEP 1: Inputs - HdrID: 1, DepId: 11
+---
+[2026-01-09T13:48:07.263Z] [/userpage/:hdrId] STEP 1: Starting first database query for tasks...
+---
+[2026-01-09T13:48:07.613Z] [/userpage/:hdrId] STEP 1 SUCCESS: Tasks query completed - Found 65 tasks
+---
+[2026-01-09T13:48:07.613Z] [/userpage/:hdrId] STEP 2: Input - DepartmentID: 11
+---
+[2026-01-09T13:48:07.613Z] [/userpage/:hdrId] STEP 2: Starting department database query...
+---
+[2026-01-09T13:48:07.644Z] [/userpage/:hdrId] STEP 2 SUCCESS: Department query completed
+---
+[2026-01-09T13:48:07.644Z] [/userpage/:hdrId] STEP 2: Department name retrieved: Accounting
+---
+[2026-01-09T13:48:07.644Z] [/userpage/:hdrId] STEP 3: Building user object...
+---
+[2026-01-09T13:48:07.644Z] [/userpage/:hdrId] STEP 3 SUCCESS: User object created - {"id":"t999","name":"sepci user","usrAdmin":false,"DepartmentId":11,"DeptName":"Accounting"}
+---
+[2026-01-09T13:48:07.644Z] [/userpage/:hdrId] STEP 4: Attempting to render userpage.ejs with 65 tasks...
+---
+[2026-01-09T13:48:07.646Z] [/userpage/:hdrId] STEP 4 SUCCESS: Page rendered successfully
+---
+[2026-01-09T13:48:07.646Z] [/userpage/:hdrId] ========== REQUEST COMPLETE (SUCCESS) ==========
+---
+[2026-01-09T13:50:24.677Z] [/userpage/:hdrId] ========== REQUEST START ==========
+---
+[2026-01-09T13:50:24.678Z] [/userpage/:hdrId] Request received with hdrId: 1
+---
+[2026-01-09T13:50:24.678Z] [/userpage/:hdrId] STEP 1: Starting first database query for tasks...
+---
+[2026-01-09T13:50:24.678Z] [/userpage/:hdrId] VALID SESSION: UserId: t999, DepId: 11, HdrId: 1
+---
+[2026-01-09T13:50:24.678Z] [/userpage/:hdrId] STEP 1: Inputs - HdrID: 1, DepId: 11
+---
+[2026-01-09T13:50:24.951Z] [/userpage/:hdrId] STEP 1 SUCCESS: Tasks query completed in 273ms - Found 65 tasks
+---
+[2026-01-09T13:50:24.951Z] [/userpage/:hdrId] STEP 2: Input - DepartmentID: 11
+---
+[2026-01-09T13:50:24.951Z] [/userpage/:hdrId] STEP 2: Starting department database query...
+---
+[2026-01-09T13:50:24.957Z] [/userpage/:hdrId] STEP 2 SUCCESS: Department query completed
+---
+[2026-01-09T13:50:24.957Z] [/userpage/:hdrId] STEP 2: Department name retrieved: Accounting
+---
+[2026-01-09T13:50:24.958Z] [/userpage/:hdrId] STEP 3 SUCCESS: User object created - {"id":"t999","name":"sepci user","usrAdmin":false,"DepartmentId":11,"DeptName":"Accounting"}
+---
+[2026-01-09T13:50:24.958Z] [/userpage/:hdrId] STEP 3: Building user object...
+---
+[2026-01-09T13:50:24.958Z] [/userpage/:hdrId] STEP 4: Attempting to render userpage.ejs with 65 tasks...
+---
+[2026-01-09T13:50:24.964Z] [/userpage/:hdrId] ========== REQUEST COMPLETE (SUCCESS) ==========
+---
+[2026-01-09T13:50:24.964Z] [/userpage/:hdrId] STEP 4 SUCCESS: Page rendered successfully
+---
+[2026-01-09T13:54:02.190Z] [/userpage/:hdrId] ========== REQUEST START ==========
+---
+[2026-01-09T13:54:02.190Z] [/userpage/:hdrId] Request received with hdrId: 3
+---
+[2026-01-09T13:54:02.190Z] [/userpage/:hdrId] VALID SESSION: UserId: t999, DepId: 11, HdrId: 3
+---
+[2026-01-09T13:54:02.190Z] [/userpage/:hdrId] STEP 1: Starting first database query for tasks...
+---
+[2026-01-09T13:54:02.190Z] [/userpage/:hdrId] STEP 1: Inputs - HdrID: 3, DepId: 11
+---
+[2026-01-09T13:54:02.570Z] [/userpage/:hdrId] STEP 1 SUCCESS: Tasks query completed in 380ms - Found 65 tasks
+---
+[2026-01-09T13:54:02.570Z] [/userpage/:hdrId] STEP 2: Starting department database query...
+---
+[2026-01-09T13:54:02.571Z] [/userpage/:hdrId] STEP 2: Input - DepartmentID: 11
+---
+[2026-01-09T13:54:02.577Z] [/userpage/:hdrId] STEP 2: Department name retrieved: Accounting
+---
+[2026-01-09T13:54:02.578Z] [/userpage/:hdrId] STEP 3 SUCCESS: User object created - {"id":"t999","name":"sepci user","usrAdmin":false,"DepartmentId":11,"DeptName":"Accounting"}
+---
+[2026-01-09T13:54:02.578Z] [/userpage/:hdrId] STEP 4: Attempting to render userpage.ejs with 65 tasks...
+---
+[2026-01-09T13:54:02.577Z] [/userpage/:hdrId] STEP 3: Building user object...
+---
+[2026-01-09T13:54:02.583Z] [/userpage/:hdrId] STEP 4 SUCCESS: Page rendered successfully
+---
+[2026-01-09T13:54:02.583Z] [/userpage/:hdrId] ========== REQUEST COMPLETE (SUCCESS) ==========
+---
+[2026-01-09T13:54:02.577Z] [/userpage/:hdrId] STEP 2 SUCCESS: Department query completed
+---
+[2026-01-09T14:13:49.524Z] [/userpage/:hdrId] Request received with hdrId: 2
+---
+[2026-01-09T14:13:49.524Z] [/userpage/:hdrId] VALID SESSION: UserId: t999, DepId: 11, HdrId: 2
+---
+[2026-01-09T14:13:49.524Z] [/userpage/:hdrId] ========== REQUEST START ==========
+---
+[2026-01-09T14:13:49.524Z] [/userpage/:hdrId] STEP 1: Inputs - HdrID: 2, DepId: 11
+---
+[2026-01-09T14:13:49.524Z] [/userpage/:hdrId] STEP 1: Starting first database query for tasks...
+---
+[2026-01-09T14:13:49.860Z] [/userpage/:hdrId] STEP 2: Starting department database query...
+---
+[2026-01-09T14:13:49.860Z] [/userpage/:hdrId] STEP 1 SUCCESS: Tasks query completed in 336ms - Found 65 tasks
+---
+[2026-01-09T14:13:49.861Z] [/userpage/:hdrId] STEP 2: Input - DepartmentID: 11
+---
+[2026-01-09T14:13:49.866Z] [/userpage/:hdrId] STEP 2 SUCCESS: Department query completed
+---
+[2026-01-09T14:13:49.866Z] [/userpage/:hdrId] STEP 2: Department name retrieved: Accounting
+---
+[2026-01-09T14:13:49.866Z] [/userpage/:hdrId] STEP 3: Building user object...
+---
+[2026-01-09T14:13:49.866Z] [/userpage/:hdrId] STEP 3 SUCCESS: User object created - {"id":"t999","name":"sepci user","usrAdmin":false,"DepartmentId":11,"DeptName":"Accounting"}
+---
+[2026-01-09T14:13:49.866Z] [/userpage/:hdrId] STEP 4: Attempting to render userpage.ejs with 65 tasks...
+---
+[2026-01-09T14:13:49.871Z] [/userpage/:hdrId] STEP 4 SUCCESS: Page rendered successfully
+---
+[2026-01-09T14:13:49.872Z] [/userpage/:hdrId] ========== REQUEST COMPLETE (SUCCESS) ==========
+---
