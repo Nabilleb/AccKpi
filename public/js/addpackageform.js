@@ -35,10 +35,16 @@ form.addEventListener('submit', async (e) => {
     };
 
     // Validation
-    if (!formData.processID || !formData.projectID || !formData.packageID || !formData.startDate) {
+    // No longer require subpackage creation, but still need to select a package
+    if (!formData.processID || !formData.projectID || !formData.packageID) {
         showAlert('Please fill in all required fields', 'danger');
         return;
     }
+    // Commented out - startDate is now optional
+    // if (!formData.startDate) {
+    //     showAlert('Please select a start date', 'danger');
+    //     return;
+    // }
 
     try {
         const response = await fetch('/addPackageForm', {

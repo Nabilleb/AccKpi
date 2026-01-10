@@ -394,20 +394,24 @@ res.render("packagefrom.ejs", {
 // Add Package Form Route (for special users)
 app.get("/addPackageForm", isSpecialUser, async (req, res) => {
   try {
-    const projects = await pool.request().query("SELECT projectID, projectName FROM tblProject");
-    const packages = await pool.request().query("SELECT PkgeID, PkgeName FROM tblPackages");
-    const processes = await pool.request().query("SELECT NumberOfProccessID, ProcessName FROM tblProcess");
+    // Run 3 database queries in parallel instead of sequentially
+    const [projects, packages, processes] = await Promise.all([
+      getAllProjects(pool),
+      getAllPackages(pool),
+      getAllProcesses(pool)
+    ]);
 
     const selectedPackageId = req.query.pkgeID || null;
 
     res.render("addPackageForm", {
-      projects: projects.recordset,
-      packages: packages.recordset,
-      processes: processes.recordset,
-      selectedPackageId: selectedPackageId
+      projects,
+      packages,
+      processes,
+      selectedPackageId
     });
   } catch (err) {
     console.error("Error loading package form:", err);
+    logToServerFile("Error loading package form (GET /addPackageForm)", err);
     res.status(500).send("Error loading form");
   }
 });
@@ -602,16 +606,26 @@ app.post("/addPackageForm", isSpecialUser, async (req, res) => {
 
 app.get("/workFlowDash",ensureAuthenticated ,async (req, res) => {
   try {
-    const projects = await pool.request().query("SELECT projectID, projectName FROM tblProject");
-    const package1 = await pool.request().query("SELECT * FROM tblPackages");
-    const process = await pool.request().query("SELECT * FROM tblProcess")
-    const isAdmin = req.session.user.usrAdmin
-    const isSpecialUser = req.session.user.IsSpecialUser
- 
+    // Run 3 database queries in parallel instead of sequentially
+    const [projects, packages, processes] = await Promise.all([
+      getAllProjects(pool),
+      getAllPackages(pool),
+      getAllProcesses(pool)
+    ]);
 
-    res.render("workflowdashboard.ejs", { projects: projects.recordset, usrAdmin:isAdmin , packages: package1.recordset, processes:process.recordset, isSpecialUser: isSpecialUser });
+    const isAdmin = req.session.user.usrAdmin;
+    const isSpecialUser = req.session.user.IsSpecialUser;
+
+    res.render("workflowdashboard.ejs", { 
+      projects, 
+      usrAdmin: isAdmin, 
+      packages, 
+      processes, 
+      isSpecialUser 
+    });
   } catch (err) {
-    console.error("Error loading projects:", err);
+    console.error("Error loading workflow dashboard:", err);
+    logToServerFile("Error loading workflow dashboard (GET /workFlowDash)", err);
     res.status(500).send("Error loading dashboard");
   }
 });
@@ -797,10 +811,11 @@ app.get("/api/workFlowDashData", ensureAuthenticated, async (req, res) => {
       LEFT JOIN tblPackages pk ON hdr.PackageID = pk.PkgeID
       LEFT JOIN tblProject prj ON hdr.ProjectID = prj.ProjectID
       LEFT JOIN tblSubPackage sp ON hdr.PackageID = sp.PkgeID
-      WHERE EXISTS (
-        SELECT 1 FROM tblSubPackage sp2
-        WHERE sp2.PkgeID = hdr.PackageID
-      )
+      -- Commented out - No longer require subpackage to display workflows
+      -- WHERE EXISTS (
+      --   SELECT 1 FROM tblSubPackage sp2
+      --   WHERE sp2.PkgeID = hdr.PackageID
+      -- )
     `;
 
     const whereClauses = [];
@@ -890,19 +905,19 @@ app.get("/userpage/:hdrId", async (req, res) => {
 
 app.get("/addProcess", isAdmin, async (req, res) => {
   try {
-    const processesResult = await pool.request().query(`
-      SELECT NumberOfProccessID, ProcessName, processDesc
-      FROM tblProcess
-    `);
+    // Run queries in parallel for better performance
+    const [processesResult, stepsResult, departmentsResult] = await Promise.all([
+      pool.request().query(`SELECT NumberOfProccessID, ProcessName, processDesc FROM tblProcess`),
+      pool.request().query(`
+        SELECT p.ProcessID, p.StepOrder, d.DeptName
+        FROM tblProcessDepartment p
+        JOIN tblDepartments d ON p.DepartmentID = d.DepartmentID
+        ORDER BY p.ProcessID, p.StepOrder
+      `),
+      getAllDepartments(pool)
+    ]);
 
     const processes = processesResult.recordset;
-
-    const stepsResult = await pool.request().query(`
-      SELECT p.ProcessID, p.StepOrder, d.DeptName
-      FROM tblProcessDepartment p
-      JOIN tblDepartments d ON p.DepartmentID = d.DepartmentID
-      ORDER BY p.ProcessID, p.StepOrder
-    `);
 
     const stepsByProcess = {};
     stepsResult.recordset.forEach(step => {
@@ -910,33 +925,19 @@ app.get("/addProcess", isAdmin, async (req, res) => {
       stepsByProcess[step.ProcessID].push(step);
     });
 
-    const departmentsResult = await pool.request().query(`
-      SELECT DepartmentID, DeptName FROM tblDepartments
-    `);
-
     res.render("process", {
       processes,
       stepsByProcess,
-      departments: departmentsResult.recordset,
+      departments: departmentsResult,
       isAdmin: req.session.user.usrAdmin,
       departmentId: req.session.user.DepartmentID,
       errorMessage: null,
-      successMessage:null
-      
+      successMessage: null
     });
   } catch (err) {
     console.error("Error loading processes:", err);
-
-  res.render("process", {
-  processes,
-  stepsByProcess,
-  departments: departmentsResult.recordset,
-  isAdmin: req.session.user.usrAdmin,
-  departmentId: req.session.user.DepartmentID,
-  errorMessage: req.flash("error"),
-  successMessage: req.flash("success")
-});
-
+    logToServerFile("Error loading add-process page (GET /addProcess)", err);
+    res.status(500).send("Server error");
   }
 });
 
@@ -976,30 +977,32 @@ app.get('/api/tasks/by-department/:departmentID/by-process/:processID', async (r
 
 app.get("/addWorkflow", isAdmin, async (req, res) => {
   try {
-    const users = await pool.request().query("SELECT usrID, usrDesc FROM tblUsers");
-    const tasks = await pool.request().query("SELECT TaskID, TaskName FROM tblTasks");
-    const packages = await pool.request().query("SELECT PkgeID, PkgeName FROM tblPackages");
+    // Run 3 database queries in parallel for faster page load
+    const [users, tasks, packages] = await Promise.all([
+      pool.request().query("SELECT usrID, usrDesc FROM tblUsers"),
+      pool.request().query("SELECT TaskID, TaskName FROM tblTasks"),
+      getAllPackages(pool)
+    ]);
 
     res.render("assignWorkflow.ejs", {
       users: users.recordset,
       tasks: tasks.recordset,
-      packages: packages.recordset,
+      packages,
       isAdmin: req.session.user.usrAdmin,
       userId: req.session.user.id,
       desc_user: req.session.user.name
     });
   } catch (err) {
     console.error("Error loading workflow form:", err);
+    logToServerFile("Error loading workflow form (GET /addWorkflow)", err);
     res.status(500).send("Failed to load form data.");
   }
 });
 
 app.get("/addUser", isAdmin, async (req, res) => {
   try {
-    const result = await pool.request().query(`
-      SELECT DepartmentID, DeptName FROM tblDepartments
-    `);
-    const departments = result.recordset;
+    // Use helper function to fetch all departments
+    const departments = await getAllDepartments(pool);
 
     res.render("addUser", {
       departments,
@@ -1009,13 +1012,15 @@ app.get("/addUser", isAdmin, async (req, res) => {
     });
   } catch (err) {
     console.error("Failed to load departments:", err);
+    logToServerFile("Error loading add-user page (GET /addUser)", err);
     res.status(500).send("Error loading form");
   }
 });
 
 app.get('/userpage', isNotAdmin, async (req, res) => {
-    const sessionUserId = req.session.user.id
+    const sessionUserId = req.session.user.id;
     try {
+        // Get user details from database (needed for department ID)
         const userResult = await pool
             .request()
             .input('userId', sessionUserId)
@@ -1029,30 +1034,16 @@ app.get('/userpage', isNotAdmin, async (req, res) => {
 
         const { usrDesc, DepartmentID } = usrDetails;
 
-        const deptResult = await pool
-            .request()
-            .input('DepId', DepartmentID)
-            .query('SELECT DeptName DepartmentID FROM tblDepartments WHERE DepartmentID = @DepId');
+        // Run department, projects, and tasks queries in parallel for better performance
+        const [department, projects, tasks] = await Promise.all([
+            getDepartmentById(pool, DepartmentID),
+            getAllProjects(pool),
+            pool.request().query('SELECT TaskID, TaskName FROM tblTasks')
+        ]);
 
-        const deptDetails = deptResult.recordset[0];
+        const deptDetails = department || { DeptName: 'Unknown', DepartmentID };
 
-        if (!deptDetails) {
-            return res.status(404).send('Department not found');
-        }
-
-       
-
-       
-        const getProjects = await pool
-                                 .request()
-                                 .query('SELECT * FROM tblProject');
-        const projects = getProjects.recordset;
-
-        const getTasks = await pool
-                              .request()
-                              .query('SELECT TaskID, TaskName FROM tblTasks');
-        const tasks = getTasks.recordset;
-
+        // Build user object
         const user = {
           id: sessionUserId,
           name: usrDesc,
@@ -1066,7 +1057,7 @@ app.get('/userpage', isNotAdmin, async (req, res) => {
             usrDesc,
             department: deptDetails.DepartmentID,
             projects,
-            tasks,
+            tasks: tasks.recordset,
             user
         });
 
@@ -1115,10 +1106,19 @@ app.get('/process/:processId/tasks', async (req, res) => {
   const processId = req.params.processId;
   const userId = req.query.userId;
 
+  // Input validation
+  if (!userId || isNaN(userId)) {
+    return res.status(400).json({ error: 'Invalid userId' });
+  }
+  if (!processId || isNaN(processId)) {
+    return res.status(400).json({ error: 'Invalid processId' });
+  }
+
   try {
+    // Get user's department
     const userResult = await pool
       .request()
-      .input('userId', userId)
+      .input('userId', sql.Int, parseInt(userId))
       .query('SELECT DepartmentID FROM tblUsers WHERE usrID = @userId');
 
     if (userResult.recordset.length === 0) {
@@ -1127,42 +1127,51 @@ app.get('/process/:processId/tasks', async (req, res) => {
 
     const userDeptId = userResult.recordset[0].DepartmentID;
 
- const processDeptResult = await pool
-  .request()
-  .input('processId', processId)
-  .input('departmentId', userDeptId)
-  .query(`
-    SELECT IsActive FROM tblProcessDepartment
-    WHERE ProcessID = @processId AND DepartmentID = @departmentId
-  `);
-if (processDeptResult.recordset.length === 0) {
-  return res.status(403).json({ error: 'User not in process-related department' });
-}
+    // Run process department validation and task fetch in parallel
+    const [processDeptResult, tasksResult] = await Promise.all([
+      pool.request()
+        .input('processId', sql.Int, parseInt(processId))
+        .input('departmentId', sql.Int, userDeptId)
+        .query(`
+          SELECT IsActive FROM tblProcessDepartment
+          WHERE ProcessID = @processId AND DepartmentID = @departmentId
+        `),
+      pool.request()
+        .input('processId', sql.Int, parseInt(processId))
+        .input('departmentId', sql.Int, userDeptId)
+        .query(`
+          SELECT 
+            T.TaskID,
+            T.TaskName,
+            T.TaskPlanned,
+            T.DepId,
+            T.PlannedDate,
+            T.IsTaskSelected,
+            T.IsFixed,
+            T.DaysRequired,
+            W.Delay,
+            W.TimeStarted,
+            W.TimeFinished,
+            W.DelayReason
+          FROM tblTasks T
+          LEFT JOIN tblWorkflowDtl W ON W.TaskID = T.TaskID
+          WHERE T.DepId = @departmentId AND T.proccessID = @processId
+          ORDER BY T.Priority
+        `)
+    ]);
 
-const isActive = processDeptResult.recordset[0].IsActive;
-if (!isActive) {
-  return res.status(403).json({ error: 'Process not currently active in your department' });
-}
+    if (processDeptResult.recordset.length === 0) {
+      return res.status(403).json({ error: 'User not in process-related department' });
+    }
 
-
-   const tasksResult = await pool
-  .request()
-  .input('processId', processId)
-  .input('departmentId', userDeptId)
-  .query(
-    `SELECT T.TaskID,T.TaskName,T.TaskPlanned, T.DepId,T.PlannedDate,T.isTaskSelected, T.IsFixed,T.DaysRequired, W.Delay,W.TimeStarted,W.TimeFinished, W.DelayReason
-     FROM tblTasks T
-     JOIN tblWorkflowDtl W ON W.TaskID = T.TaskID
-     JOIN tblProcessDepartment P ON P.DepartmentID = @departmentId AND P.ProcessID = @processId
-     WHERE T.DepId = @departmentId
-     ORDER BY Priority
-    `
-  );
-
+    if (!processDeptResult.recordset[0].IsActive) {
+      return res.status(403).json({ error: 'Process not currently active in your department' });
+    }
 
     res.json(tasksResult.recordset);
   } catch (error) {
     console.error('Error fetching tasks:', error);
+    logToServerFile('Error fetching tasks for process (GET /process/:processId/tasks)', error);
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -1355,25 +1364,24 @@ app.get("/getWorkflow", ensureAuthenticated, async (req, res) => {
 
 app.get("/adminpage", ensureAuthenticated, async (req, res) => {
   const user = req.session.user;
-  const desc_user = req.session.user.name
+  const desc_user = req.session.user.name;
+  
   if (!user || !user.usrAdmin) {
     return res.status(403).send("Forbidden: Admins only");
   }
 
   try {
-    const request = pool.request();
-    const result = await request.query(`
-      SELECT NumberOfProccessID, ProcessName, processDesc
-      FROM tblProcess
-      ORDER BY NumberOfProccessID
-    `);
+    // Use helper function for clean database query
+    const processes = await getAllProcesses(pool);
+    
     res.render("homepage.ejs", {
       user,
       desc_user,
-      processes: result.recordset 
+      processes
     });
   } catch (err) {
     console.error("Error fetching processes:", err);
+    logToServerFile("Error loading admin page (GET /adminpage)", err);
     res.status(500).send("Server error");
   }
 });
@@ -1389,8 +1397,8 @@ app.get("/check-users", ensureAuthenticated, async (req, res) => {
   const currentUserId = String(user.usrID || '');
 
   try {
-    const request = pool.request();
-    const result = await request.query(`
+    // Fetch all users with their department information
+    const result = await pool.request().query(`
       SELECT 
         tu.usrID,
         tu.usrDesc,
@@ -1413,6 +1421,7 @@ app.get("/check-users", ensureAuthenticated, async (req, res) => {
     });
   } catch (err) {
     console.error("Error fetching users:", err);
+    logToServerFile("Error loading check-users page (GET /check-users)", err);
     res.status(500).send("Server error");
   }
 });

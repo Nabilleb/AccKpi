@@ -29,9 +29,9 @@
 
         <form id="add-package-form">
             <div class="form-group">
-                <label for="process-id">Workflow</label>
+                <label for="process-id">New Workflow</label>
                 <select id="process-id" class="form-control" required>
-                    <option value="">Select Workflow</option>
+                    <option value="">Select New Workflow</option>
                     <% processes.forEach(process => { %>
                         <option value="<%= process.NumberOfProccessID %>"><%= process.ProcessName %></option>
                     <% }) %>

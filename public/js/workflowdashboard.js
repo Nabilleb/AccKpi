@@ -83,8 +83,10 @@ async function loadWorkflowData() {
             document.getElementById('noResultsText').innerHTML = `
                 <strong>No workflows available</strong><br>
                 <span class="text-small text-light">
+                    <!-- Commented out - No longer require sub packages to enable workflows
                     Workflows are only available for packages that have sub packages defined. 
                     Please add sub packages to enable workflows.
+                    -->
                 </span>
             `;
         }
