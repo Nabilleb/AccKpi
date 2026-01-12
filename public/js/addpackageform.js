@@ -58,7 +58,7 @@ form.addEventListener('submit', async (e) => {
         const data = await response.json();
 
         if (response.ok) {
-            showAlert('Package added successfully!', 'success');
+            showAlert('workflow added successfully!', 'success');
             form.reset();
             // Redirect to workflow dashboard after alert
             setTimeout(() => {
