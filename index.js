@@ -2980,8 +2980,8 @@ app.delete("/deleteProcess/:processId", isAdmin, async (req, res) => {
     const workflowCheck = await pool.request()
       .input("processId", sql.Int, parseInt(processId))
       .query(`
-        SELECT COUNT(*) AS Count FROM tblProcessWorkflow
-        WHERE processID = @processId
+        SELECT COUNT(*) AS Count FROM tblWorkflowHdr
+        WHERE ProcessID = @processId
       `);
 
     if (workflowCheck.recordset[0].Count > 0) {
@@ -3263,11 +3263,11 @@ app.post('/get-project-processes', async (req, res) => {
 FROM 
     tblProcess P
 JOIN 
-    tblProcessWorkflow PW ON P.NumberOfProccessID = PW.processID
+    tblWorkflowHdr WH ON P.NumberOfProccessID = WH.ProcessID
 JOIN 
-    tblPackages PA ON PA.pkgeID = PW.packageID
+    tblPackages PA ON PA.PkgeId = WH.packageID
 JOIN 
-    tblProject PO ON PO.projectID = PW.projectID
+    tblProject PO ON PO.ProjectID = WH.ProjectID
 JOIN 
     tblProcessDepartment PD ON P.NumberOfProccessID = PD.ProcessID
 WHERE 
