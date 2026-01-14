@@ -358,6 +358,82 @@ select.form-control {
     background-color: var(--white);
 }
 
+.selected-project-display {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-width: 200px;
+}
+
+.selected-project-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background-color: var(--white);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--primary);
+    color: var(--primary);
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.selected-project-badge i {
+    font-size: 1rem;
+    color: var(--primary);
+}
+
+/* Toggle Switch Styles */
+.toggle-checkbox {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    width: 40px;
+    height: 24px;
+    background-color: #ccc;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    position: relative;
+    transition: background-color 0.3s ease;
+    outline: none;
+}
+
+.toggle-checkbox:checked {
+    background-color: var(--success);
+}
+
+.toggle-checkbox:before {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background-color: white;
+    top: 2px;
+    left: 2px;
+    transition: left 0.3s ease;
+}
+
+.toggle-checkbox:checked:before {
+    left: 18px;
+}
+
+.toggle-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-light);
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+}
+
+.auto-select-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
 .filter-group select:focus {
     outline: none;
     border-color: var(--primary);

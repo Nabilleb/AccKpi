@@ -119,6 +119,58 @@ h1 i {
   gap: 1.5rem;
 }
 
+/* Toggle Switch Styles */
+.toggle-checkbox {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  width: 40px;
+  height: 24px;
+  background-color: #ccc;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  position: relative;
+  transition: background-color 0.3s ease;
+  outline: none;
+}
+
+.toggle-checkbox:checked {
+  background-color: var(--success);
+}
+
+.toggle-checkbox:before {
+  content: '';
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background-color: white;
+  top: 2px;
+  left: 2px;
+  transition: left 0.3s ease;
+}
+
+.toggle-checkbox:checked:before {
+  left: 18px;
+}
+
+.toggle-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-light);
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+}
+
+.auto-select-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+
 .form-group {
   display: flex;
   flex-direction: column;

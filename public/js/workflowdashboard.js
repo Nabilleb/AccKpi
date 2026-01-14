@@ -49,6 +49,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     updatePagination();
     attachTableEventListeners();
     
+    // Auto-populate the selected project in the form
+    initializeProjectSelection();
+    
     // Show/hide mobile add button based on screen size
     toggleMobileAddButton();
     window.addEventListener('resize', toggleMobileAddButton);
@@ -63,6 +66,81 @@ function toggleMobileAddButton() {
         mobileAddBtn.style.display = 'none';
         mobileAddBtnBottom.style.display = 'none';
     }
+}
+
+// Initialize project selection from login session
+function initializeProjectSelection() {
+    const selectedProjectIdInput = document.getElementById('selectedProjectID');
+    const projectIdSelect = document.getElementById('project-id');
+    const autoSelectToggle = document.getElementById('autoSelectToggle');
+    
+    if (selectedProjectIdInput && projectIdSelect && autoSelectToggle) {
+        const selectedProjectId = selectedProjectIdInput.value;
+        
+        // Check if user has auto-select enabled in localStorage
+        const autoSelectEnabled = localStorage.getItem('autoSelectProject') === 'true';
+        
+        // Set the toggle checkbox state
+        autoSelectToggle.checked = autoSelectEnabled;
+        
+        // If auto-select is enabled and we have a project ID, apply it
+        if (autoSelectEnabled && selectedProjectId) {
+            applyAutoSelect(projectIdSelect, selectedProjectId);
+        }
+        
+        // Add change listener to toggle
+        autoSelectToggle.addEventListener('change', (e) => {
+            localStorage.setItem('autoSelectProject', e.target.checked);
+            
+            if (e.target.checked && selectedProjectId) {
+                // Enable auto-select
+                applyAutoSelect(projectIdSelect, selectedProjectId);
+            } else {
+                // Disable auto-select
+                removeAutoSelect(projectIdSelect);
+            }
+        });
+    }
+}
+
+// Apply auto-select styling and disable the field
+function applyAutoSelect(projectIdSelect, selectedProjectId) {
+    projectIdSelect.value = selectedProjectId;
+    
+    projectIdSelect.disabled = true;
+    projectIdSelect.style.backgroundColor = '#f3f4f6';
+    projectIdSelect.style.cursor = 'not-allowed';
+    projectIdSelect.style.opacity = '0.8';
+    
+    // Add visual indicator
+    const projectLabel = document.querySelector('label[for="project-id"]');
+    if (projectLabel && !projectLabel.querySelector('.auto-selected-badge')) {
+        const badge = document.createElement('span');
+        badge.className = 'auto-selected-badge';
+        badge.textContent = ' (Auto-selected)';
+        badge.style.fontSize = '0.75rem';
+        badge.style.color = '#10b981';
+        badge.style.marginLeft = '0.5rem';
+        projectLabel.appendChild(badge);
+    }
+}
+
+// Remove auto-select styling and enable the field
+function removeAutoSelect(projectIdSelect) {
+    projectIdSelect.disabled = false;
+    projectIdSelect.style.backgroundColor = '';
+    projectIdSelect.style.cursor = '';
+    projectIdSelect.style.opacity = '';
+    
+    // Remove badge
+    const projectLabel = document.querySelector('label[for="project-id"]');
+    const badge = projectLabel?.querySelector('.auto-selected-badge');
+    if (badge) {
+        badge.remove();
+    }
+    
+    // Reset the value to empty
+    projectIdSelect.value = '';
 }
 
 // Load workflow data from API

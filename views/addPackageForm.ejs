@@ -40,12 +40,20 @@
 
             <div class="form-group">
                 <label for="project-id">Project</label>
-                <select id="project-id" class="form-control" required>
-                    <option value="">Select Project</option>
-                    <% projects.forEach(project => { %>
-                        <option value="<%= project.projectID %>"><%= project.projectName %></option>
-                    <% }) %>
-                </select>
+                <div style="display: flex; gap: 1rem; align-items: flex-start;">
+                    <div style="flex: 1;">
+                        <select id="project-id" class="form-control" required>
+                            <option value="">Select Project</option>
+                            <% projects.forEach(project => { %>
+                                <option value="<%= project.projectID %>"><%= project.projectName %></option>
+                            <% }) %>
+                        </select>
+                    </div>
+                    <div class="auto-select-toggle" style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.25rem;">
+                        <input type="checkbox" id="autoSelectToggle" class="toggle-checkbox">
+                        <label for="autoSelectToggle" class="toggle-label" title="Auto-select your login project">Auto</label>
+                    </div>
+                </div>
             </div>
 
             <div class="form-group">
@@ -83,6 +91,9 @@
             </div>
         </form>
     </div>
+
+    <!-- Store selected project ID from login -->
+    <input type="hidden" id="selectedProjectID" value="<%= locals.projectID %>">
 
     <script src="/js/addpackageform.js"></script>
 </body>

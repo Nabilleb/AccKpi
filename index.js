@@ -408,12 +408,14 @@ app.get("/addPackageForm", isSpecialUser, async (req, res) => {
     ]);
 
     const selectedPackageId = req.query.pkgeID || null;
+    const projectID = req.session.user.ProjectID;
 
     res.render("addPackageForm", {
       projects,
       packages,
       processes,
-      selectedPackageId
+      selectedPackageId,
+      projectID
     });
   } catch (err) {
     console.error("Error loading package form:", err);
