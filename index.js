@@ -332,7 +332,7 @@ app.get('/login', checkIfInSession,(req, res) => {
 
 
 app.post("/login", loginLimiter, async (req, res) => {
-  let { username, password } = req.body;
+  let { username, password, project } = req.body;
 
   // Check if database is connected
   if (!pool) {
@@ -343,6 +343,11 @@ app.post("/login", loginLimiter, async (req, res) => {
   // Simple sanitization
   if (typeof username !== "string" || typeof password !== "string") {
     return res.status(400).json({ success: false, message: "Invalid input." });
+  }
+
+  // Validate project selection
+  if (!project || isNaN(project)) {
+    return res.status(400).json({ success: false, message: "Please select a project." });
   }
 
   username = username.trim().toLowerCase();
@@ -366,7 +371,8 @@ app.post("/login", loginLimiter, async (req, res) => {
         name: user.usrDesc,
         usrAdmin: user.usrAdmin,
         DepartmentId: user.DepartmentID,
-        IsSpecialUser: user.IsSpecialUser
+        IsSpecialUser: user.IsSpecialUser,
+        ProjectID: parseInt(project)
       };
 
       return res.json({
@@ -615,13 +621,15 @@ app.get("/workFlowDash",ensureAuthenticated ,async (req, res) => {
 
     const isAdmin = req.session.user.usrAdmin;
     const isSpecialUser = req.session.user.IsSpecialUser;
+    const projectID = req.session.user.ProjectID;
 
     res.render("workflowdashboard.ejs", { 
       projects, 
       usrAdmin: isAdmin, 
       packages, 
       processes, 
-      isSpecialUser 
+      isSpecialUser,
+      projectID
     });
   } catch (err) {
     console.error("Error loading workflow dashboard:", err);
@@ -738,6 +746,16 @@ app.get("/api/packages", ensureAuthenticated, async (req, res) => {
   }
 });
 
+// API: Get Projects (for login page)
+app.get("/api/projects", async (req, res) => {
+  try {
+    const result = await pool.request().query("SELECT ProjectID, ProjectName FROM tblProject ORDER BY ProjectName");
+    res.json(result.recordset);
+  } catch (err) {
+    console.error("Error fetching projects:", err);
+    res.status(500).json({ error: "Failed to fetch projects" });
+  }
+});
 
 app.get('/api/users', async (req, res) => {
   const depId = req.query.depId;
@@ -766,9 +784,9 @@ app.get('/api/users', async (req, res) => {
 
 
 app.get("/api/workFlowDashData", ensureAuthenticated, async (req, res) => {
-  const projectID = req.query.projectID;
   const isAdmin = req.session.user.usrAdmin;
   const userDeptId = req.session.user.DepartmentId;
+  const userProjectID = req.session.user.ProjectID; // Use project from login session
 
   try {
     // ✅ Mark workflows as completed if all tasks are done
@@ -811,18 +829,15 @@ app.get("/api/workFlowDashData", ensureAuthenticated, async (req, res) => {
       LEFT JOIN tblPackages pk ON hdr.PackageID = pk.PkgeID
       LEFT JOIN tblProject prj ON hdr.ProjectID = prj.ProjectID
       LEFT JOIN tblSubPackage sp ON hdr.PackageID = sp.PkgeID
-      -- Commented out - No longer require subpackage to display workflows
-      -- WHERE EXISTS (
-      --   SELECT 1 FROM tblSubPackage sp2
-      --   WHERE sp2.PkgeID = hdr.PackageID
-      -- )
+      WHERE 1=1
     `;
 
     const whereClauses = [];
     const request = pool.request();
 
-    if (projectID) {
-      request.input('ProjectID', sql.Int, projectID);
+    // Always filter by selected project from login
+    if (userProjectID) {
+      request.input('ProjectID', sql.Int, userProjectID);
       whereClauses.push(`hdr.ProjectID = @ProjectID`);
     }
 

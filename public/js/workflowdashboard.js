@@ -178,11 +178,7 @@ function setupEventListeners() {
         }, 300);
     });
     
-    // Filter dropdowns
-    projectFilter.addEventListener('change', () => {
-        applyFilters();
-        updateStats();
-    });
+    // Filter dropdowns (project filter removed - uses selected project from login)
     processFilter.addEventListener('change', () => {
         applyFilters();
         updateStats();
@@ -356,11 +352,10 @@ function applyFilters() {
     currentPage = 1;
     
     const searchTerm = searchInput.value.toLowerCase().trim();
-    const projectValue = projectFilter.value.trim();
     const processValue = processFilter.value.trim();
     const statusValue = statusFilter.value.trim();
     
-    console.log('Filter values:', { projectValue, processValue, statusValue, searchTerm });
+    console.log('Filter values:', { processValue, statusValue, searchTerm });
     
     filteredWorkflows = allWorkflows.filter(workflow => {
         const matchesSearch = !searchTerm || 
@@ -370,16 +365,13 @@ function applyFilters() {
             (workflow.ProjectName && workflow.ProjectName.toLowerCase().includes(searchTerm)) ||
             (workflow.Status && workflow.Status.toLowerCase().includes(searchTerm));
         
-        // Project filter: compare projectID as numbers
-        const matchesProject = !projectValue || (workflow.projectID && String(workflow.projectID) === projectValue);
-        
         // Process filter: compare ProcessName as strings (exact match)
         const matchesProcess = !processValue || (workflow.ProcessName && workflow.ProcessName === processValue);
         
         // Status filter: compare Status as strings (exact match)
         const matchesStatus = !statusValue || (workflow.Status && workflow.Status === statusValue);
         
-        return matchesSearch && matchesProject && matchesProcess && matchesStatus;
+        return matchesSearch && matchesProcess && matchesStatus;
     });
     
     console.log('Filtered workflows count:', filteredWorkflows.length);
@@ -413,7 +405,6 @@ function attachTableEventListeners() {
 // Reset all filters
 function resetFilters() {
     searchInput.value = '';
-    projectFilter.value = '';
     processFilter.value = '';
     statusFilter.value = '';
     

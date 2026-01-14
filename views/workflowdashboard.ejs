@@ -105,6 +105,9 @@
     </div>
     <% } %>
 
+    <!-- Store selected project ID from login -->
+    <input type="hidden" id="selectedProjectID" value="<%= locals.projectID %>">
+
     <div class="dashboard">
         <div class="header">
             <div class="header-top">
@@ -174,16 +177,6 @@
         </div>
 
         <div class="filters">
-            <div class="filter-group">
-                <label class="filter-label" for="projectFilter">Project</label>
-                <select id="projectFilter" aria-label="Filter by project">
-                    <option value="">All Projects</option>
-                    <% projects.forEach(project => { %>
-                        <option value="<%= project.projectID %>"><%= project.projectName %></option>
-                    <% }) %>
-                </select>
-            </div>
-
             <div class="filter-group">
                 <label class="filter-label" for="processFilter">Process</label>
                 <select id="processFilter" aria-label="Filter by process">

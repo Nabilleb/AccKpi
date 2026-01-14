@@ -4,6 +4,32 @@ document.addEventListener('DOMContentLoaded', () => {
     const loginForm = document.getElementById('loginForm');
     const loginButton = document.getElementById('loginButton');
     const usernameInput = document.getElementById('username');
+    const projectSelect = document.getElementById('project');
+
+    // Load projects on page load
+    loadProjects();
+
+    function loadProjects() {
+        fetch('/api/projects')
+            .then(res => res.json())
+            .then(data => {
+                projectSelect.innerHTML = '<option value="">-- Choose a Project --</option>';
+                if (data && data.length > 0) {
+                    data.forEach(project => {
+                        const option = document.createElement('option');
+                        option.value = project.ProjectID;
+                        option.textContent = project.ProjectName;
+                        projectSelect.appendChild(option);
+                    });
+                } else {
+                    projectSelect.innerHTML = '<option value="">No projects available</option>';
+                }
+            })
+            .catch(err => {
+                console.error('Error loading projects:', err);
+                projectSelect.innerHTML = '<option value="">Error loading projects</option>';
+            });
+    }
 
     togglePassword.addEventListener('click', () => {
         const isPassword = passwordInput.type === 'password';
@@ -16,8 +42,6 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         
         // Validate form before submission
-     
-
         if (!usernameInput.value) {
             showToast('Please enter your username/email', 'error');
             usernameInput.focus();
@@ -27,6 +51,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!passwordInput.value) {
             showToast('Please enter your password', 'error');
             passwordInput.focus();
+            return;
+        }
+
+        if (!projectSelect.value) {
+            showToast('Please select a project', 'error');
+            projectSelect.focus();
             return;
         }
 
