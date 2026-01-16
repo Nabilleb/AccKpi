@@ -105,48 +105,60 @@ const closeModal = () => {
     currentTaskId = null;
 };
 
-const showDatePickerModal = (title, callback) => {
-    const dateModal = document.createElement('div');
-    dateModal.className = 'modal show';
-    dateModal.innerHTML = `
-        <div class="modal-content">
-            <div class="modal-title">
-                <i class="fas fa-calendar"></i> ${title}
+const showDatePickerModal = (title, minDateString = null) => {
+    return new Promise((resolve, reject) => {
+        const dateModal = document.createElement('div');
+        dateModal.className = 'modal show';
+        const today = new Date().toISOString().split('T')[0];
+        const minDate = minDateString || today;
+        dateModal.innerHTML = `
+            <div class="modal-content">
+                <div class="modal-title">
+                    <i class="fas fa-calendar"></i> ${title}
+                </div>
+                <div class="date-picker-margin">
+                    <input type="date" id="date-picker-input" class="date-picker-input" min="${minDate}">
+                </div>
+                <div class="modal-actions">
+                    <button class="modal-cancel-btn" id="date-cancel-btn">Cancel</button>
+                    <button class="modal-confirm-btn" id="date-confirm-btn">Confirm</button>
+                </div>
             </div>
-            <div class="date-picker-margin">
-                <input type="date" id="date-picker-input" class="date-picker-input">
-            </div>
-            <div class="modal-actions">
-                <button class="modal-cancel-btn" id="date-cancel-btn">Cancel</button>
-                <button class="modal-confirm-btn" id="date-confirm-btn">Confirm</button>
-            </div>
-        </div>
-    `;
-    
-    document.body.appendChild(dateModal);
-    const datePicker = dateModal.querySelector('#date-picker-input');
-    const today = new Date().toISOString().split('T')[0];
-    datePicker.value = today;
-    datePicker.focus();
-    
-    const handleConfirm = () => {
-        const selectedDate = datePicker.value;
-        if (selectedDate) {
-            callback(selectedDate);
-        } else {
-            alert('Please select a date');
-        }
-        dateModal.remove();
-    };
-    
-    const handleCancel = () => {
-        dateModal.remove();
-    };
-    
-    dateModal.querySelector('#date-confirm-btn').addEventListener('click', handleConfirm);
-    dateModal.querySelector('#date-cancel-btn').addEventListener('click', handleCancel);
-    datePicker.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') handleConfirm();
+        `;
+        
+        document.body.appendChild(dateModal);
+        const datePicker = dateModal.querySelector('#date-picker-input');
+        datePicker.value = minDate;
+        datePicker.focus();
+        
+        const handleConfirm = () => {
+            const selectedDate = datePicker.value;
+            if (selectedDate) {
+                const selected = new Date(selectedDate);
+                const minDateObj = new Date(minDate);
+                
+                if (selected < minDateObj) {
+                    alert('Please select a date on or after ' + minDate);
+                    return;
+                }
+                
+                dateModal.remove();
+                resolve(selectedDate);
+            } else {
+                alert('Please select a date');
+            }
+        };
+        
+        const handleCancel = () => {
+            dateModal.remove();
+            reject(new Error('Cancelled'));
+        };
+        
+        dateModal.querySelector('#date-confirm-btn').addEventListener('click', handleConfirm);
+        dateModal.querySelector('#date-cancel-btn').addEventListener('click', handleCancel);
+        datePicker.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleConfirm();
+        });
     });
 };
 
@@ -357,23 +369,25 @@ const startTask = async (taskId) => {
         if (!task) return showError('Task not found');
         if (!task.workFlowHdrId) return showError('Workflow ID not found');
         
-        showDatePickerModal('Select Start Date', async (selectedDate) => {
-            const res = await fetch(`/start-task/${taskId}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    startTime: selectedDate,
-                    workFlowHdrId: task.workFlowHdrId,
-                    processID: task.NumberOfProccessID
-                })
-            });
-
-            if (!res.ok) throw new Error("Failed to start task");
-            showSuccess('Task started successfully');
-            window.location.reload();
+        const selectedDate = await showDatePickerModal('Select Start Date');
+        
+        const res = await fetch(`/start-task/${taskId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                startTime: selectedDate,
+                workFlowHdrId: task.workFlowHdrId,
+                processID: task.NumberOfProccessID
+            })
         });
+
+        if (!res.ok) throw new Error("Failed to start task");
+        showSuccess('Task started successfully');
+        window.location.reload();
     } catch (err) {
-        showError(err.message);
+        if (err.message !== 'Cancelled') {
+            showError(err.message);
+        }
     }
 };
 
@@ -383,22 +397,33 @@ const finishTask = async (taskId) => {
         if (!task) return showError('Task not found');
         if (!task.workFlowHdrId) return showError('Workflow ID not found');
         
-        showDatePickerModal('Select Finish Date', async (selectedDate) => {
-            const res = await fetch(`/finish-task/${taskId}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    finishTime: selectedDate,
-                    workFlowHdrId: task.workFlowHdrId,
-                    processID: task.NumberOfProccessID
-                })
-            });
-
-            if (!res.ok) throw new Error("Failed to finish task");
-            showSuccess('Task marked as finished');
-            window.location.reload();
+        let startDate = null;
+        if (task.TimeStarted) {
+            const startDateObj = new Date(task.TimeStarted);
+            startDate = startDateObj.getFullYear() + '-' + 
+                       String(startDateObj.getMonth() + 1).padStart(2, '0') + '-' + 
+                       String(startDateObj.getDate()).padStart(2, '0');
+        }
+        
+        const selectedDate = await showDatePickerModal('Select Finish Date', startDate);
+        
+        const res = await fetch(`/finish-task/${taskId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                finishTime: selectedDate,
+                workFlowHdrId: task.workFlowHdrId,
+                processID: task.NumberOfProccessID
+            })
         });
+
+        if (!res.ok) throw new Error("Failed to finish task");
+        showSuccess('Task marked as finished');
+        window.location.reload();
     } catch (err) {
+        if (err.message === 'Cancelled') {
+            throw err;
+        }
         showError(err.message);
     }
 };
