@@ -62,10 +62,11 @@ function applyAutoSelect(projectIdSelect, selectedProjectId) {
     projectIdSelect.value = selectedProjectId;
     console.log('Set project value to:', selectedProjectId);
     
-    projectIdSelect.disabled = true;
+    // Use pointer-events instead of disabled to keep value in form submission
+    projectIdSelect.style.pointerEvents = 'none';
     projectIdSelect.style.backgroundColor = '#f3f4f6';
-    projectIdSelect.style.cursor = 'not-allowed';
     projectIdSelect.style.opacity = '0.8';
+    projectIdSelect.setAttribute('data-auto-selected', 'true');
     
     // Add visual indicator
     const projectLabel = document.querySelector('label[for="project-id"]');
@@ -83,10 +84,10 @@ function applyAutoSelect(projectIdSelect, selectedProjectId) {
 
 // Remove auto-select styling and enable the field
 function removeAutoSelect(projectIdSelect) {
-    projectIdSelect.disabled = false;
+    projectIdSelect.style.pointerEvents = '';
     projectIdSelect.style.backgroundColor = '';
-    projectIdSelect.style.cursor = '';
     projectIdSelect.style.opacity = '';
+    projectIdSelect.removeAttribute('data-auto-selected');
     
     // Remove badge
     const projectLabel = document.querySelector('label[for="project-id"]');

@@ -107,10 +107,11 @@ function initializeProjectSelection() {
 function applyAutoSelect(projectIdSelect, selectedProjectId) {
     projectIdSelect.value = selectedProjectId;
     
-    projectIdSelect.disabled = true;
+    // Use pointer-events instead of disabled to keep value in form submission
+    projectIdSelect.style.pointerEvents = 'none';
     projectIdSelect.style.backgroundColor = '#f3f4f6';
-    projectIdSelect.style.cursor = 'not-allowed';
     projectIdSelect.style.opacity = '0.8';
+    projectIdSelect.setAttribute('data-auto-selected', 'true');
     
     // Add visual indicator
     const projectLabel = document.querySelector('label[for="project-id"]');
@@ -127,10 +128,10 @@ function applyAutoSelect(projectIdSelect, selectedProjectId) {
 
 // Remove auto-select styling and enable the field
 function removeAutoSelect(projectIdSelect) {
-    projectIdSelect.disabled = false;
+    projectIdSelect.style.pointerEvents = '';
     projectIdSelect.style.backgroundColor = '';
-    projectIdSelect.style.cursor = '';
     projectIdSelect.style.opacity = '';
+    projectIdSelect.removeAttribute('data-auto-selected');
     
     // Remove badge
     const projectLabel = document.querySelector('label[for="project-id"]');
@@ -151,13 +152,25 @@ async function loadWorkflowData() {
         // Show skeleton loading
         showSkeletonLoading();
         
-        const response = await fetch("/api/workFlowDashData");
-        if (!response.ok) throw new Error("Failed to fetch data");
+        // Add cache busting parameter to force fresh data
+        const fetchUrl = "/api/workFlowDashData?t=" + new Date().getTime();
+        console.log("🔄 Fetching workflow data from:", fetchUrl);
+        
+        const response = await fetch(fetchUrl);
+        console.log("📡 API Response status:", response.status, response.statusText);
+        
+        if (!response.ok) {
+            console.error("❌ API Error:", response.status, response.statusText);
+            throw new Error("Failed to fetch data");
+        }
+        
         allWorkflows = await response.json();
-        console.log("Loaded workflows:", allWorkflows);
+        console.log("✅ Loaded workflows count:", allWorkflows.length);
+        console.log("📊 Loaded workflows data:", allWorkflows);
         
         // Check if there are no workflows at all
         if (allWorkflows.length === 0) {
+            console.warn("⚠️ No workflows returned from API");
             document.getElementById('noResultsText').innerHTML = `
                 <strong>No workflows available</strong><br>
                 <span class="text-small text-light">
@@ -170,9 +183,11 @@ async function loadWorkflowData() {
         }
         
         // Filter out Blocked and In Progress statuses from the data
+        const beforeFilter = allWorkflows.length;
         allWorkflows = allWorkflows.filter(workflow => 
             workflow.Status === 'Pending' || workflow.Status === 'Completed'
         );
+        console.log(`🔍 Filtered workflows: ${beforeFilter} → ${allWorkflows.length}`);
         
         filteredWorkflows = [...allWorkflows];
         
@@ -361,35 +376,56 @@ function setupEventListeners() {
             const packageId = document.getElementById('package-id').value;
             const status = document.getElementById('status').value;
 
+            console.log("📝 Form submitted with values:");
+            console.log("  - Process ID:", processId);
+            console.log("  - Project ID:", projectId);
+            console.log("  - Package ID:", packageId);
+            console.log("  - Status:", status);
+
             try {
                 showLoading();
+                const payloadData = {
+                    processID: processId,
+                    projectID: projectId,
+                    packageID: packageId,
+                    status
+                };
+                
+                console.log("📤 Sending payload to /api/workflows:", payloadData);
+                
                 const res = await fetch('/api/workflows', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        processID: processId,
-                        projectID: projectId,
-                        packageID: packageId,
-                        status
-                    })
+                    body: JSON.stringify(payloadData)
                 });
 
-                if (!res.ok) throw new Error('Server error');
+                console.log("📡 API Response status:", res.status, res.statusText);
+
+                if (!res.ok) {
+                    const errorData = await res.json();
+                    console.error("❌ Server error:", errorData);
+                    throw new Error(errorData.error || 'Server error');
+                }
+
+                const responseData = await res.json();
+                console.log("✅ Workflow created successfully:", responseData);
 
                 showToast('Workflow added successfully!', 'success');
                 form.reset();
                 
                 // Refresh the data
+                console.log("🔄 Refreshing workflow data after creation...");
                 await loadWorkflowData();
                 updateStats();
                 updateTable();
                 updatePagination();
             } catch (error) {
-                console.error('Error adding workflow:', error);
+                console.error('❌ Error adding workflow:', error);
                 showToast('Error adding workflow: ' + error.message, 'error');
                 form.reset();
                 
                 // Refresh the data
+                console.log("🔄 Refreshing workflow data after error...");
                 await loadWorkflowData();
                 updateStats();
                 updateTable();

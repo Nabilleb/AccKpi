@@ -429,8 +429,16 @@ app.post("/addPackageForm", isSpecialUser, async (req, res) => {
   try {
     const { processID, projectID, packageID, startDate, status } = req.body;
 
+    logToServerFile("\n📝 POST /addPackageForm - Received workflow request");
+    logToServerFile(`  - processID: ${processID}`);
+    logToServerFile(`  - projectID: ${projectID}`);
+    logToServerFile(`  - packageID: ${packageID}`);
+    logToServerFile(`  - startDate: ${startDate}`);
+    logToServerFile(`  - status: ${status}`);
+
     // Validate required fields
     if (!processID || !projectID || !packageID || !startDate) {
+      logToServerFile("❌ Validation failed: Missing required fields");
       return res.status(400).json({ error: "All fields are required" });
     }
 
@@ -505,11 +513,21 @@ app.post("/addPackageForm", isSpecialUser, async (req, res) => {
       .input('status', sql.VarChar, status || 'Pending')
       .query(`
         INSERT INTO tblWorkFlowHdr (processID, projectID, packageID, startDate, status, createdDate)
-        OUTPUT INSERTED.workFlowID
+        OUTPUT INSERTED.workFlowID, INSERTED.projectID, INSERTED.startDate, INSERTED.status
         VALUES (@processID, @projectID, @packageID, @startDate, @status, GETDATE())
       `);
 
     const newWorkflowID = insertResult.recordset[0].workFlowID;
+    logToServerFile("✅ Workflow inserted successfully:");
+    logToServerFile(`  - New Workflow ID: ${newWorkflowID}`);
+    logToServerFile(`  - Saved projectID: ${insertResult.recordset[0].projectID}`);
+    logToServerFile(`  - Saved startDate: ${insertResult.recordset[0].startDate}`);
+    logToServerFile(`  - Saved status: ${insertResult.recordset[0].status}`);
+    console.log("✅ Workflow inserted successfully:");
+    console.log("  - New Workflow ID:", newWorkflowID);
+    console.log("  - Saved projectID:", insertResult.recordset[0].projectID);
+    console.log("  - Saved startDate:", insertResult.recordset[0].startDate);
+    console.log("  - Saved status:", insertResult.recordset[0].status);
 
     // 5️⃣ Get all ORIGINAL tasks for this process (not workflow copies)
     const tasks = await pool.request()
@@ -790,7 +808,23 @@ app.get("/api/workFlowDashData", ensureAuthenticated, async (req, res) => {
   const userDeptId = req.session.user.DepartmentId;
   const userProjectID = req.session.user.ProjectID; // Use project from login session
 
+  logToServerFile("\n" + "=".repeat(80));
+  logToServerFile("📊 GET /api/workFlowDashData - User info:");
+  logToServerFile(`  - Is Admin: ${isAdmin}`);
+  logToServerFile(`  - User Dept ID: ${userDeptId}`);
+  logToServerFile(`  - User Project ID: ${userProjectID}`);
+  
+  console.log("📊 GET /api/workFlowDashData - User info:");
+  console.log("  - Is Admin:", isAdmin);
+  console.log("  - User Dept ID:", userDeptId);
+  console.log("  - User Project ID:", userProjectID);
+
   try {
+    // DEBUG: Check total workflows in database
+    const totalWorkflows = await pool.request().query(`SELECT COUNT(*) as total FROM tblWorkflowHdr`);
+    logToServerFile(`📊 Total workflows in database: ${totalWorkflows.recordset[0].total}`);
+    console.log("📊 Total workflows in database:", totalWorkflows.recordset[0].total);
+
     // ✅ Mark workflows as completed if all tasks are done
    await pool.request().query(`
   UPDATE hdr
@@ -812,6 +846,27 @@ app.get("/api/workFlowDashData", ensureAuthenticated, async (req, res) => {
   AND hdr.startDate IS NOT NULL
 `);
 
+
+    // DEBUG: Get all workflows without filters first
+    const allWorkflowsUnfiltered = await pool.request().query(`
+      SELECT 
+        hdr.WorkFlowID AS HdrID,
+        hdr.ProjectID,
+        hdr.ProcessID,
+        hdr.Status,
+        hdr.startDate,
+        hdr.createdDate
+      FROM tblWorkflowHdr hdr
+      ORDER BY hdr.createdDate DESC
+    `);
+    logToServerFile(`🔍 All workflows in DB (unfiltered): ${allWorkflowsUnfiltered.recordset.length} total`);
+    allWorkflowsUnfiltered.recordset.forEach(w => {
+      logToServerFile(`   - ID: ${w.HdrID}, ProjectID: ${w.ProjectID}, ProcessID: ${w.ProcessID}, Status: ${w.Status}, startDate: ${w.startDate}`);
+    });
+    console.log("🔍 All workflows in DB (unfiltered):", allWorkflowsUnfiltered.recordset.length, "total");
+    allWorkflowsUnfiltered.recordset.forEach(w => {
+      console.log(`   - ID: ${w.HdrID}, ProjectID: ${w.ProjectID}, ProcessID: ${w.ProcessID}, Status: ${w.Status}, startDate: ${w.startDate}`);
+    });
 
     let query = `
       SELECT 
@@ -841,6 +896,11 @@ app.get("/api/workFlowDashData", ensureAuthenticated, async (req, res) => {
     if (userProjectID) {
       request.input('ProjectID', sql.Int, userProjectID);
       whereClauses.push(`hdr.ProjectID = @ProjectID`);
+      logToServerFile(`  - Adding filter: Project ID = ${userProjectID}`);
+      console.log("  - Adding filter: Project ID =", userProjectID);
+    } else {
+      logToServerFile("  - WARNING: No user project ID set!");
+      console.log("  - WARNING: No user project ID set!");
     }
 
     if (!isAdmin) {
@@ -852,11 +912,20 @@ app.get("/api/workFlowDashData", ensureAuthenticated, async (req, res) => {
             AND pd.DepartmentID = @UserDeptId
         )
       `);
+      logToServerFile(`  - Adding filter: User Department ID = ${userDeptId}`);
+      console.log("  - Adding filter: User Department ID =", userDeptId);
+    } else {
+      logToServerFile("  - User is Admin - no department filter applied");
+      console.log("  - User is Admin - no department filter applied");
     }
 
     if (whereClauses.length > 0) {
       query += ' AND ' + whereClauses.join(' AND ');
     }
+
+    logToServerFile(`  - Final WHERE clause: ${whereClauses.length > 0 ? whereClauses.join(' AND ') : 'NONE'}`);
+    console.log("  - Final WHERE clause:", whereClauses.length > 0 ? whereClauses.join(' AND ') : 'NONE');
+    console.log("📝 Full SQL Query:", query);
 
     query += `
       ORDER BY 
@@ -865,10 +934,33 @@ app.get("/api/workFlowDashData", ensureAuthenticated, async (req, res) => {
     `;
 
     const result = await request.query(query);
+    logToServerFile(`✅ Query executed - Returning ${result.recordset.length} workflows`);
+    console.log("✅ Query executed - Returning", result.recordset.length, "workflows");
+    
+    // DEBUG: Show which workflows were filtered out
+    if (allWorkflowsUnfiltered.recordset.length > result.recordset.length) {
+      logToServerFile("\n⚠️  WORKFLOWS FILTERED OUT:");
+      console.log("\n⚠️  WORKFLOWS FILTERED OUT:");
+      const returnedIds = new Set(result.recordset.map(w => w.HdrID));
+      allWorkflowsUnfiltered.recordset.forEach(w => {
+        if (!returnedIds.has(w.HdrID)) {
+          logToServerFile(`   - ID: ${w.HdrID}, ProjectID: ${w.ProjectID}, Status: ${w.Status}`);
+          logToServerFile(`     Problem: ProjectID filter expects ${userProjectID}, got ${w.ProjectID} - ${w.ProjectID == userProjectID ? 'MATCH' : 'MISMATCH'}`);
+          console.log(`   - ID: ${w.HdrID}, ProjectID: ${w.ProjectID}, Status: ${w.Status}`);
+          console.log(`     Problem: ProjectID filter expects ${userProjectID}, got ${w.ProjectID} - ${w.ProjectID == userProjectID ? 'MATCH' : 'MISMATCH'}`);
+        }
+      });
+    } else if (allWorkflowsUnfiltered.recordset.length === result.recordset.length) {
+      logToServerFile("✅ No workflows filtered out - all match criteria");
+    }
+    
+    logToServerFile(`📋 Final returned workflows count: ${result.recordset.length}\n`);
+    console.log("📋 Workflows data:", result.recordset);
+    
     res.json(result.recordset);
 
   } catch (err) {
-    console.error("Error fetching workflow dashboard data:", err);
+    console.error("❌ Error fetching workflow dashboard data:", err);
     res.status(500).json({ error: "Failed to fetch workflow dashboard data" });
   }
 });
@@ -2532,8 +2624,15 @@ app.get("/workflow/new", isAdmin, async (req, res) => {
 app.post('/api/workflows', async (req, res) => {
   const { processID, projectID, packageID, status } = req.body;
 
+  console.log("📝 POST /api/workflows - Received request with:");
+  console.log("  - processID:", processID);
+  console.log("  - projectID:", projectID);
+  console.log("  - packageID:", packageID);
+  console.log("  - status:", status);
+
   // Validate input
   if (!processID || isNaN(processID)) {
+    console.error("❌ Validation error: Invalid processID");
     return res.status(400).json({
       error: 'Invalid processID: Must be a non-empty numeric value'
     });
@@ -2713,6 +2812,10 @@ app.post('/api/workflows', async (req, res) => {
       }
     }
 
+    console.log("✅ Workflow created successfully:");
+    console.log("  - Workflow ID:", newWorkflowID);
+    console.log("  - Tasks updated:", tasks.recordset.length);
+
     res.status(201).json({
       message: 'Workflow created and tasks updated successfully',
       workflowID: newWorkflowID,
@@ -2720,7 +2823,7 @@ app.post('/api/workflows', async (req, res) => {
     });
 
   } catch (err) {
-    console.error('Error inserting workflow:', err);
+    console.error('❌ Error inserting workflow:', err);
     res.status(500).json({ 
       error: 'Database operation failed',
       details: err.message 
