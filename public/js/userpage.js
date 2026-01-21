@@ -109,15 +109,22 @@ const showDatePickerModal = (title, minDateString = null) => {
     return new Promise((resolve, reject) => {
         const dateModal = document.createElement('div');
         dateModal.className = 'modal show';
-        const today = new Date().toISOString().split('T')[0];
-        const minDate = minDateString || today;
+        const today = new Date();
+        const todayString = today.toISOString().split('T')[0];
+        
+        // For finish date: use the start date as minimum
+        // For start date: allow unlimited backdating, max is today
+        let minDate = minDateString || '1900-01-01'; // Allow backdating to any date
+        let maxDate = minDateString ? '9999-12-31' : todayString; // If minDateString (finish date), allow future; otherwise max is today
+        
         dateModal.innerHTML = `
             <div class="modal-content">
                 <div class="modal-title">
                     <i class="fas fa-calendar"></i> ${title}
                 </div>
+                ${minDateString ? '<p style="color: #2196F3; font-size: 0.9em; margin: 10px 0; font-weight: bold;">ℹ Finish date must be on or after start date (' + minDateString + ')</p>' : '<p style="color: #4CAF50; font-size: 0.9em; margin: 10px 0;">✓ You can backdate start date</p>'}
                 <div class="date-picker-margin">
-                    <input type="date" id="date-picker-input" class="date-picker-input" min="${minDate}">
+                    <input type="date" id="date-picker-input" class="date-picker-input" min="${minDate}" max="${maxDate}">
                 </div>
                 <div class="modal-actions">
                     <button class="modal-cancel-btn" id="date-cancel-btn">Cancel</button>
@@ -134,14 +141,6 @@ const showDatePickerModal = (title, minDateString = null) => {
         const handleConfirm = () => {
             const selectedDate = datePicker.value;
             if (selectedDate) {
-                const selected = new Date(selectedDate);
-                const minDateObj = new Date(minDate);
-                
-                if (selected < minDateObj) {
-                    alert('Please select a date on or after ' + minDate);
-                    return;
-                }
-                
                 dateModal.remove();
                 resolve(selectedDate);
             } else {
