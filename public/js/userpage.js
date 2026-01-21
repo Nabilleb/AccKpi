@@ -135,7 +135,7 @@ const showDatePickerModal = (title, minDateString = null) => {
         
         document.body.appendChild(dateModal);
         const datePicker = dateModal.querySelector('#date-picker-input');
-        datePicker.value = minDate;
+        datePicker.value = minDateString || todayString; // Default to today, or start date if finish date picker
         datePicker.focus();
         
         const handleConfirm = () => {

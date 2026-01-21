@@ -2033,3 +2033,3197 @@
 ---
 [2026-01-21T13:31:37.150Z]    - ID: 1014, ProjectID: 14, Status: Pending
 ---
+[2026-01-21T13:41:33.295Z]   - User Dept ID: 8
+---
+[2026-01-21T13:41:33.295Z] 
+================================================================================
+---
+[2026-01-21T13:41:33.295Z]   - Is Admin: false
+---
+[2026-01-21T13:41:33.295Z] 📊 GET /api/workFlowDashData - User info:
+---
+[2026-01-21T13:41:33.295Z]   - User Project ID: 9
+---
+[2026-01-21T13:41:33.306Z] 📊 Total workflows in database: 10
+---
+[2026-01-21T13:41:33.346Z] 🔍 All workflows in DB (unfiltered): 10 total
+---
+[2026-01-21T13:41:33.346Z]    - ID: 1020, ProjectID: 20, ProcessID: 1, Status: Pending, startDate: Wed Jan 14 2026 16:17:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:41:33.346Z]    - ID: 1019, ProjectID: 12, ProcessID: 1, Status: Pending, startDate: Wed Jan 14 2026 15:34:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:41:33.346Z]    - ID: 1018, ProjectID: 11, ProcessID: 1, Status: Pending, startDate: Wed Jan 14 2026 15:34:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:41:33.346Z]    - ID: 1017, ProjectID: 12, ProcessID: 1, Status: Pending, startDate: Wed Jan 14 2026 15:16:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:41:33.346Z]    - ID: 1016, ProjectID: 10, ProcessID: 1, Status: Pending, startDate: Tue Jan 13 2026 18:05:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:41:33.346Z]    - ID: 1015, ProjectID: 9, ProcessID: 1, Status: Pending, startDate: Tue Jan 13 2026 17:59:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:41:33.346Z]    - ID: 1014, ProjectID: 14, ProcessID: 1, Status: Pending, startDate: Tue Jan 13 2026 17:55:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:41:33.346Z]    - ID: 1013, ProjectID: 9, ProcessID: 1, Status: Pending, startDate: Mon Jan 12 2026 10:59:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:41:33.346Z]    - ID: 1012, ProjectID: 9, ProcessID: 1, Status: Pending, startDate: Sat Jan 10 2026 14:49:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:41:33.346Z]    - ID: 1011, ProjectID: 9, ProcessID: 1, Status: Pending, startDate: Fri Jan 09 2026 17:21:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:41:33.349Z]   - Adding filter: Project ID = 9
+---
+[2026-01-21T13:41:33.349Z]   - Adding filter: User Department ID = 8
+---
+[2026-01-21T13:41:33.350Z]   - Final WHERE clause: hdr.ProjectID = @ProjectID AND 
+        EXISTS (
+          SELECT 1 FROM tblProcessDepartment pd
+          WHERE pd.ProcessID = hdr.ProcessID
+            AND pd.DepartmentID = @UserDeptId
+        )
+      
+---
+[2026-01-21T13:41:33.380Z] ✅ Query executed - Returning 4 workflows
+---
+[2026-01-21T13:41:33.381Z] 
+⚠️  WORKFLOWS FILTERED OUT:
+---
+[2026-01-21T13:41:33.381Z]      Problem: ProjectID filter expects 9, got 20 - MISMATCH
+---
+[2026-01-21T13:41:33.382Z]    - ID: 1019, ProjectID: 12, Status: Pending
+---
+[2026-01-21T13:41:33.381Z]    - ID: 1020, ProjectID: 20, Status: Pending
+---
+[2026-01-21T13:41:33.382Z]      Problem: ProjectID filter expects 9, got 12 - MISMATCH
+---
+[2026-01-21T13:41:33.382Z]    - ID: 1018, ProjectID: 11, Status: Pending
+---
+[2026-01-21T13:41:33.382Z]      Problem: ProjectID filter expects 9, got 11 - MISMATCH
+---
+[2026-01-21T13:41:33.383Z]    - ID: 1017, ProjectID: 12, Status: Pending
+---
+[2026-01-21T13:41:33.383Z]      Problem: ProjectID filter expects 9, got 12 - MISMATCH
+---
+[2026-01-21T13:41:33.383Z]    - ID: 1016, ProjectID: 10, Status: Pending
+---
+[2026-01-21T13:41:33.383Z]      Problem: ProjectID filter expects 9, got 10 - MISMATCH
+---
+[2026-01-21T13:41:33.384Z]    - ID: 1014, ProjectID: 14, Status: Pending
+---
+[2026-01-21T13:41:33.384Z]      Problem: ProjectID filter expects 9, got 14 - MISMATCH
+---
+[2026-01-21T13:41:33.384Z] 📋 Final returned workflows count: 4
+
+---
+[2026-01-21T13:42:13.882Z] 
+================================================================================
+---
+[2026-01-21T13:42:13.882Z] 📊 GET /api/workFlowDashData - User info:
+---
+[2026-01-21T13:42:13.882Z]   - Is Admin: false
+---
+[2026-01-21T13:42:13.882Z]   - User Project ID: 9
+---
+[2026-01-21T13:42:13.882Z]   - User Dept ID: 14
+---
+[2026-01-21T13:42:13.918Z] 📊 Total workflows in database: 10
+---
+[2026-01-21T13:42:13.964Z] 🔍 All workflows in DB (unfiltered): 10 total
+---
+[2026-01-21T13:42:13.964Z]    - ID: 1019, ProjectID: 12, ProcessID: 1, Status: Pending, startDate: Wed Jan 14 2026 15:34:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:42:13.964Z]    - ID: 1020, ProjectID: 20, ProcessID: 1, Status: Pending, startDate: Wed Jan 14 2026 16:17:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:42:13.964Z]    - ID: 1018, ProjectID: 11, ProcessID: 1, Status: Pending, startDate: Wed Jan 14 2026 15:34:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:42:13.965Z]    - ID: 1015, ProjectID: 9, ProcessID: 1, Status: Pending, startDate: Tue Jan 13 2026 17:59:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:42:13.965Z]    - ID: 1014, ProjectID: 14, ProcessID: 1, Status: Pending, startDate: Tue Jan 13 2026 17:55:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:42:13.965Z]    - ID: 1013, ProjectID: 9, ProcessID: 1, Status: Pending, startDate: Mon Jan 12 2026 10:59:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:42:13.965Z]    - ID: 1017, ProjectID: 12, ProcessID: 1, Status: Pending, startDate: Wed Jan 14 2026 15:16:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:42:13.965Z]    - ID: 1016, ProjectID: 10, ProcessID: 1, Status: Pending, startDate: Tue Jan 13 2026 18:05:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:42:13.965Z]    - ID: 1012, ProjectID: 9, ProcessID: 1, Status: Pending, startDate: Sat Jan 10 2026 14:49:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:42:13.965Z]    - ID: 1011, ProjectID: 9, ProcessID: 1, Status: Pending, startDate: Fri Jan 09 2026 17:21:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:42:13.968Z]   - Final WHERE clause: hdr.ProjectID = @ProjectID AND 
+        EXISTS (
+          SELECT 1 FROM tblProcessDepartment pd
+          WHERE pd.ProcessID = hdr.ProcessID
+            AND pd.DepartmentID = @UserDeptId
+        )
+      
+---
+[2026-01-21T13:42:13.968Z]   - Adding filter: User Department ID = 14
+---
+[2026-01-21T13:42:13.968Z]   - Adding filter: Project ID = 9
+---
+[2026-01-21T13:42:13.997Z] ✅ Query executed - Returning 0 workflows
+---
+[2026-01-21T13:42:13.998Z]      Problem: ProjectID filter expects 9, got 20 - MISMATCH
+---
+[2026-01-21T13:42:13.998Z]    - ID: 1020, ProjectID: 20, Status: Pending
+---
+[2026-01-21T13:42:13.999Z]      Problem: ProjectID filter expects 9, got 12 - MISMATCH
+---
+[2026-01-21T13:42:13.999Z]    - ID: 1019, ProjectID: 12, Status: Pending
+---
+[2026-01-21T13:42:13.999Z]      Problem: ProjectID filter expects 9, got 11 - MISMATCH
+---
+[2026-01-21T13:42:13.998Z] 
+⚠️  WORKFLOWS FILTERED OUT:
+---
+[2026-01-21T13:42:13.999Z]    - ID: 1018, ProjectID: 11, Status: Pending
+---
+[2026-01-21T13:42:14.000Z]      Problem: ProjectID filter expects 9, got 12 - MISMATCH
+---
+[2026-01-21T13:42:14.000Z]      Problem: ProjectID filter expects 9, got 10 - MISMATCH
+---
+[2026-01-21T13:42:14.001Z]      Problem: ProjectID filter expects 9, got 9 - MATCH
+---
+[2026-01-21T13:42:14.001Z]    - ID: 1015, ProjectID: 9, Status: Pending
+---
+[2026-01-21T13:42:14.001Z]    - ID: 1014, ProjectID: 14, Status: Pending
+---
+[2026-01-21T13:42:14.000Z]    - ID: 1017, ProjectID: 12, Status: Pending
+---
+[2026-01-21T13:42:14.001Z]      Problem: ProjectID filter expects 9, got 14 - MISMATCH
+---
+[2026-01-21T13:42:14.000Z]    - ID: 1016, ProjectID: 10, Status: Pending
+---
+[2026-01-21T13:42:14.002Z]      Problem: ProjectID filter expects 9, got 9 - MATCH
+---
+[2026-01-21T13:42:14.002Z]    - ID: 1013, ProjectID: 9, Status: Pending
+---
+[2026-01-21T13:42:14.002Z]      Problem: ProjectID filter expects 9, got 9 - MATCH
+---
+[2026-01-21T13:42:14.002Z]    - ID: 1012, ProjectID: 9, Status: Pending
+---
+[2026-01-21T13:42:14.003Z]    - ID: 1011, ProjectID: 9, Status: Pending
+---
+[2026-01-21T13:42:14.003Z]      Problem: ProjectID filter expects 9, got 9 - MATCH
+---
+[2026-01-21T13:42:14.003Z] 📋 Final returned workflows count: 0
+
+---
+[2026-01-21T13:42:53.282Z] 
+================================================================================
+---
+[2026-01-21T13:42:53.283Z]   - Is Admin: false
+---
+[2026-01-21T13:42:53.282Z] 📊 GET /api/workFlowDashData - User info:
+---
+[2026-01-21T13:42:53.283Z]   - User Project ID: 9
+---
+[2026-01-21T13:42:53.283Z]   - User Dept ID: 9
+---
+[2026-01-21T13:42:53.314Z] 📊 Total workflows in database: 10
+---
+[2026-01-21T13:42:53.352Z] 🔍 All workflows in DB (unfiltered): 10 total
+---
+[2026-01-21T13:42:53.352Z]    - ID: 1020, ProjectID: 20, ProcessID: 1, Status: Pending, startDate: Wed Jan 14 2026 16:17:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:42:53.352Z]    - ID: 1017, ProjectID: 12, ProcessID: 1, Status: Pending, startDate: Wed Jan 14 2026 15:16:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:42:53.352Z]    - ID: 1018, ProjectID: 11, ProcessID: 1, Status: Pending, startDate: Wed Jan 14 2026 15:34:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:42:53.352Z]    - ID: 1015, ProjectID: 9, ProcessID: 1, Status: Pending, startDate: Tue Jan 13 2026 17:59:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:42:53.352Z]    - ID: 1019, ProjectID: 12, ProcessID: 1, Status: Pending, startDate: Wed Jan 14 2026 15:34:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:42:53.352Z]    - ID: 1013, ProjectID: 9, ProcessID: 1, Status: Pending, startDate: Mon Jan 12 2026 10:59:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:42:53.352Z]    - ID: 1016, ProjectID: 10, ProcessID: 1, Status: Pending, startDate: Tue Jan 13 2026 18:05:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:42:53.352Z]    - ID: 1014, ProjectID: 14, ProcessID: 1, Status: Pending, startDate: Tue Jan 13 2026 17:55:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:42:53.355Z]   - Adding filter: Project ID = 9
+---
+[2026-01-21T13:42:53.352Z]    - ID: 1012, ProjectID: 9, ProcessID: 1, Status: Pending, startDate: Sat Jan 10 2026 14:49:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:42:53.356Z]   - Final WHERE clause: hdr.ProjectID = @ProjectID AND 
+        EXISTS (
+          SELECT 1 FROM tblProcessDepartment pd
+          WHERE pd.ProcessID = hdr.ProcessID
+            AND pd.DepartmentID = @UserDeptId
+        )
+      
+---
+[2026-01-21T13:42:53.352Z]    - ID: 1011, ProjectID: 9, ProcessID: 1, Status: Pending, startDate: Fri Jan 09 2026 17:21:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:42:53.355Z]   - Adding filter: User Department ID = 9
+---
+[2026-01-21T13:42:53.378Z] ✅ Query executed - Returning 4 workflows
+---
+[2026-01-21T13:42:53.379Z]    - ID: 1020, ProjectID: 20, Status: Pending
+---
+[2026-01-21T13:42:53.379Z]    - ID: 1019, ProjectID: 12, Status: Pending
+---
+[2026-01-21T13:42:53.380Z]    - ID: 1018, ProjectID: 11, Status: Pending
+---
+[2026-01-21T13:42:53.379Z]      Problem: ProjectID filter expects 9, got 12 - MISMATCH
+---
+[2026-01-21T13:42:53.380Z]      Problem: ProjectID filter expects 9, got 11 - MISMATCH
+---
+[2026-01-21T13:42:53.378Z] 
+⚠️  WORKFLOWS FILTERED OUT:
+---
+[2026-01-21T13:42:53.380Z]    - ID: 1017, ProjectID: 12, Status: Pending
+---
+[2026-01-21T13:42:53.379Z]      Problem: ProjectID filter expects 9, got 20 - MISMATCH
+---
+[2026-01-21T13:42:53.381Z]    - ID: 1016, ProjectID: 10, Status: Pending
+---
+[2026-01-21T13:42:53.380Z]      Problem: ProjectID filter expects 9, got 12 - MISMATCH
+---
+[2026-01-21T13:42:53.381Z]    - ID: 1014, ProjectID: 14, Status: Pending
+---
+[2026-01-21T13:42:53.381Z]      Problem: ProjectID filter expects 9, got 14 - MISMATCH
+---
+[2026-01-21T13:42:53.382Z] 📋 Final returned workflows count: 4
+
+---
+[2026-01-21T13:42:53.381Z]      Problem: ProjectID filter expects 9, got 10 - MISMATCH
+---
+[2026-01-21T13:52:58.155Z]   - Is Admin: false
+---
+[2026-01-21T13:52:58.155Z] 📊 GET /api/workFlowDashData - User info:
+---
+[2026-01-21T13:52:58.155Z]   - User Dept ID: 9
+---
+[2026-01-21T13:52:58.155Z] 
+================================================================================
+---
+[2026-01-21T13:52:58.155Z]   - User Project ID: 9
+---
+[2026-01-21T13:52:58.189Z] 📊 Total workflows in database: 10
+---
+[2026-01-21T13:52:58.233Z] 🔍 All workflows in DB (unfiltered): 10 total
+---
+[2026-01-21T13:52:58.233Z]    - ID: 1020, ProjectID: 20, ProcessID: 1, Status: Pending, startDate: Wed Jan 14 2026 16:17:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:52:58.234Z]    - ID: 1019, ProjectID: 12, ProcessID: 1, Status: Pending, startDate: Wed Jan 14 2026 15:34:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:52:58.234Z]    - ID: 1018, ProjectID: 11, ProcessID: 1, Status: Pending, startDate: Wed Jan 14 2026 15:34:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:52:58.234Z]    - ID: 1016, ProjectID: 10, ProcessID: 1, Status: Pending, startDate: Tue Jan 13 2026 18:05:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:52:58.234Z]    - ID: 1017, ProjectID: 12, ProcessID: 1, Status: Pending, startDate: Wed Jan 14 2026 15:16:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:52:58.234Z]    - ID: 1015, ProjectID: 9, ProcessID: 1, Status: Pending, startDate: Tue Jan 13 2026 17:59:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:52:58.234Z]    - ID: 1013, ProjectID: 9, ProcessID: 1, Status: Pending, startDate: Mon Jan 12 2026 10:59:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:52:58.234Z]    - ID: 1014, ProjectID: 14, ProcessID: 1, Status: Pending, startDate: Tue Jan 13 2026 17:55:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:52:58.234Z]    - ID: 1012, ProjectID: 9, ProcessID: 1, Status: Pending, startDate: Sat Jan 10 2026 14:49:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:52:58.237Z]   - Adding filter: Project ID = 9
+---
+[2026-01-21T13:52:58.237Z]   - Adding filter: User Department ID = 9
+---
+[2026-01-21T13:52:58.237Z]   - Final WHERE clause: hdr.ProjectID = @ProjectID AND 
+        EXISTS (
+          SELECT 1 FROM tblProcessDepartment pd
+          WHERE pd.ProcessID = hdr.ProcessID
+            AND pd.DepartmentID = @UserDeptId
+        )
+      
+---
+[2026-01-21T13:52:58.234Z]    - ID: 1011, ProjectID: 9, ProcessID: 1, Status: Pending, startDate: Fri Jan 09 2026 17:21:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:52:58.266Z] ✅ Query executed - Returning 4 workflows
+---
+[2026-01-21T13:52:58.266Z] 
+⚠️  WORKFLOWS FILTERED OUT:
+---
+[2026-01-21T13:52:58.267Z]    - ID: 1020, ProjectID: 20, Status: Pending
+---
+[2026-01-21T13:52:58.267Z]      Problem: ProjectID filter expects 9, got 20 - MISMATCH
+---
+[2026-01-21T13:52:58.268Z]    - ID: 1019, ProjectID: 12, Status: Pending
+---
+[2026-01-21T13:52:58.268Z]      Problem: ProjectID filter expects 9, got 12 - MISMATCH
+---
+[2026-01-21T13:52:58.268Z]      Problem: ProjectID filter expects 9, got 11 - MISMATCH
+---
+[2026-01-21T13:52:58.269Z]    - ID: 1017, ProjectID: 12, Status: Pending
+---
+[2026-01-21T13:52:58.268Z]    - ID: 1018, ProjectID: 11, Status: Pending
+---
+[2026-01-21T13:52:58.269Z]      Problem: ProjectID filter expects 9, got 12 - MISMATCH
+---
+[2026-01-21T13:52:58.270Z]    - ID: 1014, ProjectID: 14, Status: Pending
+---
+[2026-01-21T13:52:58.270Z]      Problem: ProjectID filter expects 9, got 14 - MISMATCH
+---
+[2026-01-21T13:52:58.270Z] 📋 Final returned workflows count: 4
+
+---
+[2026-01-21T13:52:58.269Z]    - ID: 1016, ProjectID: 10, Status: Pending
+---
+[2026-01-21T13:52:58.269Z]      Problem: ProjectID filter expects 9, got 10 - MISMATCH
+---
+[2026-01-21T13:53:08.640Z] 
+📝 POST /addPackageForm - Received workflow request
+---
+[2026-01-21T13:53:08.640Z]   - processID: 1
+---
+[2026-01-21T13:53:08.640Z]   - projectID: 9
+---
+[2026-01-21T13:53:08.641Z]   - packageID: 13
+---
+[2026-01-21T13:53:08.641Z]   - startDate: 2026-01-21T15:52
+---
+[2026-01-21T13:53:08.641Z]   - status: Pending
+---
+[2026-01-21T13:53:08.711Z] ✅ Workflow inserted successfully:
+---
+[2026-01-21T13:53:08.712Z]   - Saved projectID: 9
+---
+[2026-01-21T13:53:08.712Z]   - Saved startDate: Wed Jan 21 2026 15:52:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:08.711Z]   - New Workflow ID: 1021
+---
+[2026-01-21T13:53:08.712Z]   - Saved status: Pending
+---
+[2026-01-21T13:53:08.744Z]   - Task ID: 2381
+---
+[2026-01-21T13:53:08.744Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:53:08.744Z]   - PlannedDate: Wed Jan 21 2026 15:52:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:08.744Z]   - Predecessor ID: None
+---
+[2026-01-21T13:53:08.744Z]   - Days Required: 1
+---
+[2026-01-21T13:53:08.744Z]   - Task Name: RFQ Planned Issue Date
+---
+[2026-01-21T13:53:08.764Z]   - Task ID: 2382
+---
+[2026-01-21T13:53:08.764Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:53:08.765Z]   - PlannedDate: Wed Jan 21 2026 15:52:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:08.765Z]   - Predecessor ID: None
+---
+[2026-01-21T13:53:08.765Z]   - Days Required: 1
+---
+[2026-01-21T13:53:08.764Z]   - Task Name: RFQ Planned Dis Date
+---
+[2026-01-21T13:53:08.785Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:53:08.785Z]   - Task Name: RFQ Planned Collecting Date
+---
+[2026-01-21T13:53:08.785Z]   - PlannedDate: Wed Jan 21 2026 15:52:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:08.785Z]   - Days Required: 20
+---
+[2026-01-21T13:53:08.785Z]   - Predecessor ID: None
+---
+[2026-01-21T13:53:08.785Z]   - Task ID: 2383
+---
+[2026-01-21T13:53:08.803Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:53:08.803Z]   - Task Name: Comparison Sheet Planned Issue Date
+---
+[2026-01-21T13:53:08.804Z]   - PlannedDate: Wed Jan 21 2026 15:52:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:08.803Z]   - Task ID: 2384
+---
+[2026-01-21T13:53:08.803Z]   - Days Required: 7
+---
+[2026-01-21T13:53:08.804Z]   - Predecessor ID: None
+---
+[2026-01-21T13:53:08.821Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:53:08.821Z]   - Task Name: Planned Mgmt. Sup/Sub Selection Date
+---
+[2026-01-21T13:53:08.821Z]   - Task ID: 2385
+---
+[2026-01-21T13:53:08.821Z]   - PlannedDate: Wed Jan 21 2026 15:52:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:08.821Z]   - Days Required: 3
+---
+[2026-01-21T13:53:08.821Z]   - Predecessor ID: None
+---
+[2026-01-21T13:53:08.833Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:53:08.833Z]   - Task Name: MAR Planned Issue Date
+---
+[2026-01-21T13:53:08.833Z]   - PlannedDate: Wed Jan 21 2026 15:52:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:08.833Z]   - Predecessor ID: None
+---
+[2026-01-21T13:53:08.833Z]   - Task ID: 2386
+---
+[2026-01-21T13:53:08.833Z]   - Days Required: 1
+---
+[2026-01-21T13:53:08.847Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:53:08.847Z]   - Task Name: MAR Planned Returned Date
+---
+[2026-01-21T13:53:08.847Z]   - Task ID: 2387
+---
+[2026-01-21T13:53:08.847Z]   - Days Required: 14
+---
+[2026-01-21T13:53:08.847Z]   - PlannedDate: Wed Jan 21 2026 15:52:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:08.847Z]   - Predecessor ID: None
+---
+[2026-01-21T13:53:08.863Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:53:08.863Z]   - Task ID: 2388
+---
+[2026-01-21T13:53:08.863Z]   - Days Required: 7
+---
+[2026-01-21T13:53:08.863Z]   - Task Name: Planned Schedule Receiving date (from Site)
+---
+[2026-01-21T13:53:08.863Z]   - PlannedDate: Wed Jan 21 2026 15:52:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:08.863Z]   - Predecessor ID: None
+---
+[2026-01-21T13:53:08.880Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:53:08.880Z]   - Days Required: 1
+---
+[2026-01-21T13:53:08.880Z]   - Task Name: Planned Receiving Required Document From Logistics
+---
+[2026-01-21T13:53:08.880Z]   - PlannedDate: Wed Jan 21 2026 15:52:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:08.881Z]   - Predecessor ID: None
+---
+[2026-01-21T13:53:08.880Z]   - Task ID: 2389
+---
+[2026-01-21T13:53:08.897Z]   - Task ID: 2390
+---
+[2026-01-21T13:53:08.897Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:53:08.897Z]   - Task Name: Planned Agreement Planned Certation Date
+---
+[2026-01-21T13:53:08.897Z]   - Days Required: 1
+---
+[2026-01-21T13:53:08.897Z]   - PlannedDate: Wed Jan 21 2026 15:52:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:08.897Z]   - Predecessor ID: None
+---
+[2026-01-21T13:53:08.912Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:53:08.912Z]   - Task Name: Planned Agreement Certation Date
+---
+[2026-01-21T13:53:08.912Z]   - Task ID: 2391
+---
+[2026-01-21T13:53:08.912Z]   - Days Required: 1
+---
+[2026-01-21T13:53:08.912Z]   - PlannedDate: Wed Jan 21 2026 15:52:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:08.912Z]   - Predecessor ID: None
+---
+[2026-01-21T13:53:08.928Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:53:08.928Z]   - Task Name: Agreement Planned Issue Date to Sup/Sub
+---
+[2026-01-21T13:53:08.928Z]   - Task ID: 2392
+---
+[2026-01-21T13:53:08.928Z]   - Days Required: 1
+---
+[2026-01-21T13:53:08.928Z]   - PlannedDate: Wed Jan 21 2026 15:52:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:08.928Z]   - Predecessor ID: None
+---
+[2026-01-21T13:53:08.943Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:53:08.943Z]   - Task ID: 2393
+---
+[2026-01-21T13:53:08.943Z]   - Task Name: Planned Receiving signature Agreement date from Sup/Sub
+---
+[2026-01-21T13:53:08.943Z]   - Days Required: 1
+---
+[2026-01-21T13:53:08.943Z]   - PlannedDate: Wed Jan 21 2026 15:52:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:08.943Z]   - Predecessor ID: None
+---
+[2026-01-21T13:53:08.959Z]   - Task ID: 2394
+---
+[2026-01-21T13:53:08.959Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:53:08.959Z]   - Task Name: Planned Agreement Issue Date to Mgmt. for signature
+---
+[2026-01-21T13:53:08.959Z]   - Days Required: 1
+---
+[2026-01-21T13:53:08.960Z]   - PlannedDate: Wed Jan 21 2026 15:52:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:08.960Z]   - Predecessor ID: None
+---
+[2026-01-21T13:53:08.976Z]   - Task ID: 2395
+---
+[2026-01-21T13:53:08.976Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:53:08.976Z]   - Task Name: Planned Receiving signature Agreement date from Mgmt.
+---
+[2026-01-21T13:53:08.976Z]   - Days Required: 1
+---
+[2026-01-21T13:53:08.976Z]   - PlannedDate: Wed Jan 21 2026 15:52:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:08.976Z]   - Predecessor ID: None
+---
+[2026-01-21T13:53:08.988Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:53:08.988Z]   - Task ID: 2396
+---
+[2026-01-21T13:53:08.988Z]   - Task Name: Planned Agreement generated date on SAP
+---
+[2026-01-21T13:53:08.988Z]   - Days Required: 2
+---
+[2026-01-21T13:53:08.988Z]   - PlannedDate: Wed Jan 21 2026 15:52:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:08.988Z]   - Predecessor ID: None
+---
+[2026-01-21T13:53:09.000Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:53:09.000Z]   - Task ID: 2397
+---
+[2026-01-21T13:53:09.000Z]   - Task Name: Planned Agreement Release date on SAP from Mgmt.
+---
+[2026-01-21T13:53:09.000Z]   - Days Required: 5
+---
+[2026-01-21T13:53:09.000Z]   - PlannedDate: Wed Jan 21 2026 15:52:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:09.000Z]   - Predecessor ID: None
+---
+[2026-01-21T13:53:09.015Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:53:09.015Z]   - Task ID: 2398
+---
+[2026-01-21T13:53:09.015Z]   - Task Name: Planned PO Generation Date on SAP
+---
+[2026-01-21T13:53:09.015Z]   - Days Required: 1
+---
+[2026-01-21T13:53:09.015Z]   - PlannedDate: Wed Jan 21 2026 15:52:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:09.015Z]   - Predecessor ID: None
+---
+[2026-01-21T13:53:09.030Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:53:09.030Z]   - Task ID: 2399
+---
+[2026-01-21T13:53:09.030Z]   - Task Name: Planned PO Release date on SAP from Mgmt.
+---
+[2026-01-21T13:53:09.030Z]   - Days Required: 1
+---
+[2026-01-21T13:53:09.030Z]   - PlannedDate: Wed Jan 21 2026 15:52:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:09.030Z]   - Predecessor ID: None
+---
+[2026-01-21T13:53:09.045Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:53:09.046Z]   - Task Name: Planned PR SAP Generation Date
+---
+[2026-01-21T13:53:09.046Z]   - Task ID: 2400
+---
+[2026-01-21T13:53:09.046Z]   - Days Required: 1
+---
+[2026-01-21T13:53:09.046Z]   - PlannedDate: Wed Jan 21 2026 15:52:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:09.046Z]   - Predecessor ID: None
+---
+[2026-01-21T13:53:09.057Z]   - Task ID: 2401
+---
+[2026-01-21T13:53:09.057Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:53:09.057Z]   - PlannedDate: Wed Jan 21 2026 15:52:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:09.057Z]   - Predecessor ID: None
+---
+[2026-01-21T13:53:09.057Z]   - Days Required: 3
+---
+[2026-01-21T13:53:09.057Z]   - Task Name: Planned PR Release date on SAP from Mgmt.
+---
+[2026-01-21T13:53:09.070Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:53:09.070Z]   - Task ID: 2402
+---
+[2026-01-21T13:53:09.070Z]   - Task Name: Planned Following up the issuance of the bank guarantee with Sup/Sub
+---
+[2026-01-21T13:53:09.070Z]   - Days Required: 1
+---
+[2026-01-21T13:53:09.070Z]   - PlannedDate: Wed Jan 21 2026 15:52:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:09.070Z]   - Predecessor ID: None
+---
+[2026-01-21T13:53:09.081Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:53:09.082Z]   - Task ID: 2403
+---
+[2026-01-21T13:53:09.082Z]   - Days Required: 1
+---
+[2026-01-21T13:53:09.082Z]   - Task Name: Planned Wavier Issue Date
+---
+[2026-01-21T13:53:09.082Z]   - PlannedDate: Wed Jan 21 2026 15:52:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:09.082Z]   - Predecessor ID: None
+---
+[2026-01-21T13:53:09.090Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:53:09.090Z]   - Task Name: Planned Wavier Signature Date from Mgmt.
+---
+[2026-01-21T13:53:09.091Z]   - PlannedDate: Wed Jan 21 2026 15:52:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:09.090Z]   - Days Required: 1
+---
+[2026-01-21T13:53:09.091Z]   - Predecessor ID: None
+---
+[2026-01-21T13:53:09.090Z]   - Task ID: 2404
+---
+[2026-01-21T13:53:09.104Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:53:09.104Z]   - Task Name: Planned QS Request DN from Sup/Sub
+---
+[2026-01-21T13:53:09.104Z]   - Task ID: 2405
+---
+[2026-01-21T13:53:09.104Z]   - Days Required: 1
+---
+[2026-01-21T13:53:09.105Z]   - PlannedDate: Wed Jan 21 2026 15:52:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:09.105Z]   - Predecessor ID: None
+---
+[2026-01-21T13:53:09.114Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:53:09.114Z]   - Task ID: 2406
+---
+[2026-01-21T13:53:09.114Z]   - Task Name: Planned Issue DN from QS to SK
+---
+[2026-01-21T13:53:09.115Z]   - Days Required: 1
+---
+[2026-01-21T13:53:09.115Z]   - Predecessor ID: None
+---
+[2026-01-21T13:53:09.115Z]   - PlannedDate: Wed Jan 21 2026 15:52:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:09.122Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:53:09.122Z]   - Task ID: 2407
+---
+[2026-01-21T13:53:09.122Z]   - Task Name: Planned GR Receiving date from SK
+---
+[2026-01-21T13:53:09.122Z]   - Days Required: 1
+---
+[2026-01-21T13:53:09.122Z]   - Predecessor ID: None
+---
+[2026-01-21T13:53:09.122Z]   - PlannedDate: Wed Jan 21 2026 15:52:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:09.131Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:53:09.131Z]   - Task Name: Planned Invoice Receiving Date
+---
+[2026-01-21T13:53:09.131Z]   - PlannedDate: Wed Jan 21 2026 15:52:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:09.131Z]   - Days Required: 1
+---
+[2026-01-21T13:53:09.131Z]   - Predecessor ID: None
+---
+[2026-01-21T13:53:09.131Z]   - Task ID: 2408
+---
+[2026-01-21T13:53:09.143Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:53:09.143Z]   - Task Name: Planned Receiving bank guarantee with Sup/Sub
+---
+[2026-01-21T13:53:09.143Z]   - Task ID: 2409
+---
+[2026-01-21T13:53:09.143Z]   - Days Required: 9
+---
+[2026-01-21T13:53:09.143Z]   - PlannedDate: Wed Jan 21 2026 15:52:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:09.143Z]   - Predecessor ID: None
+---
+[2026-01-21T13:53:09.161Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:53:09.161Z]   - Task ID: 2410
+---
+[2026-01-21T13:53:09.162Z]   - Days Required: 1
+---
+[2026-01-21T13:53:09.162Z]   - Task Name: Planned Requesting a memo reference # from the document controller
+---
+[2026-01-21T13:53:09.162Z]   - Predecessor ID: None
+---
+[2026-01-21T13:53:09.162Z]   - PlannedDate: Wed Jan 21 2026 15:52:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:09.174Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:53:09.174Z]   - Task ID: 2411
+---
+[2026-01-21T13:53:09.174Z]   - Task Name: Planned Receiving a memo reference # from the document controller
+---
+[2026-01-21T13:53:09.175Z]   - Days Required: 1
+---
+[2026-01-21T13:53:09.175Z]   - PlannedDate: Wed Jan 21 2026 15:52:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:09.175Z]   - Predecessor ID: None
+---
+[2026-01-21T13:53:09.186Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:53:09.186Z]   - Task ID: 2412
+---
+[2026-01-21T13:53:09.186Z]   - Task Name: Planned PC Preparation
+---
+[2026-01-21T13:53:09.186Z]   - Days Required: 1
+---
+[2026-01-21T13:53:09.186Z]   - PlannedDate: Wed Jan 21 2026 15:52:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:09.186Z]   - Predecessor ID: None
+---
+[2026-01-21T13:53:09.197Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:53:09.197Z]   - Task ID: 2413
+---
+[2026-01-21T13:53:09.197Z]   - Days Required: 1
+---
+[2026-01-21T13:53:09.197Z]   - Task Name: Planned PC Preparation Finish
+---
+[2026-01-21T13:53:09.197Z]   - Predecessor ID: None
+---
+[2026-01-21T13:53:09.197Z]   - PlannedDate: Wed Jan 21 2026 15:52:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:09.208Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:53:09.208Z]   - Task Name: Planned PC signature from the Authorized persons
+---
+[2026-01-21T13:53:09.208Z]   - Task ID: 2414
+---
+[2026-01-21T13:53:09.208Z]   - Days Required: 1
+---
+[2026-01-21T13:53:09.208Z]   - PlannedDate: Wed Jan 21 2026 15:52:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:09.208Z]   - Predecessor ID: None
+---
+[2026-01-21T13:53:09.215Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:53:09.215Z]   - Task ID: 2415
+---
+[2026-01-21T13:53:09.215Z]   - Task Name: Planned Issue Date to Accounting
+---
+[2026-01-21T13:53:09.215Z]   - Days Required: 1
+---
+[2026-01-21T13:53:09.215Z]   - Predecessor ID: None
+---
+[2026-01-21T13:53:09.215Z]   - PlannedDate: Wed Jan 21 2026 15:52:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:09.221Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:53:09.221Z]   - Task ID: 2416
+---
+[2026-01-21T13:53:09.221Z]   - Task Name: Planned Checking Payment Certificate
+---
+[2026-01-21T13:53:09.221Z]   - Days Required: 1
+---
+[2026-01-21T13:53:09.221Z]   - PlannedDate: Wed Jan 21 2026 15:52:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:09.221Z]   - Predecessor ID: None
+---
+[2026-01-21T13:53:09.228Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:53:09.228Z]   - Task ID: 2417
+---
+[2026-01-21T13:53:09.228Z]   - Task Name: Planned Issue Payment Certificate to SAP(DMS)
+---
+[2026-01-21T13:53:09.228Z]   - Days Required: 1
+---
+[2026-01-21T13:53:09.228Z]   - PlannedDate: Wed Jan 21 2026 15:52:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:09.228Z]   - Predecessor ID: None
+---
+[2026-01-21T13:53:09.235Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:53:09.235Z]   - Task ID: 2418
+---
+[2026-01-21T13:53:09.235Z]   - Task Name: Planned Follow Up to SSC for Posting
+---
+[2026-01-21T13:53:09.235Z]   - Days Required: 1
+---
+[2026-01-21T13:53:09.235Z]   - PlannedDate: Wed Jan 21 2026 15:52:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:09.235Z]   - Predecessor ID: None
+---
+[2026-01-21T13:53:09.245Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:53:09.245Z]   - Days Required: 1
+---
+[2026-01-21T13:53:09.245Z]   - Task ID: 2419
+---
+[2026-01-21T13:53:09.245Z]   - Task Name: Planned SSC Payment Certificate Posting date
+---
+[2026-01-21T13:53:09.245Z]   - PlannedDate: Wed Jan 21 2026 15:52:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:09.245Z]   - Predecessor ID: None
+---
+[2026-01-21T13:53:09.255Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:53:09.255Z]   - Task ID: 2420
+---
+[2026-01-21T13:53:09.255Z]   - Task Name: Planned Aging preparation
+---
+[2026-01-21T13:53:09.255Z]   - Days Required: 15
+---
+[2026-01-21T13:53:09.255Z]   - Predecessor ID: None
+---
+[2026-01-21T13:53:09.255Z]   - PlannedDate: Wed Jan 21 2026 15:52:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:09.262Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:53:09.262Z]   - Task ID: 2421
+---
+[2026-01-21T13:53:09.262Z]   - Task Name: Planned Aging Approval Date
+---
+[2026-01-21T13:53:09.262Z]   - Days Required: 15
+---
+[2026-01-21T13:53:09.262Z]   - PlannedDate: Wed Jan 21 2026 15:52:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:09.262Z]   - Predecessor ID: None
+---
+[2026-01-21T13:53:09.272Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:53:09.272Z]   - Task ID: 2422
+---
+[2026-01-21T13:53:09.272Z]   - Days Required: 1
+---
+[2026-01-21T13:53:09.272Z]   - Task Name: Planned Payment release date
+---
+[2026-01-21T13:53:09.272Z]   - Predecessor ID: None
+---
+[2026-01-21T13:53:09.272Z]   - PlannedDate: Wed Jan 21 2026 15:52:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:09.282Z]   - Task ID: 2423
+---
+[2026-01-21T13:53:09.282Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:53:09.282Z]   - PlannedDate: Wed Jan 21 2026 15:52:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:09.282Z]   - Predecessor ID: None
+---
+[2026-01-21T13:53:09.282Z]   - Days Required: 1
+---
+[2026-01-21T13:53:09.282Z]   - Task Name: Planned Receiving Order from QS/PM
+---
+[2026-01-21T13:53:09.294Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:53:09.294Z]   - Task ID: 2424
+---
+[2026-01-21T13:53:09.294Z]   - Task Name: Planned Requesting Material Details from Sub/ Sup
+---
+[2026-01-21T13:53:09.295Z]   - Days Required: 1
+---
+[2026-01-21T13:53:09.295Z]   - Predecessor ID: None
+---
+[2026-01-21T13:53:09.295Z]   - PlannedDate: Wed Jan 21 2026 15:52:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:09.305Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:53:09.305Z]   - Task ID: 2425
+---
+[2026-01-21T13:53:09.305Z]   - Task Name: Planned Receiving Material Details from Sub/ Sup
+---
+[2026-01-21T13:53:09.305Z]   - Days Required: 1
+---
+[2026-01-21T13:53:09.305Z]   - PlannedDate: Wed Jan 21 2026 15:52:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:09.305Z]   - Predecessor ID: None
+---
+[2026-01-21T13:53:09.311Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:53:09.311Z]   - Task ID: 2426
+---
+[2026-01-21T13:53:09.311Z]   - Task Name: Planned Requesting Material Shipping mode from Site
+---
+[2026-01-21T13:53:09.311Z]   - Days Required: 1
+---
+[2026-01-21T13:53:09.311Z]   - Predecessor ID: None
+---
+[2026-01-21T13:53:09.311Z]   - PlannedDate: Wed Jan 21 2026 15:52:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:09.321Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:53:09.321Z]   - Task Name: Planned Material Shipping mode Reply from Site
+---
+[2026-01-21T13:53:09.321Z]   - Days Required: 1
+---
+[2026-01-21T13:53:09.321Z]   - PlannedDate: Wed Jan 21 2026 15:52:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:09.321Z]   - Task ID: 2427
+---
+[2026-01-21T13:53:09.321Z]   - Predecessor ID: None
+---
+[2026-01-21T13:53:09.330Z]   - Days Required: 1
+---
+[2026-01-21T13:53:09.330Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:53:09.330Z]   - Task Name: Planned quoting shipment date
+---
+[2026-01-21T13:53:09.330Z]   - Task ID: 2428
+---
+[2026-01-21T13:53:09.330Z]   - Predecessor ID: None
+---
+[2026-01-21T13:53:09.330Z]   - PlannedDate: Wed Jan 21 2026 15:52:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:09.338Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:53:09.338Z]   - Task ID: 2429
+---
+[2026-01-21T13:53:09.338Z]   - Task Name: Planned Shipping Quoting Distribution date to against
+---
+[2026-01-21T13:53:09.338Z]   - Days Required: 1
+---
+[2026-01-21T13:53:09.338Z]   - PlannedDate: Wed Jan 21 2026 15:52:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:09.338Z]   - Predecessor ID: None
+---
+[2026-01-21T13:53:09.348Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:53:09.348Z]   - Task Name: Planned Shipping Quoting Receiving date from against
+---
+[2026-01-21T13:53:09.348Z]   - Days Required: 3
+---
+[2026-01-21T13:53:09.348Z]   - Task ID: 2430
+---
+[2026-01-21T13:53:09.349Z]   - Predecessor ID: None
+---
+[2026-01-21T13:53:09.348Z]   - PlannedDate: Wed Jan 21 2026 15:52:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:09.363Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:53:09.363Z]   - Task ID: 2431
+---
+[2026-01-21T13:53:09.363Z]   - Task Name: Planned requisition booking shipping line confirmation with forwarder
+---
+[2026-01-21T13:53:09.363Z]   - Days Required: 1
+---
+[2026-01-21T13:53:09.363Z]   - PlannedDate: Wed Jan 21 2026 15:52:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:09.363Z]   - Predecessor ID: None
+---
+[2026-01-21T13:53:09.373Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:53:09.373Z]   - Task ID: 2432
+---
+[2026-01-21T13:53:09.373Z]   - Task Name: Planned forwarder reply date (booking shipping line)
+---
+[2026-01-21T13:53:09.373Z]   - Days Required: 1
+---
+[2026-01-21T13:53:09.373Z]   - Predecessor ID: None
+---
+[2026-01-21T13:53:09.373Z]   - PlannedDate: Wed Jan 21 2026 15:52:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:09.383Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:53:09.383Z]   - Task ID: 2433
+---
+[2026-01-21T13:53:09.383Z]   - Task Name: Planned Starting coordination with supplier for the loading process
+---
+[2026-01-21T13:53:09.384Z]   - Days Required: 1
+---
+[2026-01-21T13:53:09.384Z]   - PlannedDate: Wed Jan 21 2026 15:52:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:09.384Z]   - Predecessor ID: None
+---
+[2026-01-21T13:53:09.394Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:53:09.394Z]   - Task Name: Planned Finishing coordination with supplier for the loading process
+---
+[2026-01-21T13:53:09.394Z]   - Task ID: 2434
+---
+[2026-01-21T13:53:09.394Z]   - PlannedDate: Wed Jan 21 2026 15:52:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:09.394Z]   - Days Required: 1
+---
+[2026-01-21T13:53:09.394Z]   - Predecessor ID: None
+---
+[2026-01-21T13:53:09.400Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:53:09.400Z]   - Task ID: 2435
+---
+[2026-01-21T13:53:09.400Z]   - Task Name: Planned Issuing insurance policy
+---
+[2026-01-21T13:53:09.400Z]   - Days Required: 1
+---
+[2026-01-21T13:53:09.400Z]   - PlannedDate: Wed Jan 21 2026 15:52:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:09.400Z]   - Predecessor ID: None
+---
+[2026-01-21T13:53:09.405Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:53:09.405Z]   - Task ID: 2436
+---
+[2026-01-21T13:53:09.405Z]   - Task Name: Planned Requesting Shipping details from Sup/Sub
+---
+[2026-01-21T13:53:09.405Z]   - Days Required: 1
+---
+[2026-01-21T13:53:09.405Z]   - PlannedDate: Wed Jan 21 2026 15:52:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:09.405Z]   - Predecessor ID: None
+---
+[2026-01-21T13:53:09.416Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:53:09.416Z]   - Task ID: 2437
+---
+[2026-01-21T13:53:09.416Z]   - Task Name: Planned Receiving Shipping details From Sup/Sub
+---
+[2026-01-21T13:53:09.416Z]   - Days Required: 1
+---
+[2026-01-21T13:53:09.417Z]   - PlannedDate: Wed Jan 21 2026 15:52:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:09.417Z]   - Predecessor ID: None
+---
+[2026-01-21T13:53:09.431Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:53:09.431Z]   - Task Name: Planned PO Issue Date
+---
+[2026-01-21T13:53:09.431Z]   - Task ID: 2438
+---
+[2026-01-21T13:53:09.431Z]   - Days Required: 1
+---
+[2026-01-21T13:53:09.431Z]   - PlannedDate: Wed Jan 21 2026 15:52:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:09.431Z]   - Predecessor ID: None
+---
+[2026-01-21T13:53:09.445Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:53:09.445Z]   - Task ID: 2439
+---
+[2026-01-21T13:53:09.445Z]   - Task Name: Planned PO release date
+---
+[2026-01-21T13:53:09.446Z]   - Days Required: 1
+---
+[2026-01-21T13:53:09.446Z]   - PlannedDate: Wed Jan 21 2026 15:52:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:09.446Z]   - Predecessor ID: None
+---
+[2026-01-21T13:53:09.463Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:53:09.463Z]   - Task Name: Planned Shipment data collection date
+---
+[2026-01-21T13:53:09.463Z]   - Task ID: 2440
+---
+[2026-01-21T13:53:09.463Z]   - Days Required: 10
+---
+[2026-01-21T13:53:09.463Z]   - PlannedDate: Wed Jan 21 2026 15:52:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:09.463Z]   - Predecessor ID: None
+---
+[2026-01-21T13:53:09.473Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:53:09.473Z]   - Days Required: 1
+---
+[2026-01-21T13:53:09.473Z]   - Task Name: Planned Document Sharing date with Customs Agent
+---
+[2026-01-21T13:53:09.473Z]   - PlannedDate: Wed Jan 21 2026 15:52:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:09.473Z]   - Task ID: 2441
+---
+[2026-01-21T13:53:09.473Z]   - Predecessor ID: None
+---
+[2026-01-21T13:53:09.479Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:53:09.479Z]   - Task ID: 2442
+---
+[2026-01-21T13:53:09.480Z]   - Task Name: Planned Shipping Date
+---
+[2026-01-21T13:53:09.480Z]   - Days Required: 1
+---
+[2026-01-21T13:53:09.480Z]   - PlannedDate: Wed Jan 21 2026 15:52:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:09.480Z]   - Predecessor ID: None
+---
+[2026-01-21T13:53:09.486Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:53:09.486Z]   - Task ID: 2443
+---
+[2026-01-21T13:53:09.486Z]   - Days Required: 1
+---
+[2026-01-21T13:53:09.486Z]   - Task Name: Planned Notified Site Estimated Date Of Arrival
+---
+[2026-01-21T13:53:09.486Z]   - Predecessor ID: None
+---
+[2026-01-21T13:53:09.486Z]   - PlannedDate: Wed Jan 21 2026 15:52:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:09.491Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:53:09.491Z]   - Task Name: Planned Customs Clearance Finalized Date
+---
+[2026-01-21T13:53:09.492Z]   - Days Required: 14
+---
+[2026-01-21T13:53:09.491Z]   - Task ID: 2444
+---
+[2026-01-21T13:53:09.492Z]   - PlannedDate: Wed Jan 21 2026 15:52:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:09.492Z]   - Predecessor ID: None
+---
+[2026-01-21T13:53:09.499Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:53:09.499Z]   - Task Name: Planned Arrival Date
+---
+[2026-01-21T13:53:09.499Z]   - Task ID: 2445
+---
+[2026-01-21T13:53:09.499Z]   - PlannedDate: Wed Jan 21 2026 15:52:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:09.499Z]   - Predecessor ID: None
+---
+[2026-01-21T13:53:09.499Z]   - Days Required: 1
+---
+[2026-01-21T13:53:12.643Z] 📊 GET /api/workFlowDashData - User info:
+---
+[2026-01-21T13:53:12.643Z] 
+================================================================================
+---
+[2026-01-21T13:53:12.643Z]   - Is Admin: false
+---
+[2026-01-21T13:53:12.644Z]   - User Project ID: 9
+---
+[2026-01-21T13:53:12.644Z]   - User Dept ID: 9
+---
+[2026-01-21T13:53:12.649Z] 📊 Total workflows in database: 11
+---
+[2026-01-21T13:53:12.662Z] 🔍 All workflows in DB (unfiltered): 11 total
+---
+[2026-01-21T13:53:12.662Z]    - ID: 1021, ProjectID: 9, ProcessID: 1, Status: Pending, startDate: Wed Jan 21 2026 15:52:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:12.662Z]    - ID: 1019, ProjectID: 12, ProcessID: 1, Status: Pending, startDate: Wed Jan 14 2026 15:34:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:12.662Z]    - ID: 1017, ProjectID: 12, ProcessID: 1, Status: Pending, startDate: Wed Jan 14 2026 15:16:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:12.662Z]    - ID: 1020, ProjectID: 20, ProcessID: 1, Status: Pending, startDate: Wed Jan 14 2026 16:17:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:12.662Z]    - ID: 1016, ProjectID: 10, ProcessID: 1, Status: Pending, startDate: Tue Jan 13 2026 18:05:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:12.662Z]    - ID: 1015, ProjectID: 9, ProcessID: 1, Status: Pending, startDate: Tue Jan 13 2026 17:59:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:12.662Z]    - ID: 1018, ProjectID: 11, ProcessID: 1, Status: Pending, startDate: Wed Jan 14 2026 15:34:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:12.663Z]    - ID: 1014, ProjectID: 14, ProcessID: 1, Status: Pending, startDate: Tue Jan 13 2026 17:55:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:12.663Z]    - ID: 1011, ProjectID: 9, ProcessID: 1, Status: Pending, startDate: Fri Jan 09 2026 17:21:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:12.666Z]   - Adding filter: Project ID = 9
+---
+[2026-01-21T13:53:12.663Z]    - ID: 1012, ProjectID: 9, ProcessID: 1, Status: Pending, startDate: Sat Jan 10 2026 14:49:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:12.666Z]   - Final WHERE clause: hdr.ProjectID = @ProjectID AND 
+        EXISTS (
+          SELECT 1 FROM tblProcessDepartment pd
+          WHERE pd.ProcessID = hdr.ProcessID
+            AND pd.DepartmentID = @UserDeptId
+        )
+      
+---
+[2026-01-21T13:53:12.663Z]    - ID: 1013, ProjectID: 9, ProcessID: 1, Status: Pending, startDate: Mon Jan 12 2026 10:59:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:53:12.666Z]   - Adding filter: User Department ID = 9
+---
+[2026-01-21T13:53:12.672Z] ✅ Query executed - Returning 5 workflows
+---
+[2026-01-21T13:53:12.673Z] 
+⚠️  WORKFLOWS FILTERED OUT:
+---
+[2026-01-21T13:53:12.673Z]    - ID: 1020, ProjectID: 20, Status: Pending
+---
+[2026-01-21T13:53:12.673Z]      Problem: ProjectID filter expects 9, got 20 - MISMATCH
+---
+[2026-01-21T13:53:12.674Z]    - ID: 1019, ProjectID: 12, Status: Pending
+---
+[2026-01-21T13:53:12.674Z]      Problem: ProjectID filter expects 9, got 12 - MISMATCH
+---
+[2026-01-21T13:53:12.674Z]    - ID: 1018, ProjectID: 11, Status: Pending
+---
+[2026-01-21T13:53:12.674Z]      Problem: ProjectID filter expects 9, got 11 - MISMATCH
+---
+[2026-01-21T13:53:12.675Z]      Problem: ProjectID filter expects 9, got 12 - MISMATCH
+---
+[2026-01-21T13:53:12.675Z]    - ID: 1017, ProjectID: 12, Status: Pending
+---
+[2026-01-21T13:53:12.676Z]    - ID: 1016, ProjectID: 10, Status: Pending
+---
+[2026-01-21T13:53:12.676Z]      Problem: ProjectID filter expects 9, got 10 - MISMATCH
+---
+[2026-01-21T13:53:12.676Z]    - ID: 1014, ProjectID: 14, Status: Pending
+---
+[2026-01-21T13:53:12.676Z]      Problem: ProjectID filter expects 9, got 14 - MISMATCH
+---
+[2026-01-21T13:53:12.677Z] 📋 Final returned workflows count: 5
+
+---
+[2026-01-21T13:56:35.391Z] 
+================================================================================
+---
+[2026-01-21T13:56:35.391Z]   - Is Admin: false
+---
+[2026-01-21T13:56:35.391Z] 📊 GET /api/workFlowDashData - User info:
+---
+[2026-01-21T13:56:35.391Z]   - User Dept ID: 9
+---
+[2026-01-21T13:56:35.391Z]   - User Project ID: 9
+---
+[2026-01-21T13:56:35.404Z] 📊 Total workflows in database: 11
+---
+[2026-01-21T13:56:35.454Z] 🔍 All workflows in DB (unfiltered): 11 total
+---
+[2026-01-21T13:56:35.454Z]    - ID: 1021, ProjectID: 9, ProcessID: 1, Status: Pending, startDate: Wed Jan 21 2026 15:52:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:35.454Z]    - ID: 1020, ProjectID: 20, ProcessID: 1, Status: Pending, startDate: Wed Jan 14 2026 16:17:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:35.454Z]    - ID: 1019, ProjectID: 12, ProcessID: 1, Status: Pending, startDate: Wed Jan 14 2026 15:34:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:35.454Z]    - ID: 1018, ProjectID: 11, ProcessID: 1, Status: Pending, startDate: Wed Jan 14 2026 15:34:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:35.455Z]    - ID: 1016, ProjectID: 10, ProcessID: 1, Status: Pending, startDate: Tue Jan 13 2026 18:05:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:35.454Z]    - ID: 1017, ProjectID: 12, ProcessID: 1, Status: Pending, startDate: Wed Jan 14 2026 15:16:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:35.455Z]    - ID: 1014, ProjectID: 14, ProcessID: 1, Status: Pending, startDate: Tue Jan 13 2026 17:55:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:35.455Z]    - ID: 1012, ProjectID: 9, ProcessID: 1, Status: Pending, startDate: Sat Jan 10 2026 14:49:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:35.455Z]    - ID: 1015, ProjectID: 9, ProcessID: 1, Status: Pending, startDate: Tue Jan 13 2026 17:59:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:35.455Z]    - ID: 1013, ProjectID: 9, ProcessID: 1, Status: Pending, startDate: Mon Jan 12 2026 10:59:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:35.455Z]    - ID: 1011, ProjectID: 9, ProcessID: 1, Status: Pending, startDate: Fri Jan 09 2026 17:21:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:35.459Z]   - Adding filter: Project ID = 9
+---
+[2026-01-21T13:56:35.459Z]   - Adding filter: User Department ID = 9
+---
+[2026-01-21T13:56:35.460Z]   - Final WHERE clause: hdr.ProjectID = @ProjectID AND 
+        EXISTS (
+          SELECT 1 FROM tblProcessDepartment pd
+          WHERE pd.ProcessID = hdr.ProcessID
+            AND pd.DepartmentID = @UserDeptId
+        )
+      
+---
+[2026-01-21T13:56:35.495Z] ✅ Query executed - Returning 5 workflows
+---
+[2026-01-21T13:56:35.496Z]    - ID: 1020, ProjectID: 20, Status: Pending
+---
+[2026-01-21T13:56:35.496Z]      Problem: ProjectID filter expects 9, got 20 - MISMATCH
+---
+[2026-01-21T13:56:35.496Z]    - ID: 1019, ProjectID: 12, Status: Pending
+---
+[2026-01-21T13:56:35.496Z]      Problem: ProjectID filter expects 9, got 12 - MISMATCH
+---
+[2026-01-21T13:56:35.495Z] 
+⚠️  WORKFLOWS FILTERED OUT:
+---
+[2026-01-21T13:56:35.497Z]    - ID: 1018, ProjectID: 11, Status: Pending
+---
+[2026-01-21T13:56:35.497Z]    - ID: 1017, ProjectID: 12, Status: Pending
+---
+[2026-01-21T13:56:35.498Z]    - ID: 1016, ProjectID: 10, Status: Pending
+---
+[2026-01-21T13:56:35.498Z]      Problem: ProjectID filter expects 9, got 10 - MISMATCH
+---
+[2026-01-21T13:56:35.498Z]    - ID: 1014, ProjectID: 14, Status: Pending
+---
+[2026-01-21T13:56:35.498Z]      Problem: ProjectID filter expects 9, got 14 - MISMATCH
+---
+[2026-01-21T13:56:35.497Z]      Problem: ProjectID filter expects 9, got 11 - MISMATCH
+---
+[2026-01-21T13:56:35.497Z]      Problem: ProjectID filter expects 9, got 12 - MISMATCH
+---
+[2026-01-21T13:56:35.499Z] 📋 Final returned workflows count: 5
+
+---
+[2026-01-21T13:56:42.294Z] 
+📝 POST /addPackageForm - Received workflow request
+---
+[2026-01-21T13:56:42.295Z]   - projectID: 9
+---
+[2026-01-21T13:56:42.295Z]   - packageID: 14
+---
+[2026-01-21T13:56:42.295Z]   - startDate: 2026-01-21T15:56
+---
+[2026-01-21T13:56:42.295Z]   - processID: 1
+---
+[2026-01-21T13:56:42.295Z]   - status: Pending
+---
+[2026-01-21T13:56:42.345Z]   - New Workflow ID: 1022
+---
+[2026-01-21T13:56:42.345Z] ✅ Workflow inserted successfully:
+---
+[2026-01-21T13:56:42.345Z]   - Saved status: Pending
+---
+[2026-01-21T13:56:42.345Z]   - Saved projectID: 9
+---
+[2026-01-21T13:56:42.345Z]   - Saved startDate: Wed Jan 21 2026 15:56:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:42.373Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:56:42.374Z]   - Task Name: RFQ Planned Issue Date
+---
+[2026-01-21T13:56:42.374Z]   - Calculated PlannedDate: Wed Jan 21 2026 15:56:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:42.374Z]   - Days Required: 1
+---
+[2026-01-21T13:56:42.374Z]   - Original Predecessor ID: None
+---
+[2026-01-21T13:56:42.373Z]   - Task ID: 2446
+---
+[2026-01-21T13:56:42.397Z]   - Task Name: RFQ Planned Dis Date
+---
+[2026-01-21T13:56:42.396Z]   - Task ID: 2447
+---
+[2026-01-21T13:56:42.396Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:56:42.397Z]   - Calculated PlannedDate: Wed Jan 21 2026 15:56:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:42.397Z]   - Days Required: 1
+---
+[2026-01-21T13:56:42.397Z]   - Original Predecessor ID: None
+---
+[2026-01-21T13:56:42.419Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:56:42.419Z]   - Task Name: RFQ Planned Collecting Date
+---
+[2026-01-21T13:56:42.420Z]   - Calculated PlannedDate: Wed Jan 21 2026 15:56:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:42.419Z]   - Task ID: 2448
+---
+[2026-01-21T13:56:42.419Z]   - Days Required: 20
+---
+[2026-01-21T13:56:42.420Z]   - Original Predecessor ID: None
+---
+[2026-01-21T13:56:42.446Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:56:42.446Z]   - Task Name: Comparison Sheet Planned Issue Date
+---
+[2026-01-21T13:56:42.446Z]   - Days Required: 7
+---
+[2026-01-21T13:56:42.446Z]   - Calculated PlannedDate: Wed Jan 21 2026 15:56:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:42.446Z]   - Original Predecessor ID: None
+---
+[2026-01-21T13:56:42.446Z]   - Task ID: 2449
+---
+[2026-01-21T13:56:42.468Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:56:42.468Z]   - Task Name: Planned Mgmt. Sup/Sub Selection Date
+---
+[2026-01-21T13:56:42.468Z]   - Days Required: 3
+---
+[2026-01-21T13:56:42.469Z]   - Calculated PlannedDate: Wed Jan 21 2026 15:56:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:42.469Z]   - Original Predecessor ID: None
+---
+[2026-01-21T13:56:42.468Z]   - Task ID: 2450
+---
+[2026-01-21T13:56:42.484Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:56:42.484Z]   - Task Name: MAR Planned Issue Date
+---
+[2026-01-21T13:56:42.485Z]   - Days Required: 1
+---
+[2026-01-21T13:56:42.485Z]   - Calculated PlannedDate: Wed Jan 21 2026 15:56:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:42.484Z]   - Task ID: 2451
+---
+[2026-01-21T13:56:42.485Z]   - Original Predecessor ID: None
+---
+[2026-01-21T13:56:42.502Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:56:42.503Z]   - Task Name: MAR Planned Returned Date
+---
+[2026-01-21T13:56:42.503Z]   - Days Required: 14
+---
+[2026-01-21T13:56:42.503Z]   - Original Predecessor ID: None
+---
+[2026-01-21T13:56:42.503Z]   - Calculated PlannedDate: Wed Jan 21 2026 15:56:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:42.503Z]   - Task ID: 2452
+---
+[2026-01-21T13:56:42.524Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:56:42.524Z]   - Task Name: Planned Schedule Receiving date (from Site)
+---
+[2026-01-21T13:56:42.524Z]   - Calculated PlannedDate: Wed Jan 21 2026 15:56:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:42.524Z]   - Task ID: 2453
+---
+[2026-01-21T13:56:42.524Z]   - Original Predecessor ID: None
+---
+[2026-01-21T13:56:42.524Z]   - Days Required: 7
+---
+[2026-01-21T13:56:42.541Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:56:42.541Z]   - Task Name: Planned Receiving Required Document From Logistics
+---
+[2026-01-21T13:56:42.541Z]   - Days Required: 1
+---
+[2026-01-21T13:56:42.541Z]   - Task ID: 2454
+---
+[2026-01-21T13:56:42.541Z]   - Original Predecessor ID: None
+---
+[2026-01-21T13:56:42.541Z]   - Calculated PlannedDate: Wed Jan 21 2026 15:56:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:42.566Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:56:42.567Z]   - Task Name: Planned Agreement Planned Certation Date
+---
+[2026-01-21T13:56:42.567Z]   - Calculated PlannedDate: Wed Jan 21 2026 15:56:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:42.567Z]   - Original Predecessor ID: None
+---
+[2026-01-21T13:56:42.567Z]   - Days Required: 1
+---
+[2026-01-21T13:56:42.567Z]   - Task ID: 2455
+---
+[2026-01-21T13:56:42.584Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:56:42.584Z]   - Task Name: Planned Agreement Certation Date
+---
+[2026-01-21T13:56:42.584Z]   - Calculated PlannedDate: Wed Jan 21 2026 15:56:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:42.584Z]   - Days Required: 1
+---
+[2026-01-21T13:56:42.584Z]   - Task ID: 2456
+---
+[2026-01-21T13:56:42.584Z]   - Original Predecessor ID: None
+---
+[2026-01-21T13:56:42.601Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:56:42.601Z]   - Task Name: Agreement Planned Issue Date to Sup/Sub
+---
+[2026-01-21T13:56:42.601Z]   - Task ID: 2457
+---
+[2026-01-21T13:56:42.601Z]   - Days Required: 1
+---
+[2026-01-21T13:56:42.601Z]   - Calculated PlannedDate: Wed Jan 21 2026 15:56:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:42.601Z]   - Original Predecessor ID: None
+---
+[2026-01-21T13:56:42.618Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:56:42.618Z]   - Task ID: 2458
+---
+[2026-01-21T13:56:42.618Z]   - Task Name: Planned Receiving signature Agreement date from Sup/Sub
+---
+[2026-01-21T13:56:42.618Z]   - Calculated PlannedDate: Wed Jan 21 2026 15:56:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:42.618Z]   - Original Predecessor ID: None
+---
+[2026-01-21T13:56:42.618Z]   - Days Required: 1
+---
+[2026-01-21T13:56:42.635Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:56:42.635Z]   - Task ID: 2459
+---
+[2026-01-21T13:56:42.635Z]   - Task Name: Planned Agreement Issue Date to Mgmt. for signature
+---
+[2026-01-21T13:56:42.635Z]   - Days Required: 1
+---
+[2026-01-21T13:56:42.635Z]   - Calculated PlannedDate: Wed Jan 21 2026 15:56:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:42.635Z]   - Original Predecessor ID: None
+---
+[2026-01-21T13:56:42.652Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:56:42.652Z]   - Task Name: Planned Receiving signature Agreement date from Mgmt.
+---
+[2026-01-21T13:56:42.652Z]   - Original Predecessor ID: None
+---
+[2026-01-21T13:56:42.652Z]   - Calculated PlannedDate: Wed Jan 21 2026 15:56:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:42.652Z]   - Days Required: 1
+---
+[2026-01-21T13:56:42.652Z]   - Task ID: 2460
+---
+[2026-01-21T13:56:42.663Z]   - Task ID: 2461
+---
+[2026-01-21T13:56:42.663Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:56:42.663Z]   - Days Required: 2
+---
+[2026-01-21T13:56:42.663Z]   - Task Name: Planned Agreement generated date on SAP
+---
+[2026-01-21T13:56:42.664Z]   - Calculated PlannedDate: Wed Jan 21 2026 15:56:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:42.664Z]   - Original Predecessor ID: None
+---
+[2026-01-21T13:56:42.677Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:56:42.677Z]   - Task Name: Planned Agreement Release date on SAP from Mgmt.
+---
+[2026-01-21T13:56:42.677Z]   - Days Required: 5
+---
+[2026-01-21T13:56:42.677Z]   - Calculated PlannedDate: Wed Jan 21 2026 15:56:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:42.677Z]   - Task ID: 2462
+---
+[2026-01-21T13:56:42.677Z]   - Original Predecessor ID: None
+---
+[2026-01-21T13:56:42.695Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:56:42.695Z]   - Task ID: 2463
+---
+[2026-01-21T13:56:42.695Z]   - Task Name: Planned PO Generation Date on SAP
+---
+[2026-01-21T13:56:42.695Z]   - Days Required: 1
+---
+[2026-01-21T13:56:42.695Z]   - Calculated PlannedDate: Wed Jan 21 2026 15:56:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:42.695Z]   - Original Predecessor ID: None
+---
+[2026-01-21T13:56:42.711Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:56:42.711Z]   - Task Name: Planned PO Release date on SAP from Mgmt.
+---
+[2026-01-21T13:56:42.711Z]   - Task ID: 2464
+---
+[2026-01-21T13:56:42.711Z]   - Days Required: 1
+---
+[2026-01-21T13:56:42.711Z]   - Calculated PlannedDate: Wed Jan 21 2026 15:56:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:42.711Z]   - Original Predecessor ID: None
+---
+[2026-01-21T13:56:42.730Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:56:42.730Z]   - Task Name: Planned PR SAP Generation Date
+---
+[2026-01-21T13:56:42.730Z]   - Days Required: 1
+---
+[2026-01-21T13:56:42.730Z]   - Original Predecessor ID: None
+---
+[2026-01-21T13:56:42.730Z]   - Calculated PlannedDate: Wed Jan 21 2026 15:56:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:42.730Z]   - Task ID: 2465
+---
+[2026-01-21T13:56:42.743Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:56:42.743Z]   - Task Name: Planned PR Release date on SAP from Mgmt.
+---
+[2026-01-21T13:56:42.743Z]   - Days Required: 3
+---
+[2026-01-21T13:56:42.743Z]   - Calculated PlannedDate: Wed Jan 21 2026 15:56:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:42.743Z]   - Task ID: 2466
+---
+[2026-01-21T13:56:42.743Z]   - Original Predecessor ID: None
+---
+[2026-01-21T13:56:42.755Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:56:42.755Z]   - Task ID: 2467
+---
+[2026-01-21T13:56:42.755Z]   - Task Name: Planned Following up the issuance of the bank guarantee with Sup/Sub
+---
+[2026-01-21T13:56:42.756Z]   - Days Required: 1
+---
+[2026-01-21T13:56:42.756Z]   - Calculated PlannedDate: Wed Jan 21 2026 15:56:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:42.756Z]   - Original Predecessor ID: None
+---
+[2026-01-21T13:56:42.768Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:56:42.768Z]   - Task Name: Planned Wavier Issue Date
+---
+[2026-01-21T13:56:42.768Z]   - Days Required: 1
+---
+[2026-01-21T13:56:42.768Z]   - Calculated PlannedDate: Wed Jan 21 2026 15:56:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:42.768Z]   - Original Predecessor ID: None
+---
+[2026-01-21T13:56:42.768Z]   - Task ID: 2468
+---
+[2026-01-21T13:56:42.779Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:56:42.779Z]   - Task Name: Planned Wavier Signature Date from Mgmt.
+---
+[2026-01-21T13:56:42.779Z]   - Days Required: 1
+---
+[2026-01-21T13:56:42.780Z]   - Calculated PlannedDate: Wed Jan 21 2026 15:56:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:42.780Z]   - Original Predecessor ID: None
+---
+[2026-01-21T13:56:42.779Z]   - Task ID: 2469
+---
+[2026-01-21T13:56:42.793Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:56:42.793Z]   - Task ID: 2470
+---
+[2026-01-21T13:56:42.793Z]   - Task Name: Planned QS Request DN from Sup/Sub
+---
+[2026-01-21T13:56:42.793Z]   - Calculated PlannedDate: Wed Jan 21 2026 15:56:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:42.793Z]   - Original Predecessor ID: None
+---
+[2026-01-21T13:56:42.793Z]   - Days Required: 1
+---
+[2026-01-21T13:56:42.804Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:56:42.805Z]   - Task ID: 2471
+---
+[2026-01-21T13:56:42.805Z]   - Task Name: Planned Issue DN from QS to SK
+---
+[2026-01-21T13:56:42.805Z]   - Days Required: 1
+---
+[2026-01-21T13:56:42.805Z]   - Calculated PlannedDate: Wed Jan 21 2026 15:56:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:42.805Z]   - Original Predecessor ID: None
+---
+[2026-01-21T13:56:42.812Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:56:42.812Z]   - Task Name: Planned GR Receiving date from SK
+---
+[2026-01-21T13:56:42.812Z]   - Task ID: 2472
+---
+[2026-01-21T13:56:42.812Z]   - Days Required: 1
+---
+[2026-01-21T13:56:42.812Z]   - Calculated PlannedDate: Wed Jan 21 2026 15:56:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:42.812Z]   - Original Predecessor ID: None
+---
+[2026-01-21T13:56:42.822Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:56:42.822Z]   - Task ID: 2473
+---
+[2026-01-21T13:56:42.822Z]   - Task Name: Planned Invoice Receiving Date
+---
+[2026-01-21T13:56:42.822Z]   - Calculated PlannedDate: Wed Jan 21 2026 15:56:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:42.822Z]   - Original Predecessor ID: None
+---
+[2026-01-21T13:56:42.822Z]   - Days Required: 1
+---
+[2026-01-21T13:56:42.837Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:56:42.837Z]   - Days Required: 9
+---
+[2026-01-21T13:56:42.837Z]   - Task Name: Planned Receiving bank guarantee with Sup/Sub
+---
+[2026-01-21T13:56:42.837Z]   - Calculated PlannedDate: Wed Jan 21 2026 15:56:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:42.837Z]   - Task ID: 2474
+---
+[2026-01-21T13:56:42.837Z]   - Original Predecessor ID: None
+---
+[2026-01-21T13:56:42.855Z]   - Task ID: 2475
+---
+[2026-01-21T13:56:42.855Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:56:42.855Z]   - Task Name: Planned Requesting a memo reference # from the document controller
+---
+[2026-01-21T13:56:42.855Z]   - Days Required: 1
+---
+[2026-01-21T13:56:42.855Z]   - Original Predecessor ID: None
+---
+[2026-01-21T13:56:42.855Z]   - Calculated PlannedDate: Wed Jan 21 2026 15:56:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:42.870Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:56:42.871Z]   - Task Name: Planned Receiving a memo reference # from the document controller
+---
+[2026-01-21T13:56:42.871Z]   - Days Required: 1
+---
+[2026-01-21T13:56:42.871Z]   - Task ID: 2476
+---
+[2026-01-21T13:56:42.871Z]   - Calculated PlannedDate: Wed Jan 21 2026 15:56:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:42.871Z]   - Original Predecessor ID: None
+---
+[2026-01-21T13:56:42.881Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:56:42.882Z]   - Task Name: Planned PC Preparation
+---
+[2026-01-21T13:56:42.882Z]   - Calculated PlannedDate: Wed Jan 21 2026 15:56:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:42.882Z]   - Days Required: 1
+---
+[2026-01-21T13:56:42.882Z]   - Task ID: 2477
+---
+[2026-01-21T13:56:42.882Z]   - Original Predecessor ID: None
+---
+[2026-01-21T13:56:42.894Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:56:42.894Z]   - Task ID: 2478
+---
+[2026-01-21T13:56:42.894Z]   - Task Name: Planned PC Preparation Finish
+---
+[2026-01-21T13:56:42.894Z]   - Days Required: 1
+---
+[2026-01-21T13:56:42.894Z]   - Original Predecessor ID: None
+---
+[2026-01-21T13:56:42.894Z]   - Calculated PlannedDate: Wed Jan 21 2026 15:56:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:42.906Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:56:42.907Z]   - Task ID: 2479
+---
+[2026-01-21T13:56:42.907Z]   - Task Name: Planned PC signature from the Authorized persons
+---
+[2026-01-21T13:56:42.907Z]   - Days Required: 1
+---
+[2026-01-21T13:56:42.907Z]   - Calculated PlannedDate: Wed Jan 21 2026 15:56:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:42.907Z]   - Original Predecessor ID: None
+---
+[2026-01-21T13:56:42.916Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:56:42.916Z]   - Task Name: Planned Issue Date to Accounting
+---
+[2026-01-21T13:56:42.916Z]   - Days Required: 1
+---
+[2026-01-21T13:56:42.916Z]   - Task ID: 2480
+---
+[2026-01-21T13:56:42.916Z]   - Calculated PlannedDate: Wed Jan 21 2026 15:56:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:42.916Z]   - Original Predecessor ID: None
+---
+[2026-01-21T13:56:42.923Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:56:42.924Z]   - Task Name: Planned Checking Payment Certificate
+---
+[2026-01-21T13:56:42.924Z]   - Task ID: 2481
+---
+[2026-01-21T13:56:42.924Z]   - Days Required: 1
+---
+[2026-01-21T13:56:42.924Z]   - Calculated PlannedDate: Wed Jan 21 2026 15:56:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:42.924Z]   - Original Predecessor ID: None
+---
+[2026-01-21T13:56:42.933Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:56:42.933Z]   - Task Name: Planned Issue Payment Certificate to SAP(DMS)
+---
+[2026-01-21T13:56:42.933Z]   - Task ID: 2482
+---
+[2026-01-21T13:56:42.933Z]   - Days Required: 1
+---
+[2026-01-21T13:56:42.933Z]   - Calculated PlannedDate: Wed Jan 21 2026 15:56:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:42.933Z]   - Original Predecessor ID: None
+---
+[2026-01-21T13:56:42.939Z]   - Task ID: 2483
+---
+[2026-01-21T13:56:42.939Z]   - Task Name: Planned Follow Up to SSC for Posting
+---
+[2026-01-21T13:56:42.939Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:56:42.939Z]   - Calculated PlannedDate: Wed Jan 21 2026 15:56:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:42.939Z]   - Days Required: 1
+---
+[2026-01-21T13:56:42.939Z]   - Original Predecessor ID: None
+---
+[2026-01-21T13:56:42.951Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:56:42.952Z]   - Task Name: Planned SSC Payment Certificate Posting date
+---
+[2026-01-21T13:56:42.952Z]   - Task ID: 2484
+---
+[2026-01-21T13:56:42.952Z]   - Days Required: 1
+---
+[2026-01-21T13:56:42.952Z]   - Calculated PlannedDate: Wed Jan 21 2026 15:56:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:42.952Z]   - Original Predecessor ID: None
+---
+[2026-01-21T13:56:42.964Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:56:42.964Z]   - Task Name: Planned Aging preparation
+---
+[2026-01-21T13:56:42.964Z]   - Days Required: 15
+---
+[2026-01-21T13:56:42.964Z]   - Calculated PlannedDate: Wed Jan 21 2026 15:56:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:42.964Z]   - Task ID: 2485
+---
+[2026-01-21T13:56:42.964Z]   - Original Predecessor ID: None
+---
+[2026-01-21T13:56:42.970Z]   - Task ID: 2486
+---
+[2026-01-21T13:56:42.970Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:56:42.970Z]   - Days Required: 15
+---
+[2026-01-21T13:56:42.970Z]   - Task Name: Planned Aging Approval Date
+---
+[2026-01-21T13:56:42.970Z]   - Calculated PlannedDate: Wed Jan 21 2026 15:56:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:42.970Z]   - Original Predecessor ID: None
+---
+[2026-01-21T13:56:42.983Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:56:42.983Z]   - Task ID: 2487
+---
+[2026-01-21T13:56:42.983Z]   - Task Name: Planned Payment release date
+---
+[2026-01-21T13:56:42.983Z]   - Calculated PlannedDate: Wed Jan 21 2026 15:56:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:42.983Z]   - Days Required: 1
+---
+[2026-01-21T13:56:42.983Z]   - Original Predecessor ID: None
+---
+[2026-01-21T13:56:42.995Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:56:42.995Z]   - Days Required: 1
+---
+[2026-01-21T13:56:42.995Z]   - Task ID: 2488
+---
+[2026-01-21T13:56:42.995Z]   - Task Name: Planned Receiving Order from QS/PM
+---
+[2026-01-21T13:56:42.995Z]   - Original Predecessor ID: None
+---
+[2026-01-21T13:56:42.995Z]   - Calculated PlannedDate: Wed Jan 21 2026 15:56:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:43.007Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:56:43.007Z]   - Task ID: 2489
+---
+[2026-01-21T13:56:43.007Z]   - Task Name: Planned Requesting Material Details from Sub/ Sup
+---
+[2026-01-21T13:56:43.007Z]   - Days Required: 1
+---
+[2026-01-21T13:56:43.008Z]   - Original Predecessor ID: None
+---
+[2026-01-21T13:56:43.007Z]   - Calculated PlannedDate: Wed Jan 21 2026 15:56:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:43.019Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:56:43.019Z]   - Task ID: 2490
+---
+[2026-01-21T13:56:43.019Z]   - Days Required: 1
+---
+[2026-01-21T13:56:43.019Z]   - Task Name: Planned Receiving Material Details from Sub/ Sup
+---
+[2026-01-21T13:56:43.019Z]   - Original Predecessor ID: None
+---
+[2026-01-21T13:56:43.019Z]   - Calculated PlannedDate: Wed Jan 21 2026 15:56:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:43.026Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:56:43.026Z]   - Task ID: 2491
+---
+[2026-01-21T13:56:43.026Z]   - Task Name: Planned Requesting Material Shipping mode from Site
+---
+[2026-01-21T13:56:43.026Z]   - Days Required: 1
+---
+[2026-01-21T13:56:43.026Z]   - Original Predecessor ID: None
+---
+[2026-01-21T13:56:43.026Z]   - Calculated PlannedDate: Wed Jan 21 2026 15:56:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:43.036Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:56:43.037Z]   - Task ID: 2492
+---
+[2026-01-21T13:56:43.037Z]   - Task Name: Planned Material Shipping mode Reply from Site
+---
+[2026-01-21T13:56:43.037Z]   - Days Required: 1
+---
+[2026-01-21T13:56:43.037Z]   - Original Predecessor ID: None
+---
+[2026-01-21T13:56:43.037Z]   - Calculated PlannedDate: Wed Jan 21 2026 15:56:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:43.049Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:56:43.049Z]   - Task Name: Planned quoting shipment date
+---
+[2026-01-21T13:56:43.049Z]   - Days Required: 1
+---
+[2026-01-21T13:56:43.049Z]   - Task ID: 2493
+---
+[2026-01-21T13:56:43.049Z]   - Calculated PlannedDate: Wed Jan 21 2026 15:56:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:43.049Z]   - Original Predecessor ID: None
+---
+[2026-01-21T13:56:43.056Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:56:43.056Z]   - Task Name: Planned Shipping Quoting Distribution date to against
+---
+[2026-01-21T13:56:43.056Z]   - Task ID: 2494
+---
+[2026-01-21T13:56:43.056Z]   - Days Required: 1
+---
+[2026-01-21T13:56:43.056Z]   - Calculated PlannedDate: Wed Jan 21 2026 15:56:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:43.056Z]   - Original Predecessor ID: None
+---
+[2026-01-21T13:56:43.067Z]   - Task ID: 2495
+---
+[2026-01-21T13:56:43.066Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:56:43.067Z]   - Task Name: Planned Shipping Quoting Receiving date from against
+---
+[2026-01-21T13:56:43.067Z]   - Days Required: 3
+---
+[2026-01-21T13:56:43.067Z]   - Calculated PlannedDate: Wed Jan 21 2026 15:56:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:43.067Z]   - Original Predecessor ID: None
+---
+[2026-01-21T13:56:43.089Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:56:43.089Z]   - Task Name: Planned requisition booking shipping line confirmation with forwarder
+---
+[2026-01-21T13:56:43.089Z]   - Task ID: 2496
+---
+[2026-01-21T13:56:43.089Z]   - Days Required: 1
+---
+[2026-01-21T13:56:43.089Z]   - Calculated PlannedDate: Wed Jan 21 2026 15:56:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:43.089Z]   - Original Predecessor ID: None
+---
+[2026-01-21T13:56:43.101Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:56:43.101Z]   - Task Name: Planned forwarder reply date (booking shipping line)
+---
+[2026-01-21T13:56:43.101Z]   - Task ID: 2497
+---
+[2026-01-21T13:56:43.101Z]   - Days Required: 1
+---
+[2026-01-21T13:56:43.101Z]   - Calculated PlannedDate: Wed Jan 21 2026 15:56:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:43.101Z]   - Original Predecessor ID: None
+---
+[2026-01-21T13:56:43.115Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:56:43.115Z]   - Task Name: Planned Starting coordination with supplier for the loading process
+---
+[2026-01-21T13:56:43.115Z]   - Days Required: 1
+---
+[2026-01-21T13:56:43.116Z]   - Calculated PlannedDate: Wed Jan 21 2026 15:56:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:43.115Z]   - Task ID: 2498
+---
+[2026-01-21T13:56:43.116Z]   - Original Predecessor ID: None
+---
+[2026-01-21T13:56:43.127Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:56:43.128Z]   - Task ID: 2499
+---
+[2026-01-21T13:56:43.128Z]   - Task Name: Planned Finishing coordination with supplier for the loading process
+---
+[2026-01-21T13:56:43.128Z]   - Days Required: 1
+---
+[2026-01-21T13:56:43.128Z]   - Calculated PlannedDate: Wed Jan 21 2026 15:56:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:43.128Z]   - Original Predecessor ID: None
+---
+[2026-01-21T13:56:43.137Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:56:43.137Z]   - Task Name: Planned Issuing insurance policy
+---
+[2026-01-21T13:56:43.137Z]   - Task ID: 2500
+---
+[2026-01-21T13:56:43.137Z]   - Days Required: 1
+---
+[2026-01-21T13:56:43.137Z]   - Calculated PlannedDate: Wed Jan 21 2026 15:56:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:43.137Z]   - Original Predecessor ID: None
+---
+[2026-01-21T13:56:43.144Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:56:43.145Z]   - Task ID: 2501
+---
+[2026-01-21T13:56:43.145Z]   - Days Required: 1
+---
+[2026-01-21T13:56:43.145Z]   - Task Name: Planned Requesting Shipping details from Sup/Sub
+---
+[2026-01-21T13:56:43.145Z]   - Calculated PlannedDate: Wed Jan 21 2026 15:56:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:43.145Z]   - Original Predecessor ID: None
+---
+[2026-01-21T13:56:43.155Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:56:43.155Z]   - Task ID: 2502
+---
+[2026-01-21T13:56:43.155Z]   - Task Name: Planned Receiving Shipping details From Sup/Sub
+---
+[2026-01-21T13:56:43.155Z]   - Days Required: 1
+---
+[2026-01-21T13:56:43.155Z]   - Calculated PlannedDate: Wed Jan 21 2026 15:56:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:43.155Z]   - Original Predecessor ID: None
+---
+[2026-01-21T13:56:43.170Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:56:43.170Z]   - Task ID: 2503
+---
+[2026-01-21T13:56:43.170Z]   - Days Required: 1
+---
+[2026-01-21T13:56:43.170Z]   - Task Name: Planned PO Issue Date
+---
+[2026-01-21T13:56:43.171Z]   - Original Predecessor ID: None
+---
+[2026-01-21T13:56:43.170Z]   - Calculated PlannedDate: Wed Jan 21 2026 15:56:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:43.187Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:56:43.187Z]   - Task ID: 2504
+---
+[2026-01-21T13:56:43.187Z]   - Days Required: 1
+---
+[2026-01-21T13:56:43.187Z]   - Calculated PlannedDate: Wed Jan 21 2026 15:56:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:43.187Z]   - Task Name: Planned PO release date
+---
+[2026-01-21T13:56:43.187Z]   - Original Predecessor ID: None
+---
+[2026-01-21T13:56:43.201Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:56:43.201Z]   - Task Name: Planned Shipment data collection date
+---
+[2026-01-21T13:56:43.201Z]   - Days Required: 10
+---
+[2026-01-21T13:56:43.201Z]   - Task ID: 2505
+---
+[2026-01-21T13:56:43.201Z]   - Calculated PlannedDate: Wed Jan 21 2026 15:56:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:43.201Z]   - Original Predecessor ID: None
+---
+[2026-01-21T13:56:43.213Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:56:43.213Z]   - Task ID: 2506
+---
+[2026-01-21T13:56:43.213Z]   - Task Name: Planned Document Sharing date with Customs Agent
+---
+[2026-01-21T13:56:43.213Z]   - Days Required: 1
+---
+[2026-01-21T13:56:43.213Z]   - Calculated PlannedDate: Wed Jan 21 2026 15:56:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:43.213Z]   - Original Predecessor ID: None
+---
+[2026-01-21T13:56:43.221Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:56:43.221Z]   - Task ID: 2507
+---
+[2026-01-21T13:56:43.221Z]   - Task Name: Planned Shipping Date
+---
+[2026-01-21T13:56:43.221Z]   - Days Required: 1
+---
+[2026-01-21T13:56:43.221Z]   - Original Predecessor ID: None
+---
+[2026-01-21T13:56:43.221Z]   - Calculated PlannedDate: Wed Jan 21 2026 15:56:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:43.229Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:56:43.229Z]   - Task Name: Planned Notified Site Estimated Date Of Arrival
+---
+[2026-01-21T13:56:43.229Z]   - Calculated PlannedDate: Wed Jan 21 2026 15:56:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:43.229Z]   - Original Predecessor ID: None
+---
+[2026-01-21T13:56:43.229Z]   - Days Required: 1
+---
+[2026-01-21T13:56:43.229Z]   - Task ID: 2508
+---
+[2026-01-21T13:56:43.238Z]   - Task ID: 2509
+---
+[2026-01-21T13:56:43.238Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:56:43.238Z]   - Task Name: Planned Customs Clearance Finalized Date
+---
+[2026-01-21T13:56:43.238Z]   - Days Required: 14
+---
+[2026-01-21T13:56:43.238Z]   - Original Predecessor ID: None
+---
+[2026-01-21T13:56:43.238Z]   - Calculated PlannedDate: Wed Jan 21 2026 15:56:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:43.246Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:56:43.246Z]   - Task ID: 2510
+---
+[2026-01-21T13:56:43.246Z]   - Task Name: Planned Arrival Date
+---
+[2026-01-21T13:56:43.246Z]   - Days Required: 1
+---
+[2026-01-21T13:56:43.246Z]   - Original Predecessor ID: None
+---
+[2026-01-21T13:56:43.246Z]   - Calculated PlannedDate: Wed Jan 21 2026 15:56:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:46.404Z] 
+================================================================================
+---
+[2026-01-21T13:56:46.404Z]   - Is Admin: false
+---
+[2026-01-21T13:56:46.404Z] 📊 GET /api/workFlowDashData - User info:
+---
+[2026-01-21T13:56:46.404Z]   - User Project ID: 9
+---
+[2026-01-21T13:56:46.404Z]   - User Dept ID: 9
+---
+[2026-01-21T13:56:46.409Z] 📊 Total workflows in database: 12
+---
+[2026-01-21T13:56:46.426Z] 🔍 All workflows in DB (unfiltered): 12 total
+---
+[2026-01-21T13:56:46.426Z]    - ID: 1022, ProjectID: 9, ProcessID: 1, Status: Pending, startDate: Wed Jan 21 2026 15:56:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:46.426Z]    - ID: 1020, ProjectID: 20, ProcessID: 1, Status: Pending, startDate: Wed Jan 14 2026 16:17:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:46.426Z]    - ID: 1018, ProjectID: 11, ProcessID: 1, Status: Pending, startDate: Wed Jan 14 2026 15:34:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:46.426Z]    - ID: 1017, ProjectID: 12, ProcessID: 1, Status: Pending, startDate: Wed Jan 14 2026 15:16:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:46.426Z]    - ID: 1019, ProjectID: 12, ProcessID: 1, Status: Pending, startDate: Wed Jan 14 2026 15:34:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:46.427Z]    - ID: 1015, ProjectID: 9, ProcessID: 1, Status: Pending, startDate: Tue Jan 13 2026 17:59:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:46.426Z]    - ID: 1021, ProjectID: 9, ProcessID: 1, Status: Pending, startDate: Wed Jan 21 2026 15:52:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:46.426Z]    - ID: 1016, ProjectID: 10, ProcessID: 1, Status: Pending, startDate: Tue Jan 13 2026 18:05:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:46.427Z]    - ID: 1012, ProjectID: 9, ProcessID: 1, Status: Pending, startDate: Sat Jan 10 2026 14:49:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:46.427Z]    - ID: 1013, ProjectID: 9, ProcessID: 1, Status: Pending, startDate: Mon Jan 12 2026 10:59:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:46.427Z]    - ID: 1014, ProjectID: 14, ProcessID: 1, Status: Pending, startDate: Tue Jan 13 2026 17:55:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:46.431Z]   - Adding filter: User Department ID = 9
+---
+[2026-01-21T13:56:46.430Z]   - Adding filter: Project ID = 9
+---
+[2026-01-21T13:56:46.431Z]   - Final WHERE clause: hdr.ProjectID = @ProjectID AND 
+        EXISTS (
+          SELECT 1 FROM tblProcessDepartment pd
+          WHERE pd.ProcessID = hdr.ProcessID
+            AND pd.DepartmentID = @UserDeptId
+        )
+      
+---
+[2026-01-21T13:56:46.427Z]    - ID: 1011, ProjectID: 9, ProcessID: 1, Status: Pending, startDate: Fri Jan 09 2026 17:21:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:56:46.438Z] ✅ Query executed - Returning 6 workflows
+---
+[2026-01-21T13:56:46.439Z] 
+⚠️  WORKFLOWS FILTERED OUT:
+---
+[2026-01-21T13:56:46.439Z]    - ID: 1020, ProjectID: 20, Status: Pending
+---
+[2026-01-21T13:56:46.439Z]      Problem: ProjectID filter expects 9, got 20 - MISMATCH
+---
+[2026-01-21T13:56:46.441Z]    - ID: 1018, ProjectID: 11, Status: Pending
+---
+[2026-01-21T13:56:46.441Z]      Problem: ProjectID filter expects 9, got 12 - MISMATCH
+---
+[2026-01-21T13:56:46.442Z]    - ID: 1017, ProjectID: 12, Status: Pending
+---
+[2026-01-21T13:56:46.442Z]      Problem: ProjectID filter expects 9, got 11 - MISMATCH
+---
+[2026-01-21T13:56:46.443Z]      Problem: ProjectID filter expects 9, got 12 - MISMATCH
+---
+[2026-01-21T13:56:46.440Z]    - ID: 1019, ProjectID: 12, Status: Pending
+---
+[2026-01-21T13:56:46.443Z]    - ID: 1016, ProjectID: 10, Status: Pending
+---
+[2026-01-21T13:56:46.444Z]    - ID: 1014, ProjectID: 14, Status: Pending
+---
+[2026-01-21T13:56:46.443Z]      Problem: ProjectID filter expects 9, got 10 - MISMATCH
+---
+[2026-01-21T13:56:46.444Z] 📋 Final returned workflows count: 6
+
+---
+[2026-01-21T13:56:46.444Z]      Problem: ProjectID filter expects 9, got 14 - MISMATCH
+---
+[2026-01-21T13:58:35.494Z] 
+================================================================================
+---
+[2026-01-21T13:58:35.495Z] 📊 GET /api/workFlowDashData - User info:
+---
+[2026-01-21T13:58:35.495Z]   - User Dept ID: 9
+---
+[2026-01-21T13:58:35.495Z]   - Is Admin: false
+---
+[2026-01-21T13:58:35.495Z]   - User Project ID: 9
+---
+[2026-01-21T13:58:35.511Z] 📊 Total workflows in database: 12
+---
+[2026-01-21T13:58:35.561Z] 🔍 All workflows in DB (unfiltered): 12 total
+---
+[2026-01-21T13:58:35.561Z]    - ID: 1022, ProjectID: 9, ProcessID: 1, Status: Pending, startDate: Wed Jan 21 2026 15:56:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:58:35.561Z]    - ID: 1021, ProjectID: 9, ProcessID: 1, Status: Pending, startDate: Wed Jan 21 2026 15:52:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:58:35.562Z]    - ID: 1020, ProjectID: 20, ProcessID: 1, Status: Pending, startDate: Wed Jan 14 2026 16:17:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:58:35.562Z]    - ID: 1019, ProjectID: 12, ProcessID: 1, Status: Pending, startDate: Wed Jan 14 2026 15:34:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:58:35.562Z]    - ID: 1018, ProjectID: 11, ProcessID: 1, Status: Pending, startDate: Wed Jan 14 2026 15:34:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:58:35.562Z]    - ID: 1017, ProjectID: 12, ProcessID: 1, Status: Pending, startDate: Wed Jan 14 2026 15:16:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:58:35.562Z]    - ID: 1016, ProjectID: 10, ProcessID: 1, Status: Pending, startDate: Tue Jan 13 2026 18:05:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:58:35.562Z]    - ID: 1015, ProjectID: 9, ProcessID: 1, Status: Pending, startDate: Tue Jan 13 2026 17:59:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:58:35.562Z]    - ID: 1014, ProjectID: 14, ProcessID: 1, Status: Pending, startDate: Tue Jan 13 2026 17:55:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:58:35.562Z]    - ID: 1013, ProjectID: 9, ProcessID: 1, Status: Pending, startDate: Mon Jan 12 2026 10:59:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:58:35.562Z]    - ID: 1012, ProjectID: 9, ProcessID: 1, Status: Pending, startDate: Sat Jan 10 2026 14:49:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:58:35.562Z]    - ID: 1011, ProjectID: 9, ProcessID: 1, Status: Pending, startDate: Fri Jan 09 2026 17:21:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:58:35.566Z]   - Adding filter: Project ID = 9
+---
+[2026-01-21T13:58:35.566Z]   - Adding filter: User Department ID = 9
+---
+[2026-01-21T13:58:35.567Z]   - Final WHERE clause: hdr.ProjectID = @ProjectID AND 
+        EXISTS (
+          SELECT 1 FROM tblProcessDepartment pd
+          WHERE pd.ProcessID = hdr.ProcessID
+            AND pd.DepartmentID = @UserDeptId
+        )
+      
+---
+[2026-01-21T13:58:35.598Z] ✅ Query executed - Returning 6 workflows
+---
+[2026-01-21T13:58:35.599Z]      Problem: ProjectID filter expects 9, got 20 - MISMATCH
+---
+[2026-01-21T13:58:35.599Z]    - ID: 1019, ProjectID: 12, Status: Pending
+---
+[2026-01-21T13:58:35.598Z] 
+⚠️  WORKFLOWS FILTERED OUT:
+---
+[2026-01-21T13:58:35.600Z]    - ID: 1018, ProjectID: 11, Status: Pending
+---
+[2026-01-21T13:58:35.599Z]      Problem: ProjectID filter expects 9, got 12 - MISMATCH
+---
+[2026-01-21T13:58:35.600Z]      Problem: ProjectID filter expects 9, got 11 - MISMATCH
+---
+[2026-01-21T13:58:35.600Z]    - ID: 1017, ProjectID: 12, Status: Pending
+---
+[2026-01-21T13:58:35.600Z]      Problem: ProjectID filter expects 9, got 12 - MISMATCH
+---
+[2026-01-21T13:58:35.601Z]      Problem: ProjectID filter expects 9, got 10 - MISMATCH
+---
+[2026-01-21T13:58:35.601Z]    - ID: 1016, ProjectID: 10, Status: Pending
+---
+[2026-01-21T13:58:35.602Z]    - ID: 1014, ProjectID: 14, Status: Pending
+---
+[2026-01-21T13:58:35.602Z]      Problem: ProjectID filter expects 9, got 14 - MISMATCH
+---
+[2026-01-21T13:58:35.599Z]    - ID: 1020, ProjectID: 20, Status: Pending
+---
+[2026-01-21T13:58:35.603Z] 📋 Final returned workflows count: 6
+
+---
+[2026-01-21T13:58:42.853Z]   - processID: 1
+---
+[2026-01-21T13:58:42.852Z] 
+📝 POST /addPackageForm - Received workflow request
+---
+[2026-01-21T13:58:42.853Z]   - packageID: 2
+---
+[2026-01-21T13:58:42.853Z]   - startDate: 2026-01-21T15:58
+---
+[2026-01-21T13:58:42.853Z]   - projectID: 9
+---
+[2026-01-21T13:58:42.853Z]   - status: Pending
+---
+[2026-01-21T13:58:42.926Z] ✅ Workflow inserted successfully:
+---
+[2026-01-21T13:58:42.926Z]   - Saved startDate: Wed Jan 21 2026 15:58:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:58:42.926Z]   - Saved projectID: 9
+---
+[2026-01-21T13:58:42.926Z]   - Saved status: Pending
+---
+[2026-01-21T13:58:42.926Z]   - New Workflow ID: 1023
+---
+[2026-01-21T13:58:42.952Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:58:42.952Z]   - Task Name: RFQ Planned Issue Date
+---
+[2026-01-21T13:58:42.952Z]   - Days Required: 1
+---
+[2026-01-21T13:58:42.952Z]   - Calculated PlannedDate: Wed Jan 21 2026 15:58:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:58:42.952Z]   - Task ID: 2511
+---
+[2026-01-21T13:58:42.969Z]   - Task Name: RFQ Planned Dis Date
+---
+[2026-01-21T13:58:42.969Z]   - Task ID: 2512
+---
+[2026-01-21T13:58:42.969Z]   - Calculated PlannedDate: Thu Jan 22 2026 15:58:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:58:42.969Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:58:42.969Z]   - Days Required: 1
+---
+[2026-01-21T13:58:42.987Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:58:42.987Z]   - Task Name: RFQ Planned Collecting Date
+---
+[2026-01-21T13:58:42.987Z]   - Task ID: 2513
+---
+[2026-01-21T13:58:42.987Z]   - Calculated PlannedDate: Fri Jan 23 2026 15:58:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:58:42.987Z]   - Days Required: 20
+---
+[2026-01-21T13:58:43.004Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:58:43.004Z]   - Task Name: Comparison Sheet Planned Issue Date
+---
+[2026-01-21T13:58:43.004Z]   - Calculated PlannedDate: Thu Feb 12 2026 15:58:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:58:43.004Z]   - Days Required: 7
+---
+[2026-01-21T13:58:43.004Z]   - Task ID: 2514
+---
+[2026-01-21T13:58:43.022Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:58:43.022Z]   - Task Name: Planned Mgmt. Sup/Sub Selection Date
+---
+[2026-01-21T13:58:43.022Z]   - Calculated PlannedDate: Thu Feb 19 2026 15:58:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:58:43.022Z]   - Task ID: 2515
+---
+[2026-01-21T13:58:43.022Z]   - Days Required: 3
+---
+[2026-01-21T13:58:43.034Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:58:43.034Z]   - Task Name: MAR Planned Issue Date
+---
+[2026-01-21T13:58:43.034Z]   - Calculated PlannedDate: Sun Feb 22 2026 15:58:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:58:43.034Z]   - Task ID: 2516
+---
+[2026-01-21T13:58:43.034Z]   - Days Required: 1
+---
+[2026-01-21T13:58:43.047Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:58:43.047Z]   - Task Name: MAR Planned Returned Date
+---
+[2026-01-21T13:58:43.047Z]   - Days Required: 14
+---
+[2026-01-21T13:58:43.047Z]   - Task ID: 2517
+---
+[2026-01-21T13:58:43.047Z]   - Calculated PlannedDate: Mon Feb 23 2026 15:58:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:58:43.065Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:58:43.065Z]   - Task Name: Planned Schedule Receiving date (from Site)
+---
+[2026-01-21T13:58:43.065Z]   - Task ID: 2518
+---
+[2026-01-21T13:58:43.065Z]   - Days Required: 7
+---
+[2026-01-21T13:58:43.065Z]   - Calculated PlannedDate: Mon Mar 09 2026 15:58:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:58:43.082Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:58:43.082Z]   - Task Name: Planned Receiving Required Document From Logistics
+---
+[2026-01-21T13:58:43.082Z]   - Days Required: 1
+---
+[2026-01-21T13:58:43.082Z]   - Calculated PlannedDate: Mon Mar 16 2026 15:58:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:58:43.082Z]   - Task ID: 2519
+---
+[2026-01-21T13:58:43.102Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:58:43.102Z]   - Task Name: Planned Agreement Planned Certation Date
+---
+[2026-01-21T13:58:43.102Z]   - Days Required: 1
+---
+[2026-01-21T13:58:43.102Z]   - Calculated PlannedDate: Tue Mar 17 2026 15:58:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:58:43.102Z]   - Task ID: 2520
+---
+[2026-01-21T13:58:43.116Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:58:43.116Z]   - Task ID: 2521
+---
+[2026-01-21T13:58:43.116Z]   - Task Name: Planned Agreement Certation Date
+---
+[2026-01-21T13:58:43.117Z]   - Days Required: 1
+---
+[2026-01-21T13:58:43.117Z]   - Calculated PlannedDate: Wed Mar 18 2026 15:58:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:58:43.132Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:58:43.132Z]   - Task Name: Agreement Planned Issue Date to Sup/Sub
+---
+[2026-01-21T13:58:43.133Z]   - Calculated PlannedDate: Thu Mar 19 2026 15:58:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:58:43.132Z]   - Task ID: 2522
+---
+[2026-01-21T13:58:43.133Z]   - Days Required: 1
+---
+[2026-01-21T13:58:43.149Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:58:43.149Z]   - Task Name: Planned Receiving signature Agreement date from Sup/Sub
+---
+[2026-01-21T13:58:43.149Z]   - Task ID: 2523
+---
+[2026-01-21T13:58:43.149Z]   - Days Required: 1
+---
+[2026-01-21T13:58:43.149Z]   - Calculated PlannedDate: Fri Mar 20 2026 15:58:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:58:43.165Z]   - Task ID: 2524
+---
+[2026-01-21T13:58:43.165Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:58:43.165Z]   - Calculated PlannedDate: Sat Mar 21 2026 15:58:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:58:43.165Z]   - Task Name: Planned Agreement Issue Date to Mgmt. for signature
+---
+[2026-01-21T13:58:43.165Z]   - Days Required: 1
+---
+[2026-01-21T13:58:43.181Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:58:43.181Z]   - Task Name: Planned Receiving signature Agreement date from Mgmt.
+---
+[2026-01-21T13:58:43.181Z]   - Calculated PlannedDate: Sun Mar 22 2026 15:58:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:58:43.181Z]   - Days Required: 1
+---
+[2026-01-21T13:58:43.181Z]   - Task ID: 2525
+---
+[2026-01-21T13:58:43.192Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:58:43.192Z]   - Task ID: 2526
+---
+[2026-01-21T13:58:43.192Z]   - Task Name: Planned Agreement generated date on SAP
+---
+[2026-01-21T13:58:43.192Z]   - Days Required: 2
+---
+[2026-01-21T13:58:43.193Z]   - Calculated PlannedDate: Mon Mar 23 2026 15:58:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:58:43.205Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:58:43.205Z]   - Task Name: Planned Agreement Release date on SAP from Mgmt.
+---
+[2026-01-21T13:58:43.205Z]   - Task ID: 2527
+---
+[2026-01-21T13:58:43.205Z]   - Days Required: 5
+---
+[2026-01-21T13:58:43.205Z]   - Calculated PlannedDate: Wed Mar 25 2026 15:58:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:58:43.220Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:58:43.220Z]   - Task Name: Planned PO Generation Date on SAP
+---
+[2026-01-21T13:58:43.220Z]   - Days Required: 1
+---
+[2026-01-21T13:58:43.220Z]   - Task ID: 2528
+---
+[2026-01-21T13:58:43.220Z]   - Calculated PlannedDate: Mon Mar 30 2026 15:58:00 GMT+0300 (Eastern European Summer Time)
+---
+[2026-01-21T13:58:43.234Z]   - Task ID: 2529
+---
+[2026-01-21T13:58:43.234Z]   - Task Name: Planned PO Release date on SAP from Mgmt.
+---
+[2026-01-21T13:58:43.234Z]   - Calculated PlannedDate: Tue Mar 31 2026 15:58:00 GMT+0300 (Eastern European Summer Time)
+---
+[2026-01-21T13:58:43.234Z]   - Days Required: 1
+---
+[2026-01-21T13:58:43.234Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:58:43.249Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:58:43.249Z]   - Task Name: Planned PR SAP Generation Date
+---
+[2026-01-21T13:58:43.249Z]   - Days Required: 1
+---
+[2026-01-21T13:58:43.249Z]   - Calculated PlannedDate: Wed Apr 01 2026 15:58:00 GMT+0300 (Eastern European Summer Time)
+---
+[2026-01-21T13:58:43.249Z]   - Task ID: 2530
+---
+[2026-01-21T13:58:43.260Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:58:43.260Z]   - Task Name: Planned PR Release date on SAP from Mgmt.
+---
+[2026-01-21T13:58:43.260Z]   - Task ID: 2531
+---
+[2026-01-21T13:58:43.260Z]   - Calculated PlannedDate: Thu Apr 02 2026 15:58:00 GMT+0300 (Eastern European Summer Time)
+---
+[2026-01-21T13:58:43.260Z]   - Days Required: 3
+---
+[2026-01-21T13:58:43.271Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:58:43.271Z]   - Task ID: 2532
+---
+[2026-01-21T13:58:43.271Z]   - Task Name: Planned Following up the issuance of the bank guarantee with Sup/Sub
+---
+[2026-01-21T13:58:43.271Z]   - Days Required: 1
+---
+[2026-01-21T13:58:43.271Z]   - Calculated PlannedDate: Sun Apr 05 2026 15:58:00 GMT+0300 (Eastern European Summer Time)
+---
+[2026-01-21T13:58:43.282Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:58:43.282Z]   - Task Name: Planned Wavier Issue Date
+---
+[2026-01-21T13:58:43.282Z]   - Task ID: 2533
+---
+[2026-01-21T13:58:43.282Z]   - Days Required: 1
+---
+[2026-01-21T13:58:43.282Z]   - Calculated PlannedDate: Mon Apr 06 2026 15:58:00 GMT+0300 (Eastern European Summer Time)
+---
+[2026-01-21T13:58:43.291Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:58:43.292Z]   - Task Name: Planned Wavier Signature Date from Mgmt.
+---
+[2026-01-21T13:58:43.291Z]   - Task ID: 2534
+---
+[2026-01-21T13:58:43.292Z]   - Days Required: 1
+---
+[2026-01-21T13:58:43.292Z]   - Calculated PlannedDate: Tue Apr 07 2026 15:58:00 GMT+0300 (Eastern European Summer Time)
+---
+[2026-01-21T13:58:43.303Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:58:43.304Z]   - Task Name: Planned QS Request DN from Sup/Sub
+---
+[2026-01-21T13:58:43.304Z]   - Task ID: 2535
+---
+[2026-01-21T13:58:43.304Z]   - Calculated PlannedDate: Wed Apr 08 2026 15:58:00 GMT+0300 (Eastern European Summer Time)
+---
+[2026-01-21T13:58:43.304Z]   - Days Required: 1
+---
+[2026-01-21T13:58:43.314Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:58:43.314Z]   - Task Name: Planned Issue DN from QS to SK
+---
+[2026-01-21T13:58:43.314Z]   - Calculated PlannedDate: Thu Apr 09 2026 15:58:00 GMT+0300 (Eastern European Summer Time)
+---
+[2026-01-21T13:58:43.314Z]   - Task ID: 2536
+---
+[2026-01-21T13:58:43.314Z]   - Days Required: 1
+---
+[2026-01-21T13:58:43.321Z]   - Task ID: 2537
+---
+[2026-01-21T13:58:43.321Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:58:43.321Z]   - Task Name: Planned GR Receiving date from SK
+---
+[2026-01-21T13:58:43.321Z]   - Days Required: 1
+---
+[2026-01-21T13:58:43.321Z]   - Calculated PlannedDate: Fri Apr 10 2026 15:58:00 GMT+0300 (Eastern European Summer Time)
+---
+[2026-01-21T13:58:43.329Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:58:43.329Z]   - Task Name: Planned Invoice Receiving Date
+---
+[2026-01-21T13:58:43.329Z]   - Calculated PlannedDate: Sat Apr 11 2026 15:58:00 GMT+0300 (Eastern European Summer Time)
+---
+[2026-01-21T13:58:43.329Z]   - Days Required: 1
+---
+[2026-01-21T13:58:43.329Z]   - Task ID: 2538
+---
+[2026-01-21T13:58:43.341Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:58:43.341Z]   - Task Name: Planned Receiving bank guarantee with Sup/Sub
+---
+[2026-01-21T13:58:43.341Z]   - Days Required: 9
+---
+[2026-01-21T13:58:43.341Z]   - Task ID: 2539
+---
+[2026-01-21T13:58:43.341Z]   - Calculated PlannedDate: Sun Apr 12 2026 15:58:00 GMT+0300 (Eastern European Summer Time)
+---
+[2026-01-21T13:58:43.355Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:58:43.355Z]   - Task Name: Planned Requesting a memo reference # from the document controller
+---
+[2026-01-21T13:58:43.355Z]   - Task ID: 2540
+---
+[2026-01-21T13:58:43.355Z]   - Days Required: 1
+---
+[2026-01-21T13:58:43.355Z]   - Calculated PlannedDate: Tue Apr 21 2026 15:58:00 GMT+0300 (Eastern European Summer Time)
+---
+[2026-01-21T13:58:43.368Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:58:43.368Z]   - Task ID: 2541
+---
+[2026-01-21T13:58:43.368Z]   - Task Name: Planned Receiving a memo reference # from the document controller
+---
+[2026-01-21T13:58:43.368Z]   - Calculated PlannedDate: Wed Apr 22 2026 15:58:00 GMT+0300 (Eastern European Summer Time)
+---
+[2026-01-21T13:58:43.368Z]   - Days Required: 1
+---
+[2026-01-21T13:58:43.379Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:58:43.379Z]   - Task Name: Planned PC Preparation
+---
+[2026-01-21T13:58:43.379Z]   - Task ID: 2542
+---
+[2026-01-21T13:58:43.380Z]   - Days Required: 1
+---
+[2026-01-21T13:58:43.380Z]   - Calculated PlannedDate: Thu Apr 23 2026 15:58:00 GMT+0300 (Eastern European Summer Time)
+---
+[2026-01-21T13:58:43.389Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:58:43.389Z]   - Task Name: Planned PC Preparation Finish
+---
+[2026-01-21T13:58:43.389Z]   - Task ID: 2543
+---
+[2026-01-21T13:58:43.390Z]   - Calculated PlannedDate: Fri Apr 24 2026 15:58:00 GMT+0300 (Eastern European Summer Time)
+---
+[2026-01-21T13:58:43.390Z]   - Days Required: 1
+---
+[2026-01-21T13:58:43.400Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:58:43.400Z]   - Task Name: Planned PC signature from the Authorized persons
+---
+[2026-01-21T13:58:43.400Z]   - Days Required: 1
+---
+[2026-01-21T13:58:43.400Z]   - Task ID: 2544
+---
+[2026-01-21T13:58:43.400Z]   - Calculated PlannedDate: Sat Apr 25 2026 15:58:00 GMT+0300 (Eastern European Summer Time)
+---
+[2026-01-21T13:58:43.408Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:58:43.408Z]   - Task ID: 2545
+---
+[2026-01-21T13:58:43.408Z]   - Days Required: 1
+---
+[2026-01-21T13:58:43.408Z]   - Task Name: Planned Issue Date to Accounting
+---
+[2026-01-21T13:58:43.408Z]   - Calculated PlannedDate: Sun Apr 26 2026 15:58:00 GMT+0300 (Eastern European Summer Time)
+---
+[2026-01-21T13:58:43.414Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:58:43.414Z]   - Task Name: Planned Checking Payment Certificate
+---
+[2026-01-21T13:58:43.414Z]   - Task ID: 2546
+---
+[2026-01-21T13:58:43.415Z]   - Calculated PlannedDate: Mon Apr 27 2026 15:58:00 GMT+0300 (Eastern European Summer Time)
+---
+[2026-01-21T13:58:43.415Z]   - Days Required: 1
+---
+[2026-01-21T13:58:43.421Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:58:43.421Z]   - Task ID: 2547
+---
+[2026-01-21T13:58:43.421Z]   - Task Name: Planned Issue Payment Certificate to SAP(DMS)
+---
+[2026-01-21T13:58:43.421Z]   - Days Required: 1
+---
+[2026-01-21T13:58:43.421Z]   - Calculated PlannedDate: Tue Apr 28 2026 15:58:00 GMT+0300 (Eastern European Summer Time)
+---
+[2026-01-21T13:58:43.427Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:58:43.427Z]   - Task Name: Planned Follow Up to SSC for Posting
+---
+[2026-01-21T13:58:43.427Z]   - Task ID: 2548
+---
+[2026-01-21T13:58:43.427Z]   - Days Required: 1
+---
+[2026-01-21T13:58:43.427Z]   - Calculated PlannedDate: Wed Apr 29 2026 15:58:00 GMT+0300 (Eastern European Summer Time)
+---
+[2026-01-21T13:58:43.437Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:58:43.438Z]   - Task Name: Planned SSC Payment Certificate Posting date
+---
+[2026-01-21T13:58:43.438Z]   - Calculated PlannedDate: Thu Apr 30 2026 15:58:00 GMT+0300 (Eastern European Summer Time)
+---
+[2026-01-21T13:58:43.438Z]   - Days Required: 1
+---
+[2026-01-21T13:58:43.438Z]   - Task ID: 2549
+---
+[2026-01-21T13:58:43.449Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:58:43.449Z]   - Task Name: Planned Aging preparation
+---
+[2026-01-21T13:58:43.449Z]   - Task ID: 2550
+---
+[2026-01-21T13:58:43.449Z]   - Days Required: 15
+---
+[2026-01-21T13:58:43.449Z]   - Calculated PlannedDate: Fri May 01 2026 15:58:00 GMT+0300 (Eastern European Summer Time)
+---
+[2026-01-21T13:58:43.455Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:58:43.455Z]   - Task ID: 2551
+---
+[2026-01-21T13:58:43.455Z]   - Task Name: Planned Aging Approval Date
+---
+[2026-01-21T13:58:43.455Z]   - Days Required: 15
+---
+[2026-01-21T13:58:43.455Z]   - Calculated PlannedDate: Sat May 16 2026 15:58:00 GMT+0300 (Eastern European Summer Time)
+---
+[2026-01-21T13:58:43.466Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:58:43.466Z]   - Task ID: 2552
+---
+[2026-01-21T13:58:43.466Z]   - Task Name: Planned Payment release date
+---
+[2026-01-21T13:58:43.466Z]   - Days Required: 1
+---
+[2026-01-21T13:58:43.466Z]   - Calculated PlannedDate: Sun May 31 2026 15:58:00 GMT+0300 (Eastern European Summer Time)
+---
+[2026-01-21T13:58:43.475Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:58:43.475Z]   - Task ID: 2553
+---
+[2026-01-21T13:58:43.475Z]   - Task Name: Planned Receiving Order from QS/PM
+---
+[2026-01-21T13:58:43.475Z]   - Days Required: 1
+---
+[2026-01-21T13:58:43.475Z]   - Calculated PlannedDate: Mon Jun 01 2026 15:58:00 GMT+0300 (Eastern European Summer Time)
+---
+[2026-01-21T13:58:43.486Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:58:43.486Z]   - Task Name: Planned Requesting Material Details from Sub/ Sup
+---
+[2026-01-21T13:58:43.486Z]   - Task ID: 2554
+---
+[2026-01-21T13:58:43.486Z]   - Days Required: 1
+---
+[2026-01-21T13:58:43.486Z]   - Calculated PlannedDate: Tue Jun 02 2026 15:58:00 GMT+0300 (Eastern European Summer Time)
+---
+[2026-01-21T13:58:43.495Z]   - Task ID: 2555
+---
+[2026-01-21T13:58:43.495Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:58:43.495Z]   - Task Name: Planned Receiving Material Details from Sub/ Sup
+---
+[2026-01-21T13:58:43.496Z]   - Days Required: 1
+---
+[2026-01-21T13:58:43.496Z]   - Calculated PlannedDate: Wed Jun 03 2026 15:58:00 GMT+0300 (Eastern European Summer Time)
+---
+[2026-01-21T13:58:43.503Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:58:43.503Z]   - Task Name: Planned Requesting Material Shipping mode from Site
+---
+[2026-01-21T13:58:43.503Z]   - Task ID: 2556
+---
+[2026-01-21T13:58:43.503Z]   - Days Required: 1
+---
+[2026-01-21T13:58:43.503Z]   - Calculated PlannedDate: Thu Jun 04 2026 15:58:00 GMT+0300 (Eastern European Summer Time)
+---
+[2026-01-21T13:58:43.513Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:58:43.513Z]   - Task Name: Planned Material Shipping mode Reply from Site
+---
+[2026-01-21T13:58:43.513Z]   - Days Required: 1
+---
+[2026-01-21T13:58:43.513Z]   - Task ID: 2557
+---
+[2026-01-21T13:58:43.513Z]   - Calculated PlannedDate: Fri Jun 05 2026 15:58:00 GMT+0300 (Eastern European Summer Time)
+---
+[2026-01-21T13:58:43.522Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:58:43.522Z]   - Task ID: 2558
+---
+[2026-01-21T13:58:43.522Z]   - Task Name: Planned quoting shipment date
+---
+[2026-01-21T13:58:43.522Z]   - Days Required: 1
+---
+[2026-01-21T13:58:43.522Z]   - Calculated PlannedDate: Sat Jun 06 2026 15:58:00 GMT+0300 (Eastern European Summer Time)
+---
+[2026-01-21T13:58:43.528Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:58:43.528Z]   - Task Name: Planned Shipping Quoting Distribution date to against
+---
+[2026-01-21T13:58:43.528Z]   - Task ID: 2559
+---
+[2026-01-21T13:58:43.528Z]   - Calculated PlannedDate: Sun Jun 07 2026 15:58:00 GMT+0300 (Eastern European Summer Time)
+---
+[2026-01-21T13:58:43.528Z]   - Days Required: 1
+---
+[2026-01-21T13:58:43.539Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:58:43.539Z]   - Task Name: Planned Shipping Quoting Receiving date from against
+---
+[2026-01-21T13:58:43.539Z]   - Task ID: 2560
+---
+[2026-01-21T13:58:43.539Z]   - Days Required: 3
+---
+[2026-01-21T13:58:43.539Z]   - Calculated PlannedDate: Mon Jun 08 2026 15:58:00 GMT+0300 (Eastern European Summer Time)
+---
+[2026-01-21T13:58:43.552Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:58:43.553Z]   - Task Name: Planned requisition booking shipping line confirmation with forwarder
+---
+[2026-01-21T13:58:43.553Z]   - Calculated PlannedDate: Thu Jun 11 2026 15:58:00 GMT+0300 (Eastern European Summer Time)
+---
+[2026-01-21T13:58:43.553Z]   - Task ID: 2561
+---
+[2026-01-21T13:58:43.553Z]   - Days Required: 1
+---
+[2026-01-21T13:58:43.568Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:58:43.568Z]   - Task ID: 2562
+---
+[2026-01-21T13:58:43.568Z]   - Task Name: Planned forwarder reply date (booking shipping line)
+---
+[2026-01-21T13:58:43.568Z]   - Days Required: 1
+---
+[2026-01-21T13:58:43.568Z]   - Calculated PlannedDate: Fri Jun 12 2026 15:58:00 GMT+0300 (Eastern European Summer Time)
+---
+[2026-01-21T13:58:43.578Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:58:43.578Z]   - Task Name: Planned Starting coordination with supplier for the loading process
+---
+[2026-01-21T13:58:43.578Z]   - Days Required: 1
+---
+[2026-01-21T13:58:43.578Z]   - Task ID: 2563
+---
+[2026-01-21T13:58:43.578Z]   - Calculated PlannedDate: Sat Jun 13 2026 15:58:00 GMT+0300 (Eastern European Summer Time)
+---
+[2026-01-21T13:58:43.587Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:58:43.588Z]   - Task ID: 2564
+---
+[2026-01-21T13:58:43.588Z]   - Task Name: Planned Finishing coordination with supplier for the loading process
+---
+[2026-01-21T13:58:43.588Z]   - Days Required: 1
+---
+[2026-01-21T13:58:43.588Z]   - Calculated PlannedDate: Sun Jun 14 2026 15:58:00 GMT+0300 (Eastern European Summer Time)
+---
+[2026-01-21T13:58:43.593Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:58:43.593Z]   - Task ID: 2565
+---
+[2026-01-21T13:58:43.593Z]   - Task Name: Planned Issuing insurance policy
+---
+[2026-01-21T13:58:43.593Z]   - Days Required: 1
+---
+[2026-01-21T13:58:43.593Z]   - Calculated PlannedDate: Mon Jun 15 2026 15:58:00 GMT+0300 (Eastern European Summer Time)
+---
+[2026-01-21T13:58:43.599Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:58:43.599Z]   - Task Name: Planned Requesting Shipping details from Sup/Sub
+---
+[2026-01-21T13:58:43.599Z]   - Task ID: 2566
+---
+[2026-01-21T13:58:43.599Z]   - Days Required: 1
+---
+[2026-01-21T13:58:43.599Z]   - Calculated PlannedDate: Tue Jun 16 2026 15:58:00 GMT+0300 (Eastern European Summer Time)
+---
+[2026-01-21T13:58:43.609Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:58:43.609Z]   - Task Name: Planned Receiving Shipping details From Sup/Sub
+---
+[2026-01-21T13:58:43.609Z]   - Task ID: 2567
+---
+[2026-01-21T13:58:43.609Z]   - Days Required: 1
+---
+[2026-01-21T13:58:43.609Z]   - Calculated PlannedDate: Wed Jun 17 2026 15:58:00 GMT+0300 (Eastern European Summer Time)
+---
+[2026-01-21T13:58:43.623Z]   - Task ID: 2568
+---
+[2026-01-21T13:58:43.623Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:58:43.623Z]   - Calculated PlannedDate: Thu Jun 18 2026 15:58:00 GMT+0300 (Eastern European Summer Time)
+---
+[2026-01-21T13:58:43.623Z]   - Days Required: 1
+---
+[2026-01-21T13:58:43.623Z]   - Task Name: Planned PO Issue Date
+---
+[2026-01-21T13:58:43.636Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:58:43.636Z]   - Task Name: Planned PO release date
+---
+[2026-01-21T13:58:43.636Z]   - Days Required: 1
+---
+[2026-01-21T13:58:43.636Z]   - Task ID: 2569
+---
+[2026-01-21T13:58:43.636Z]   - Calculated PlannedDate: Fri Jun 19 2026 15:58:00 GMT+0300 (Eastern European Summer Time)
+---
+[2026-01-21T13:58:43.649Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:58:43.650Z]   - Task Name: Planned Shipment data collection date
+---
+[2026-01-21T13:58:43.650Z]   - Task ID: 2570
+---
+[2026-01-21T13:58:43.650Z]   - Days Required: 10
+---
+[2026-01-21T13:58:43.650Z]   - Calculated PlannedDate: Sat Jun 20 2026 15:58:00 GMT+0300 (Eastern European Summer Time)
+---
+[2026-01-21T13:58:43.660Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:58:43.660Z]   - Task ID: 2571
+---
+[2026-01-21T13:58:43.660Z]   - Task Name: Planned Document Sharing date with Customs Agent
+---
+[2026-01-21T13:58:43.660Z]   - Days Required: 1
+---
+[2026-01-21T13:58:43.660Z]   - Calculated PlannedDate: Tue Jun 30 2026 15:58:00 GMT+0300 (Eastern European Summer Time)
+---
+[2026-01-21T13:58:43.666Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:58:43.667Z]   - Task Name: Planned Shipping Date
+---
+[2026-01-21T13:58:43.667Z]   - Days Required: 1
+---
+[2026-01-21T13:58:43.666Z]   - Task ID: 2572
+---
+[2026-01-21T13:58:43.667Z]   - Calculated PlannedDate: Wed Jul 01 2026 15:58:00 GMT+0300 (Eastern European Summer Time)
+---
+[2026-01-21T13:58:43.672Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:58:43.672Z]   - Task ID: 2573
+---
+[2026-01-21T13:58:43.673Z]   - Task Name: Planned Notified Site Estimated Date Of Arrival
+---
+[2026-01-21T13:58:43.673Z]   - Days Required: 1
+---
+[2026-01-21T13:58:43.673Z]   - Calculated PlannedDate: Thu Jul 02 2026 15:58:00 GMT+0300 (Eastern European Summer Time)
+---
+[2026-01-21T13:58:43.678Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:58:43.678Z]   - Task ID: 2574
+---
+[2026-01-21T13:58:43.679Z]   - Task Name: Planned Customs Clearance Finalized Date
+---
+[2026-01-21T13:58:43.679Z]   - Days Required: 14
+---
+[2026-01-21T13:58:43.679Z]   - Calculated PlannedDate: Fri Jul 03 2026 15:58:00 GMT+0300 (Eastern European Summer Time)
+---
+[2026-01-21T13:58:43.685Z] ✅ Task created for workflow:
+---
+[2026-01-21T13:58:43.685Z]   - Days Required: 1
+---
+[2026-01-21T13:58:43.685Z]   - Task Name: Planned Arrival Date
+---
+[2026-01-21T13:58:43.685Z]   - Calculated PlannedDate: Fri Jul 17 2026 15:58:00 GMT+0300 (Eastern European Summer Time)
+---
+[2026-01-21T13:58:43.685Z]   - Task ID: 2575
+---
+[2026-01-21T13:58:46.838Z] 📊 GET /api/workFlowDashData - User info:
+---
+[2026-01-21T13:58:46.838Z]   - Is Admin: false
+---
+[2026-01-21T13:58:46.838Z]   - User Dept ID: 9
+---
+[2026-01-21T13:58:46.838Z] 
+================================================================================
+---
+[2026-01-21T13:58:46.838Z]   - User Project ID: 9
+---
+[2026-01-21T13:58:46.843Z] 📊 Total workflows in database: 13
+---
+[2026-01-21T13:58:46.864Z]    - ID: 1023, ProjectID: 9, ProcessID: 1, Status: Pending, startDate: Wed Jan 21 2026 15:58:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:58:46.864Z]    - ID: 1022, ProjectID: 9, ProcessID: 1, Status: Pending, startDate: Wed Jan 21 2026 15:56:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:58:46.864Z]    - ID: 1021, ProjectID: 9, ProcessID: 1, Status: Pending, startDate: Wed Jan 21 2026 15:52:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:58:46.864Z]    - ID: 1020, ProjectID: 20, ProcessID: 1, Status: Pending, startDate: Wed Jan 14 2026 16:17:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:58:46.864Z] 🔍 All workflows in DB (unfiltered): 13 total
+---
+[2026-01-21T13:58:46.865Z]    - ID: 1019, ProjectID: 12, ProcessID: 1, Status: Pending, startDate: Wed Jan 14 2026 15:34:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:58:46.865Z]    - ID: 1016, ProjectID: 10, ProcessID: 1, Status: Pending, startDate: Tue Jan 13 2026 18:05:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:58:46.865Z]    - ID: 1018, ProjectID: 11, ProcessID: 1, Status: Pending, startDate: Wed Jan 14 2026 15:34:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:58:46.865Z]    - ID: 1015, ProjectID: 9, ProcessID: 1, Status: Pending, startDate: Tue Jan 13 2026 17:59:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:58:46.865Z]    - ID: 1017, ProjectID: 12, ProcessID: 1, Status: Pending, startDate: Wed Jan 14 2026 15:16:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:58:46.865Z]    - ID: 1013, ProjectID: 9, ProcessID: 1, Status: Pending, startDate: Mon Jan 12 2026 10:59:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:58:46.865Z]    - ID: 1014, ProjectID: 14, ProcessID: 1, Status: Pending, startDate: Tue Jan 13 2026 17:55:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:58:46.865Z]    - ID: 1012, ProjectID: 9, ProcessID: 1, Status: Pending, startDate: Sat Jan 10 2026 14:49:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:58:46.865Z]    - ID: 1011, ProjectID: 9, ProcessID: 1, Status: Pending, startDate: Fri Jan 09 2026 17:21:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T13:58:46.869Z]   - Final WHERE clause: hdr.ProjectID = @ProjectID AND 
+        EXISTS (
+          SELECT 1 FROM tblProcessDepartment pd
+          WHERE pd.ProcessID = hdr.ProcessID
+            AND pd.DepartmentID = @UserDeptId
+        )
+      
+---
+[2026-01-21T13:58:46.868Z]   - Adding filter: User Department ID = 9
+---
+[2026-01-21T13:58:46.868Z]   - Adding filter: Project ID = 9
+---
+[2026-01-21T13:58:46.878Z] ✅ Query executed - Returning 7 workflows
+---
+[2026-01-21T13:58:46.879Z]    - ID: 1020, ProjectID: 20, Status: Pending
+---
+[2026-01-21T13:58:46.878Z] 
+⚠️  WORKFLOWS FILTERED OUT:
+---
+[2026-01-21T13:58:46.880Z]      Problem: ProjectID filter expects 9, got 20 - MISMATCH
+---
+[2026-01-21T13:58:46.880Z]    - ID: 1019, ProjectID: 12, Status: Pending
+---
+[2026-01-21T13:58:46.881Z]    - ID: 1018, ProjectID: 11, Status: Pending
+---
+[2026-01-21T13:58:46.882Z]      Problem: ProjectID filter expects 9, got 11 - MISMATCH
+---
+[2026-01-21T13:58:46.883Z]      Problem: ProjectID filter expects 9, got 12 - MISMATCH
+---
+[2026-01-21T13:58:46.883Z]    - ID: 1017, ProjectID: 12, Status: Pending
+---
+[2026-01-21T13:58:46.881Z]      Problem: ProjectID filter expects 9, got 12 - MISMATCH
+---
+[2026-01-21T13:58:46.884Z]      Problem: ProjectID filter expects 9, got 10 - MISMATCH
+---
+[2026-01-21T13:58:46.885Z]      Problem: ProjectID filter expects 9, got 14 - MISMATCH
+---
+[2026-01-21T13:58:46.884Z]    - ID: 1016, ProjectID: 10, Status: Pending
+---
+[2026-01-21T13:58:46.885Z]    - ID: 1014, ProjectID: 14, Status: Pending
+---
+[2026-01-21T13:58:46.887Z] 📋 Final returned workflows count: 7
+
+---
+[2026-01-21T14:07:48.674Z] 
+================================================================================
+---
+[2026-01-21T14:07:48.674Z] 📊 GET /api/workFlowDashData - User info:
+---
+[2026-01-21T14:07:48.674Z]   - User Dept ID: 8
+---
+[2026-01-21T14:07:48.674Z]   - Is Admin: false
+---
+[2026-01-21T14:07:48.674Z]   - User Project ID: 9
+---
+[2026-01-21T14:07:48.701Z] 📊 Total workflows in database: 13
+---
+[2026-01-21T14:07:48.748Z] 🔍 All workflows in DB (unfiltered): 13 total
+---
+[2026-01-21T14:07:48.748Z]    - ID: 1023, ProjectID: 9, ProcessID: 1, Status: Pending, startDate: Wed Jan 21 2026 15:58:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T14:07:48.748Z]    - ID: 1022, ProjectID: 9, ProcessID: 1, Status: Pending, startDate: Wed Jan 21 2026 15:56:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T14:07:48.748Z]    - ID: 1020, ProjectID: 20, ProcessID: 1, Status: Pending, startDate: Wed Jan 14 2026 16:17:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T14:07:48.748Z]    - ID: 1018, ProjectID: 11, ProcessID: 1, Status: Pending, startDate: Wed Jan 14 2026 15:34:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T14:07:48.748Z]    - ID: 1019, ProjectID: 12, ProcessID: 1, Status: Pending, startDate: Wed Jan 14 2026 15:34:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T14:07:48.748Z]    - ID: 1021, ProjectID: 9, ProcessID: 1, Status: Pending, startDate: Wed Jan 21 2026 15:52:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T14:07:48.748Z]    - ID: 1017, ProjectID: 12, ProcessID: 1, Status: Pending, startDate: Wed Jan 14 2026 15:16:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T14:07:48.748Z]    - ID: 1016, ProjectID: 10, ProcessID: 1, Status: Pending, startDate: Tue Jan 13 2026 18:05:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T14:07:48.748Z]    - ID: 1014, ProjectID: 14, ProcessID: 1, Status: Pending, startDate: Tue Jan 13 2026 17:55:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T14:07:48.749Z]    - ID: 1013, ProjectID: 9, ProcessID: 1, Status: Pending, startDate: Mon Jan 12 2026 10:59:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T14:07:48.749Z]    - ID: 1012, ProjectID: 9, ProcessID: 1, Status: Pending, startDate: Sat Jan 10 2026 14:49:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T14:07:48.752Z]   - Adding filter: Project ID = 9
+---
+[2026-01-21T14:07:48.748Z]    - ID: 1015, ProjectID: 9, ProcessID: 1, Status: Pending, startDate: Tue Jan 13 2026 17:59:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T14:07:48.752Z]   - Adding filter: User Department ID = 8
+---
+[2026-01-21T14:07:48.753Z]   - Final WHERE clause: hdr.ProjectID = @ProjectID AND 
+        EXISTS (
+          SELECT 1 FROM tblProcessDepartment pd
+          WHERE pd.ProcessID = hdr.ProcessID
+            AND pd.DepartmentID = @UserDeptId
+        )
+      
+---
+[2026-01-21T14:07:48.749Z]    - ID: 1011, ProjectID: 9, ProcessID: 1, Status: Pending, startDate: Fri Jan 09 2026 17:21:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T14:07:48.786Z] ✅ Query executed - Returning 7 workflows
+---
+[2026-01-21T14:07:48.786Z] 
+⚠️  WORKFLOWS FILTERED OUT:
+---
+[2026-01-21T14:07:48.787Z]    - ID: 1020, ProjectID: 20, Status: Pending
+---
+[2026-01-21T14:07:48.787Z]      Problem: ProjectID filter expects 9, got 12 - MISMATCH
+---
+[2026-01-21T14:07:48.787Z]    - ID: 1019, ProjectID: 12, Status: Pending
+---
+[2026-01-21T14:07:48.787Z]      Problem: ProjectID filter expects 9, got 20 - MISMATCH
+---
+[2026-01-21T14:07:48.788Z]      Problem: ProjectID filter expects 9, got 11 - MISMATCH
+---
+[2026-01-21T14:07:48.788Z]    - ID: 1017, ProjectID: 12, Status: Pending
+---
+[2026-01-21T14:07:48.788Z]      Problem: ProjectID filter expects 9, got 12 - MISMATCH
+---
+[2026-01-21T14:07:48.789Z]    - ID: 1016, ProjectID: 10, Status: Pending
+---
+[2026-01-21T14:07:48.789Z]      Problem: ProjectID filter expects 9, got 10 - MISMATCH
+---
+[2026-01-21T14:07:48.789Z]    - ID: 1014, ProjectID: 14, Status: Pending
+---
+[2026-01-21T14:07:48.789Z]      Problem: ProjectID filter expects 9, got 14 - MISMATCH
+---
+[2026-01-21T14:07:48.788Z]    - ID: 1018, ProjectID: 11, Status: Pending
+---
+[2026-01-21T14:07:48.789Z] 📋 Final returned workflows count: 7
+
+---
+[2026-01-21T14:10:35.532Z] 
+================================================================================
+---
+[2026-01-21T14:10:35.533Z] 📊 GET /api/workFlowDashData - User info:
+---
+[2026-01-21T14:10:35.533Z]   - User Dept ID: 8
+---
+[2026-01-21T14:10:35.533Z]   - Is Admin: false
+---
+[2026-01-21T14:10:35.533Z]   - User Project ID: 9
+---
+[2026-01-21T14:10:35.541Z] 📊 Total workflows in database: 13
+---
+[2026-01-21T14:10:35.587Z] 🔍 All workflows in DB (unfiltered): 13 total
+---
+[2026-01-21T14:10:35.587Z]    - ID: 1023, ProjectID: 9, ProcessID: 1, Status: Pending, startDate: Wed Jan 21 2026 15:58:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T14:10:35.587Z]    - ID: 1022, ProjectID: 9, ProcessID: 1, Status: Pending, startDate: Wed Jan 21 2026 15:56:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T14:10:35.587Z]    - ID: 1021, ProjectID: 9, ProcessID: 1, Status: Pending, startDate: Wed Jan 21 2026 15:52:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T14:10:35.587Z]    - ID: 1020, ProjectID: 20, ProcessID: 1, Status: Pending, startDate: Wed Jan 14 2026 16:17:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T14:10:35.588Z]    - ID: 1019, ProjectID: 12, ProcessID: 1, Status: Pending, startDate: Wed Jan 14 2026 15:34:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T14:10:35.588Z]    - ID: 1018, ProjectID: 11, ProcessID: 1, Status: Pending, startDate: Wed Jan 14 2026 15:34:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T14:10:35.588Z]    - ID: 1017, ProjectID: 12, ProcessID: 1, Status: Pending, startDate: Wed Jan 14 2026 15:16:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T14:10:35.588Z]    - ID: 1016, ProjectID: 10, ProcessID: 1, Status: Pending, startDate: Tue Jan 13 2026 18:05:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T14:10:35.588Z]    - ID: 1015, ProjectID: 9, ProcessID: 1, Status: Pending, startDate: Tue Jan 13 2026 17:59:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T14:10:35.588Z]    - ID: 1014, ProjectID: 14, ProcessID: 1, Status: Pending, startDate: Tue Jan 13 2026 17:55:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T14:10:35.588Z]    - ID: 1012, ProjectID: 9, ProcessID: 1, Status: Pending, startDate: Sat Jan 10 2026 14:49:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T14:10:35.588Z]    - ID: 1011, ProjectID: 9, ProcessID: 1, Status: Pending, startDate: Fri Jan 09 2026 17:21:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T14:10:35.588Z]    - ID: 1013, ProjectID: 9, ProcessID: 1, Status: Pending, startDate: Mon Jan 12 2026 10:59:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-21T14:10:35.592Z]   - Final WHERE clause: hdr.ProjectID = @ProjectID AND 
+        EXISTS (
+          SELECT 1 FROM tblProcessDepartment pd
+          WHERE pd.ProcessID = hdr.ProcessID
+            AND pd.DepartmentID = @UserDeptId
+        )
+      
+---
+[2026-01-21T14:10:35.592Z]   - Adding filter: User Department ID = 8
+---
+[2026-01-21T14:10:35.592Z]   - Adding filter: Project ID = 9
+---
+[2026-01-21T14:10:35.625Z] ✅ Query executed - Returning 7 workflows
+---
+[2026-01-21T14:10:35.627Z]      Problem: ProjectID filter expects 9, got 20 - MISMATCH
+---
+[2026-01-21T14:10:35.628Z]    - ID: 1019, ProjectID: 12, Status: Pending
+---
+[2026-01-21T14:10:35.627Z]    - ID: 1020, ProjectID: 20, Status: Pending
+---
+[2026-01-21T14:10:35.626Z] 
+⚠️  WORKFLOWS FILTERED OUT:
+---
+[2026-01-21T14:10:35.628Z]      Problem: ProjectID filter expects 9, got 12 - MISMATCH
+---
+[2026-01-21T14:10:35.629Z]    - ID: 1017, ProjectID: 12, Status: Pending
+---
+[2026-01-21T14:10:35.629Z]      Problem: ProjectID filter expects 9, got 11 - MISMATCH
+---
+[2026-01-21T14:10:35.630Z]    - ID: 1016, ProjectID: 10, Status: Pending
+---
+[2026-01-21T14:10:35.629Z]    - ID: 1018, ProjectID: 11, Status: Pending
+---
+[2026-01-21T14:10:35.630Z]      Problem: ProjectID filter expects 9, got 12 - MISMATCH
+---
+[2026-01-21T14:10:35.630Z]      Problem: ProjectID filter expects 9, got 10 - MISMATCH
+---
+[2026-01-21T14:10:35.631Z]      Problem: ProjectID filter expects 9, got 14 - MISMATCH
+---
+[2026-01-21T14:10:35.631Z]    - ID: 1014, ProjectID: 14, Status: Pending
+---
+[2026-01-21T14:10:35.633Z] 📋 Final returned workflows count: 7
+
+---

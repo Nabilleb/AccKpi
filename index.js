@@ -540,13 +540,50 @@ app.post("/addPackageForm", isSpecialUser, async (req, res) => {
 
     // 6️⃣ Insert new task copies with all properties and create workflow detail records
     if (tasks.recordset.length > 0) {
+      const taskMap = {}; // Map original TaskID to new TaskID for predecessor linking
+      const baseDate = new Date(startDate);
+      let lastTaskDate = new Date(baseDate); // Track the last task's date for cascading
+      let lastTaskDays = 0; // Track the last task's duration
+      
       for (const task of tasks.recordset) {
+        // Calculate PlannedDate based on predecessor relationship OR simple cascading
+        let taskPlannedDate;
+        
+        if (task.PredecessorID && taskMap[task.PredecessorID]) {
+          // If has predecessor in the new workflow, use predecessor's date + days
+          const newPredecessorID = taskMap[task.PredecessorID];
+          const predResult = await pool.request()
+            .input('taskID', sql.Int, newPredecessorID)
+            .input('workflowID', sql.Int, newWorkflowID)
+            .query(`
+              SELECT PlannedDate, DaysRequired
+              FROM tblTasks
+              WHERE TaskID = @taskID AND WorkFlowHdrID = @workflowID
+            `);
+          
+          if (predResult.recordset.length > 0) {
+            const predTask = predResult.recordset[0];
+            taskPlannedDate = new Date(predTask.PlannedDate);
+            const daysToAdd = predTask.DaysRequired || 0;
+            taskPlannedDate.setDate(taskPlannedDate.getDate() + daysToAdd);
+            lastTaskDate = taskPlannedDate;
+            lastTaskDays = task.DaysRequired || 0;
+            logToServerFile(`  - Cascading from predecessor: ${predTask.PlannedDate} + ${daysToAdd} days`);
+          }
+        } else {
+          // Simple sequential cascading: each task starts after the previous ends
+          taskPlannedDate = new Date(lastTaskDate);
+          taskPlannedDate.setDate(taskPlannedDate.getDate() + lastTaskDays);
+          lastTaskDate = new Date(taskPlannedDate);
+          lastTaskDays = task.DaysRequired || 0;
+        }
+        
         // Insert new task copy with all properties
         const insertTaskResult = await pool.request()
           .input('taskName', sql.VarChar, task.TaskName)
           .input('taskPlanned', sql.VarChar, task.TaskPlanned)
           .input('isTaskSelected', sql.Int, task.IsTaskSelected || 0)
-          .input('plannedDate', sql.DateTime2, task.PlannedDate)
+          .input('plannedDate', sql.DateTime2, taskPlannedDate)
           .input('depId', sql.Int, task.DepId)
           .input('priority', sql.Int, task.Priority)
           .input('predecessorID', sql.Int, task.PredecessorID)
@@ -588,6 +625,13 @@ app.post("/addPackageForm", isSpecialUser, async (req, res) => {
           `);
         
         const newTaskID = insertTaskResult.recordset[0].TaskID;
+        taskMap[task.TaskID] = newTaskID; // Store mapping for predecessor lookups
+        
+        logToServerFile(`✅ Task created for workflow:`);
+        logToServerFile(`  - Task ID: ${newTaskID}`);
+        logToServerFile(`  - Task Name: ${task.TaskName}`);
+        logToServerFile(`  - Days Required: ${task.DaysRequired}`);
+        logToServerFile(`  - Calculated PlannedDate: ${taskPlannedDate}`);
         
         // Create workflow detail record for state tracking
         await pool.request()

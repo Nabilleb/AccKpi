@@ -13,6 +13,7 @@ form.addEventListener('submit', async (e) => {
   const jsonData = {
     packageName: formDataObj.get('packageName'),
     duration: parseInt(formDataObj.get('duration')) || 0,
+    startDate: formDataObj.get('startDate'),
     division: formDataObj.get('division'),
     selected: formDataObj.get('selected') ? 1 : 0,
     standard: formDataObj.get('standard') ? 1 : 0,
@@ -22,7 +23,7 @@ form.addEventListener('submit', async (e) => {
   };
 
   // Validate required fields
-  if (!jsonData.packageName || !jsonData.duration || !jsonData.division || !jsonData.trade) {
+  if (!jsonData.packageName || !jsonData.duration || !jsonData.startDate || !jsonData.division || !jsonData.trade) {
     alert('Please fill in all required fields.');
     return;
   }
