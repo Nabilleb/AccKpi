@@ -205,9 +205,11 @@ body {
   align-items: center;
   border-bottom: 1px solid var(--border);
   box-shadow: var(--shadow);
-  z-index: 10;
-  position: sticky;
+  z-index: 100;
+  position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
   height: var(--header-height);
 }
 
@@ -268,9 +270,12 @@ body {
 
 .content-area {
   flex: 1;
-  padding: 2rem;
+  padding: 0;
   overflow-y: auto;
   background-color: var(--background);
+  display: flex;
+  flex-direction: column;
+  margin-top: var(--header-height);
 }
 
 .task-management {
@@ -279,6 +284,8 @@ body {
   box-shadow: var(--shadow);
   overflow: hidden;
   transition: var(--transition);
+  margin: 2rem;
+  flex: 1;
 }
 
 .task-header {
@@ -1564,4 +1571,30 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 
 .days-input-small {
   width: 60px;
+}
+
+/* Date Display Styling */
+.date-display {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-md);
+  background-color: var(--background);
+  font-weight: 500;
+  transition: var(--transition);
+}
+
+.date-display i {
+  color: var(--primary);
+  font-size: 0.9rem;
+}
+
+.date-display.has-date {
+  background-color: #dcfce7;
+  color: var(--success);
+}
+
+.date-display.has-date i {
+  color: var(--success);
 }

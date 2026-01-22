@@ -547,17 +547,35 @@ const renderTasks = async (tasks) => {
 };
 
 // Optimized task row rendering
+// Function to format date string without timezone conversion
+const formatDateString = (dateStr) => {
+    if (!dateStr) return '';
+    // If it's already a date string in format like "2026-01-21" or "2026-01-21 00:00:00"
+    if (typeof dateStr === 'string') {
+        const datePart = dateStr.split(' ')[0]; // Get just the YYYY-MM-DD part
+        if (datePart && datePart.match(/^\d{4}-\d{2}-\d{2}$/)) {
+            const [year, month, day] = datePart.split('-');
+            // Format as localized date using the date components directly
+            return new Date(year, month - 1, day).toLocaleDateString();
+        }
+    }
+    // Fallback to Date parsing
+    const date = new Date(dateStr);
+    return date.toLocaleDateString();
+};
+
 const renderTaskRow = (task) => {
     const isOwnDepartment = task.DepId == deptId;
-    const plannedDate = task.PlannedDate ? new Date(task.PlannedDate).toLocaleDateString() : '';
-    const finishDate = task.TimeFinished ? new Date(task.TimeFinished).toLocaleDateString() : '';
-    const startDate = task.TimeStarted ? new Date(task.TimeStarted).toLocaleDateString() : '';
+    const plannedDate = formatDateString(task.PlannedDate);
+    const finishDate = formatDateString(task.TimeFinished);
+    const startDate = formatDateString(task.TimeStarted);
     const delayReason = task.DelayReason || '';
     const delayInputDisabled = !isOwnDepartment || !task.TimeFinished ? 'disabled' : '';
     
     let status = '';
     if (task.TimeStarted && !task.TimeFinished) {
         status = '<span class="status-badge status-inprogress"><i class="fas fa-spinner"></i> In Progress</span>';
+
     } else if (!task.TimeFinished && task.IsTaskSelected) {
         status = '<span class="status-badge status-pending"><i class="fas fa-clock"></i> Pending</span>';
     } else if (task.TimeFinished && task.Delay > 0) {
@@ -608,7 +626,7 @@ const renderTaskRow = (task) => {
       <tr ${task.IsTaskSelected ? 'class="active-task-row"' : ''}>
     <td data-label="Task Name">${task.TaskName || ''}</td>
     <td data-label="Description">${task.TaskPlanned || ''}</td>
-    <td data-label="Planned Date">${plannedDate}</td>
+    <td data-label="Planned Date"><span class="date-display"><i class="fas fa-calendar-alt"></i> ${plannedDate}</span></td>
     <td data-label="Days Required">
         ${(() => {
             const isLocked = task.IsFixed === true || task.IsFixed === 1 || task.TimeFinished || !isOwnDepartment;
@@ -624,8 +642,8 @@ const renderTaskRow = (task) => {
                 `<input type="number" value="${task.DaysRequired}" class="days-required-input" data-task-id="${task.TaskID}" min="1" placeholder="Days required">`;
         })()}
     </td>
-    <td data-label="Start Date">${startDate}</td>
-    <td data-label="Date Finished">${finishDate}</td>
+    <td data-label="Start Date"><span class="date-display ${startDate ? 'has-date' : ''}"><i class="fas fa-play-circle"></i> ${startDate || '-'}</span></td>
+    <td data-label="Date Finished"><span class="date-display ${finishDate ? 'has-date' : ''}"><i class="fas fa-check-circle"></i> ${finishDate || '-'}</span></td>
     <td data-label="Status">${status}</td>
     <td data-label="Days Delay">${task.TimeFinished ? (task.Delay !== null && task.Delay > 0 ? task.Delay : 'On Time') : '-'}</td>
     <td data-label="Delay Reason">

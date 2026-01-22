@@ -3811,20 +3811,10 @@ app.post('/start-task/:taskId', async (req, res) => {
     await sqlTransaction.begin();
 
     // 1️⃣ Update the task start time ONLY for this specific workflow
-    // Parse the date string (YYYY-MM-DD) as a local date, not UTC
-    let startTimeFormatted;
-    if (startTime.includes('-') && !startTime.includes(':')) {
-      // If it's YYYY-MM-DD format, parse it as local date
-      const [year, month, day] = startTime.split('-');
-      const localDate = new Date(year, month - 1, day, 0, 0, 0);
-      startTimeFormatted = localDate.getFullYear() + '-' + 
-                          String(localDate.getMonth() + 1).padStart(2, '0') + '-' + 
-                          String(localDate.getDate()).padStart(2, '0') + ' 00:00:00';
-    } else {
-      startTimeFormatted = startTime.includes('-') 
-        ? startTime + ' 00:00:00'  // If it's YYYY-MM-DD format, add time
-        : startTime;  // Otherwise use as is
-    }
+    // Use the date string directly without JavaScript Date conversion to avoid timezone issues
+    const startTimeFormatted = startTime.includes('-') && !startTime.includes(':')
+      ? startTime + ' 00:00:00'  // YYYY-MM-DD format, just add time
+      : startTime;  // Otherwise use as is
     
     const reqUpdate = sqlTransaction.request();
     await reqUpdate
@@ -3934,20 +3924,10 @@ console.log(req.body)
   }
 
   try {
-    // Parse the date string (YYYY-MM-DD) as a local date, not UTC
-    let finishTimeFormatted;
-    if (finishTime.includes('-') && !finishTime.includes(':')) {
-      // If it's YYYY-MM-DD format, parse it as local date
-      const [year, month, day] = finishTime.split('-');
-      const localDate = new Date(year, month - 1, day, 0, 0, 0);
-      finishTimeFormatted = localDate.getFullYear() + '-' + 
-                           String(localDate.getMonth() + 1).padStart(2, '0') + '-' + 
-                           String(localDate.getDate()).padStart(2, '0') + ' 00:00:00';
-    } else {
-      finishTimeFormatted = finishTime.includes('-') 
-        ? finishTime + ' 00:00:00'
-        : finishTime;
-    }
+    // Use the date string directly without JavaScript Date conversion to avoid timezone issues
+    const finishTimeFormatted = finishTime.includes('-') && !finishTime.includes(':')
+      ? finishTime + ' 00:00:00'  // YYYY-MM-DD format, just add time
+      : finishTime;  // Otherwise use as is
 
     // Get task info
     const taskResult = await pool.request()
@@ -3963,19 +3943,19 @@ console.log(req.body)
     }
 const { PlannedDate, DepId, DaysRequired } = taskResult.recordset[0];
 
-// Parse dates as local dates (not UTC)
-const plannedDateOnly = new Date(PlannedDate);
-plannedDateOnly.setHours(0, 0, 0, 0);
+// Calculate delay in days using date strings directly
+const plannedDateObj = new Date(PlannedDate);
+plannedDateObj.setHours(0, 0, 0, 0);
 
-// Parse finishTime as local date
+// Parse finishTime date string (YYYY-MM-DD)
 const [year, month, day] = finishTime.split('-');
-const finishedDateOnly = new Date(year, month - 1, day, 0, 0, 0);
+const finishDateObj = new Date(year, month - 1, day, 0, 0, 0);
 
 // Calculate delay in days
-const delayMs = finishedDateOnly.getTime() - plannedDateOnly.getTime();
+const delayMs = finishDateObj.getTime() - plannedDateObj.getTime();
 const delay = Math.max(0, Math.ceil(delayMs / (1000 * 60 * 60 * 24)));
 
-console.log('Planned:', plannedDateOnly, 'Finished:', finishedDateOnly, 'Delay:', delay);
+console.log('Planned:', plannedDateObj, 'Finished:', finishDateObj, 'Delay:', delay);
 
     // Mark workflow detail as finished
     await pool.request()
@@ -4111,7 +4091,7 @@ console.log('Planned:', plannedDateOnly, 'Finished:', finishedDateOnly, 'Delay:'
           const nextTaskId = nextTaskResult.recordset[0].TaskID;
           const nextTaskDays = nextTaskResult.recordset[0].DaysRequired || 1;
 
-          const nextPlanned = new Date(finishedDateOnly);
+          const nextPlanned = new Date(finishDateObj);
           nextPlanned.setDate(nextPlanned.getDate() + 1 + nextTaskDays);
 
           // Update any linked tasks

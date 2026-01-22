@@ -11,92 +11,37 @@
 
 </head>
 <body data-user-id="<%= user.id %>" data-dept-id="<%= user.DepartmentId %>" data-task-list="<%= JSON.stringify(tasks) %>" data-is-admin="<%= user.usrAdmin || false %>">
-  <!-- Sidebar Navigation -->
-  <aside class="sidebar">
-    <div class="sidebar-header">
-      <img src="/images/accLogo.png" alt="Company Logo" class="sidebar-logo">
-    </div>
-    
-    <div class="sidebar-user">
-      <div class="sidebar-user-avatar"><%= (user.name && user.name.split(' ').map(word => word.charAt(0).toUpperCase()).slice(0, 2).join('')) || 'U' %></div>
-      <div class="sidebar-user-info">
-        <h4><%= user.name || 'User' %></h4>
-<p>
-  <% if (user.DeptName) { %>
-    <%= user.DeptName %> Department
-  <% } else { %>
-    Admin
-  <% } %>
-</p>
-      </div>
-    </div>
-    
-    <nav class="sidebar-nav">
-      <a href="/workflowdashboard" class="active">
-        <i class="fas fa-tachometer-alt"></i>
-        Dashboard
-      </a>
-
-      <a href="/task-selected">
-        <i class="fas fa-tasks"></i>
-        View Tasks
-      </a>
-      <a href="#">
-        <i class="fas fa-project-diagram"></i>
-        Projects
-      </a>
-      <a href="#">
-        <i class="fas fa-calendar-alt"></i>
-        Schedule
-      </a>
-      <a href="#">
-        <i class="fas fa-chart-line"></i>
-        Reports
-      </a>
-      <a href="#">
-        <i class="fas fa-cog"></i>
-        Settings
-      </a>
-    </nav>
-    
-    <div class="sidebar-footer">
-      <button class="logout-btn" id="sidebarLogoutBtn">
-        <i class="fas fa-sign-out-alt"></i>
-        Logout
-      </button>
-    </div>
-  </aside>
 
   <!-- Main Content Area -->
   <main class="main-content">
-    <!-- Top Header -->
-    <header class="top-header">
-      <div class="breadcrumb">
-        <a href="/workFlowDash">
-          <i class="fas fa-home"></i>
-          Dashboard
-        </a>
-        
-        <span class="breadcrumb-separator">/</span>
-        <span>My Tasks</span>
-      </div>
-      
-      <div class="header-actions">
-        <button class="back-button" id="backBtn">
-          <i class="fas fa-arrow-left"></i>
-          Back to Dashboard
-        </button>
-        <a href="/logout">
-  <i class="fas fa-sign-out-alt"></i>
-  Logout
-</a>
-
-      </div>
-      
-    </header>
-
     <!-- Content Area -->
     <div class="content-area">
+      <!-- Top Header -->
+      <header class="top-header">
+        <div class="breadcrumb">
+          <a href="/workFlowDash">
+            <i class="fas fa-home"></i>
+            Dashboard
+          </a>
+          
+          <span class="breadcrumb-separator">/</span>
+          <span>My Tasks</span>
+        </div>
+        
+        <div class="header-actions">
+          <button class="back-button" id="backBtn">
+            <i class="fas fa-arrow-left"></i>
+            Back to Dashboard
+          </button>
+          <a href="/logout">
+    <i class="fas fa-sign-out-alt"></i>
+    Logout
+  </a>
+
+        </div>
+        
+      </header>
+
       <section class="task-management">
         <div class="task-header">
           <h2>
