@@ -3811,16 +3811,26 @@ app.post('/start-task/:taskId', async (req, res) => {
     await sqlTransaction.begin();
 
     // 1️⃣ Update the task start time ONLY for this specific workflow
-    // Format the date as YYYY-MM-DD HH:MM:SS for SQL Server
-    const startTimeFormatted = startTime.includes('-') 
-      ? startTime + ' 00:00:00'  // If it's YYYY-MM-DD format, add time
-      : startTime;  // Otherwise use as is
+    // Parse the date string (YYYY-MM-DD) as a local date, not UTC
+    let startTimeFormatted;
+    if (startTime.includes('-') && !startTime.includes(':')) {
+      // If it's YYYY-MM-DD format, parse it as local date
+      const [year, month, day] = startTime.split('-');
+      const localDate = new Date(year, month - 1, day, 0, 0, 0);
+      startTimeFormatted = localDate.getFullYear() + '-' + 
+                          String(localDate.getMonth() + 1).padStart(2, '0') + '-' + 
+                          String(localDate.getDate()).padStart(2, '0') + ' 00:00:00';
+    } else {
+      startTimeFormatted = startTime.includes('-') 
+        ? startTime + ' 00:00:00'  // If it's YYYY-MM-DD format, add time
+        : startTime;  // Otherwise use as is
+    }
     
     const reqUpdate = sqlTransaction.request();
     await reqUpdate
       .input('taskId', taskId)
       .input('workFlowHdrId', sql.Int, workFlowHdrId)
-      .input('startTime', sql.DateTime, startTimeFormatted)
+      .input('startTime', sql.DateTime2, startTimeFormatted)
       .query(`
         UPDATE tblWorkflowDtl
         SET TimeStarted = @startTime
@@ -3924,7 +3934,20 @@ console.log(req.body)
   }
 
   try {
-    const finished = new Date(finishTime);
+    // Parse the date string (YYYY-MM-DD) as a local date, not UTC
+    let finishTimeFormatted;
+    if (finishTime.includes('-') && !finishTime.includes(':')) {
+      // If it's YYYY-MM-DD format, parse it as local date
+      const [year, month, day] = finishTime.split('-');
+      const localDate = new Date(year, month - 1, day, 0, 0, 0);
+      finishTimeFormatted = localDate.getFullYear() + '-' + 
+                           String(localDate.getMonth() + 1).padStart(2, '0') + '-' + 
+                           String(localDate.getDate()).padStart(2, '0') + ' 00:00:00';
+    } else {
+      finishTimeFormatted = finishTime.includes('-') 
+        ? finishTime + ' 00:00:00'
+        : finishTime;
+    }
 
     // Get task info
     const taskResult = await pool.request()
@@ -3944,8 +3967,9 @@ const { PlannedDate, DepId, DaysRequired } = taskResult.recordset[0];
 const plannedDateOnly = new Date(PlannedDate);
 plannedDateOnly.setHours(0, 0, 0, 0);
 
-const finishedDateOnly = new Date(finishTime);
-finishedDateOnly.setHours(0, 0, 0, 0);
+// Parse finishTime as local date
+const [year, month, day] = finishTime.split('-');
+const finishedDateOnly = new Date(year, month - 1, day, 0, 0, 0);
 
 // Calculate delay in days
 const delayMs = finishedDateOnly.getTime() - plannedDateOnly.getTime();
@@ -3953,16 +3977,10 @@ const delay = Math.max(0, Math.ceil(delayMs / (1000 * 60 * 60 * 24)));
 
 console.log('Planned:', plannedDateOnly, 'Finished:', finishedDateOnly, 'Delay:', delay);
 
-
     // Mark workflow detail as finished
-    // Format the date as YYYY-MM-DD HH:MM:SS for SQL Server
-    const finishTimeFormatted = finishTime.includes('-') 
-      ? finishTime + ' 00:00:00'  // If it's YYYY-MM-DD format, add time
-      : finishTime;  // Otherwise use as is
-    
     await pool.request()
       .input('taskId', taskId)
-      .input('finishTime', sql.DateTime, finishTimeFormatted)
+      .input('finishTime', sql.DateTime2, finishTimeFormatted)
       .input('delay', delay)
       .input('workFlowHdrId', workFlowHdrId)
       .query(`
@@ -4093,7 +4111,7 @@ console.log('Planned:', plannedDateOnly, 'Finished:', finishedDateOnly, 'Delay:'
           const nextTaskId = nextTaskResult.recordset[0].TaskID;
           const nextTaskDays = nextTaskResult.recordset[0].DaysRequired || 1;
 
-          const nextPlanned = new Date(finished);
+          const nextPlanned = new Date(finishedDateOnly);
           nextPlanned.setDate(nextPlanned.getDate() + 1 + nextTaskDays);
 
           // Update any linked tasks
