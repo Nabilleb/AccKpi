@@ -3813,7 +3813,7 @@ app.post('/start-task/:taskId', async (req, res) => {
     // 1️⃣ Update the task start time ONLY for this specific workflow
     // Use the date string directly without JavaScript Date conversion to avoid timezone issues
     const startTimeFormatted = startTime.includes('-') && !startTime.includes(':')
-      ? startTime + ' 00:00:00'  // YYYY-MM-DD format, just add time
+      ? startTime + ' 00:00:00'  
       : startTime;  // Otherwise use as is
     
     const reqUpdate = sqlTransaction.request();
