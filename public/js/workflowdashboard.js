@@ -557,7 +557,19 @@ function sortWorkflows() {
 
 function formatDate(dateStr) {
     if (!dateStr) return '-';
-    const date = new Date(dateStr);
+    
+    // Handle date string by extracting just the date portion (YYYY-MM-DD)
+    // This avoids timezone offset issues
+    let dateOnly = dateStr;
+    if (dateStr.includes('T')) {
+        // If it has time component, extract just the date part
+        dateOnly = dateStr.split('T')[0];
+    }
+    
+    // Parse the date string as YYYY-MM-DD and create date in UTC
+    const [year, month, day] = dateOnly.split('-').map(Number);
+    const date = new Date(Date.UTC(year, month - 1, day));
+    
     return date.toLocaleDateString('en-GB', {
         day: '2-digit',
         month: 'short',

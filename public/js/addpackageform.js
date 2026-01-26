@@ -105,14 +105,12 @@ function removeAutoSelect(projectIdSelect) {
 initializeProjectSelection();
 document.addEventListener('DOMContentLoaded', initializeProjectSelection);
 
-// Set today's date as default for start date
+// Set today's date as default for start date (DATE ONLY, no time to avoid timezone issues)
 const now = new Date();
 const year = now.getFullYear();
 const month = String(now.getMonth() + 1).padStart(2, '0');
 const day = String(now.getDate()).padStart(2, '0');
-const hours = String(now.getHours()).padStart(2, '0');
-const minutes = String(now.getMinutes()).padStart(2, '0');
-document.getElementById('startDate').value = `${year}-${month}-${day}T${hours}:${minutes}`;
+document.getElementById('startDate').value = `${year}-${month}-${day}`;
 
 form.addEventListener('submit', async (e) => {
     e.preventDefault();

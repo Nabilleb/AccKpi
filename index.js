@@ -505,11 +505,13 @@ app.post("/addPackageForm", isSpecialUser, async (req, res) => {
     }
 
     // 4️⃣ Insert workflow header and get the new workFlowID
+    // Use the submitted startDate directly (YYYY-MM-DD format)
+    // Do not use task's PlannedDate to avoid timezone issues
     const insertResult = await pool.request()
       .input('processID', sql.Int, parseInt(processID))
       .input('projectID', sql.Int, parseInt(projectID))
       .input('packageID', sql.Int, parseInt(packageID))
-      .input('startDate', sql.DateTime2, new Date(startDate))
+      .input('startDate', sql.Date, startDate)
       .input('status', sql.VarChar, status || 'Pending')
       .query(`
         INSERT INTO tblWorkFlowHdr (processID, projectID, packageID, startDate, status, createdDate)
@@ -541,41 +543,26 @@ app.post("/addPackageForm", isSpecialUser, async (req, res) => {
     // 6️⃣ Insert new task copies with all properties and create workflow detail records
     if (tasks.recordset.length > 0) {
       const taskMap = {}; // Map original TaskID to new TaskID for predecessor linking
-      const baseDate = new Date(startDate);
-      let lastTaskDate = new Date(baseDate); // Track the last task's date for cascading
-      let lastTaskDays = 0; // Track the last task's duration
+      // Parse startDate (YYYY-MM-DD) as UTC to avoid timezone offset
+      const [year, month, day] = startDate.split('-').map(Number);
+      const baseDate = new Date(Date.UTC(year, month - 1, day));
+      let taskCounter = 0; // Track task order for first vs subsequent
       
       for (const task of tasks.recordset) {
-        // Calculate PlannedDate based on predecessor relationship OR simple cascading
-        let taskPlannedDate;
+        // Calculate PlannedDate only for the first task
+        let taskPlannedDate = null;
+        taskCounter++;
         
-        if (task.PredecessorID && taskMap[task.PredecessorID]) {
-          // If has predecessor in the new workflow, use predecessor's date + days
-          const newPredecessorID = taskMap[task.PredecessorID];
-          const predResult = await pool.request()
-            .input('taskID', sql.Int, newPredecessorID)
-            .input('workflowID', sql.Int, newWorkflowID)
-            .query(`
-              SELECT PlannedDate, DaysRequired
-              FROM tblTasks
-              WHERE TaskID = @taskID AND WorkFlowHdrID = @workflowID
-            `);
-          
-          if (predResult.recordset.length > 0) {
-            const predTask = predResult.recordset[0];
-            taskPlannedDate = new Date(predTask.PlannedDate);
-            const daysToAdd = predTask.DaysRequired || 0;
-            taskPlannedDate.setDate(taskPlannedDate.getDate() + daysToAdd);
-            lastTaskDate = taskPlannedDate;
-            lastTaskDays = task.DaysRequired || 0;
-            logToServerFile(`  - Cascading from predecessor: ${predTask.PlannedDate} + ${daysToAdd} days`);
-          }
-        } else {
-          // Simple sequential cascading: each task starts after the previous ends
-          taskPlannedDate = new Date(lastTaskDate);
-          taskPlannedDate.setDate(taskPlannedDate.getDate() + lastTaskDays);
-          lastTaskDate = new Date(taskPlannedDate);
-          lastTaskDays = task.DaysRequired || 0;
+        if (taskCounter === 1) {
+          // First task: use the submitted startDate
+          taskPlannedDate = new Date(baseDate);
+        }
+        // For all other tasks: leave PlannedDate as NULL (don't fill it)
+        
+        // Convert taskPlannedDate to string format for database (YYYY-MM-DD)
+        let plannedDateStr = null;
+        if (taskPlannedDate) {
+          plannedDateStr = taskPlannedDate.toISOString().split('T')[0];
         }
         
         // Insert new task copy with all properties
@@ -583,7 +570,7 @@ app.post("/addPackageForm", isSpecialUser, async (req, res) => {
           .input('taskName', sql.VarChar, task.TaskName)
           .input('taskPlanned', sql.VarChar, task.TaskPlanned)
           .input('isTaskSelected', sql.Int, task.IsTaskSelected || 0)
-          .input('plannedDate', sql.DateTime2, taskPlannedDate)
+          .input('plannedDate', sql.Date, plannedDateStr)
           .input('depId', sql.Int, task.DepId)
           .input('priority', sql.Int, task.Priority)
           .input('predecessorID', sql.Int, task.PredecessorID)
@@ -3943,19 +3930,25 @@ console.log(req.body)
     }
 const { PlannedDate, DepId, DaysRequired } = taskResult.recordset[0];
 
-// Calculate delay in days using date strings directly
+// Calculate delay in days using UTC to avoid timezone issues
+// PlannedDate from DB might be ISO format already, just parse it directly
 const plannedDateObj = new Date(PlannedDate);
-plannedDateObj.setHours(0, 0, 0, 0);
 
-// Parse finishTime date string (YYYY-MM-DD)
-const [year, month, day] = finishTime.split('-');
-const finishDateObj = new Date(year, month - 1, day, 0, 0, 0);
+// Parse finishTime date string (YYYY-MM-DD) as UTC
+const finishDateObj = new Date(finishTime + 'T00:00:00Z');
 
-// Calculate delay in days
+// Calculate delay in days (Finished Date - Planned Date)
 const delayMs = finishDateObj.getTime() - plannedDateObj.getTime();
-const delay = Math.max(0, Math.ceil(delayMs / (1000 * 60 * 60 * 24)));
+const delay = Math.max(0, Math.round(delayMs / (1000 * 60 * 60 * 24)));
 
-console.log('Planned:', plannedDateObj, 'Finished:', finishDateObj, 'Delay:', delay);
+console.log('========== DELAY CALCULATION ==========');
+console.log('Raw PlannedDate from DB:', PlannedDate);
+console.log('Raw finishTime from request:', finishTime);
+console.log('Parsed Planned Date:', plannedDateObj.toISOString());
+console.log('Parsed Finish Date:', finishDateObj.toISOString());
+console.log('Delay Ms:', delayMs);
+console.log('Delay Days:', delay);
+console.log('=========================================');
 
     // Mark workflow detail as finished
     await pool.request()
@@ -4089,10 +4082,39 @@ console.log('Planned:', plannedDateObj, 'Finished:', finishDateObj, 'Delay:', de
 
         if (nextTaskResult.recordset.length > 0) {
           const nextTaskId = nextTaskResult.recordset[0].TaskID;
-          const nextTaskDays = nextTaskResult.recordset[0].DaysRequired || 1;
+          const nextTaskDays = Number(nextTaskResult.recordset[0].DaysRequired) || 1;
+
+          // Count finished tasks to determine task sequence position
+          const finishedTasksCount = await pool.request()
+            .input('workFlowHdrId', workFlowHdrId)
+            .query(`
+              SELECT COUNT(*) AS Count
+              FROM tblWorkflowDtl
+              WHERE workFlowHdrId = @workFlowHdrId AND TimeFinished IS NOT NULL
+            `);
+          
+          const taskSequenceNumber = finishedTasksCount.recordset[0].Count + 1; // Current position being set
+          
+          // Buffer logic: Task 3+ gets +1 buffer, ONLY if DaysRequired < 20
+          const buffer = (taskSequenceNumber >= 3 && nextTaskDays < 20) ? 1 : 0;
+
+          console.log('===== NEXT TASK CALCULATION =====');
+          console.log('Task Sequence Number:', taskSequenceNumber);
+          console.log('nextTaskDays:', nextTaskDays);
+          console.log('Buffer (should add 1 for Task 3+):', buffer);
 
           const nextPlanned = new Date(finishDateObj);
-          nextPlanned.setDate(nextPlanned.getDate() + 1 + nextTaskDays);
+          nextPlanned.setDate(nextPlanned.getDate() + nextTaskDays + buffer);
+          
+          console.log('BEFORE:', finishDateObj.toISOString().split('T')[0]);
+          console.log('AFTER adding', nextTaskDays, '+ buffer', buffer, '=', nextPlanned.toISOString().split('T')[0]);
+          console.log('===== END CALCULATION =====');
+
+          // Update the next task's PlannedDate
+          await pool.request()
+            .input('plannedDate', nextPlanned.toISOString().split('T')[0])
+            .input('nextTaskId', nextTaskId)
+            .query(`UPDATE tblTasks SET PlannedDate = @plannedDate WHERE TaskID = @nextTaskId`);
 
           // Update any linked tasks
           const linkedTasks = await pool.request()
@@ -4279,10 +4301,30 @@ Engineering Project Dashboard`,
 
           if (nextDeptTask.recordset.length > 0) {
             const nextDeptTaskId = nextDeptTask.recordset[0].TaskID;
-            const nextDeptDays = nextDeptTask.recordset[0].DaysRequired || 1;
+            const nextDeptDays = Number(nextDeptTask.recordset[0].DaysRequired) || 1;
 
-            const plannedDate = new Date(finished);
-            plannedDate.setDate(plannedDate.getDate() + 1 + nextDeptDays);
+            // Count finished tasks to determine task sequence position
+            const finishedTasksCount = await pool.request()
+              .input('workFlowHdrId', workFlowHdrId)
+              .query(`
+                SELECT COUNT(*) AS Count
+                FROM tblWorkflowDtl
+                WHERE workFlowHdrId = @workFlowHdrId AND TimeFinished IS NOT NULL
+              `);
+            
+            const taskSequenceNumber = finishedTasksCount.recordset[0].Count + 1;
+            
+            // Buffer logic: Task 3+ gets +1 buffer, ONLY if DaysRequired < 20
+            const buffer = (taskSequenceNumber >= 3 && nextDeptDays < 20) ? 1 : 0;
+
+            const plannedDate = new Date(finishDateObj);
+            plannedDate.setDate(plannedDate.getDate() + nextDeptDays + buffer);
+
+            // Update the next department task's PlannedDate
+            await pool.request()
+              .input('plannedDate', plannedDate.toISOString().split('T')[0])
+              .input('nextDeptTaskId', nextDeptTaskId)
+              .query(`UPDATE tblTasks SET PlannedDate = @plannedDate WHERE TaskID = @nextDeptTaskId`);
 
             // Update linked tasks
             const linked = await pool.request()
