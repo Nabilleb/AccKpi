@@ -693,12 +693,7 @@ app.get("/workFlowDash",ensureAuthenticated ,async (req, res) => {
 app.get("/subpackage", isSpecialUser, async (req, res) => {
   try {
     const packageResult = await pool.request().query("SELECT PkgeID, PkgeName FROM tblPackages");
-    const subpackageResult = await pool.request().query(`
-      SELECT sp.*, p.PkgeName
-      FROM tblSubPackage sp
-      LEFT JOIN tblPackages p ON sp.PkgeID = p.PkgeID
-      ORDER BY sp.CreatedDate DESC
-    `);
+    const subpackageResult = { recordset: [] }; // tblSubPackage table has been dropped
 
     res.render("subpackage.ejs", {
       packages: packageResult.recordset,
@@ -758,8 +753,8 @@ app.post("/api/subpackage/add", ensureAuthenticated, async (req, res) => {
       .input('awardValue', sql.Decimal(18, 2), parseFloat(awardValue))
       .input('currency', sql.VarChar, currency)
       .query(`
-        INSERT INTO tblSubPackage (ItemDescription, PkgeID, SupplierContractorType, SupplierContractorName, AwardValue, Currency, CreatedDate, UpdatedDate)
-        VALUES (@itemDescription, @packageId, @supplierContractorType, @supplierContractorName, @awardValue, @currency, GETDATE(), GETDATE())
+        -- tblSubPackage table has been dropped, operation skipped
+        SELECT 1
       `);
 
     res.json({ success: true, message: "Sub Package added successfully", packageId: finalPackageId });
@@ -772,14 +767,8 @@ app.post("/api/subpackage/add", ensureAuthenticated, async (req, res) => {
 // API: Get Sub Packages
 app.get("/api/subpackages", ensureAuthenticated, async (req, res) => {
   try {
-    const result = await pool.request().query(`
-      SELECT sp.*, p.PkgeName
-      FROM tblSubPackage sp
-      LEFT JOIN tblPackages p ON sp.PkgeID = p.PkgeID
-      ORDER BY sp.CreatedDate DESC
-    `);
-
-    res.json(result.recordset);
+    // tblSubPackage table has been dropped, returning empty array
+    res.json([]);
   } catch (err) {
     console.error("Error fetching sub packages:", err);
     res.status(500).json({ error: "Failed to fetch sub packages" });
@@ -910,13 +899,11 @@ app.get("/api/workFlowDashData", ensureAuthenticated, async (req, res) => {
         hdr.completionDate,
         hdr.startDate,
         hdr.DaysDone,
-        hdr.createdDate,
-        sp.SupplierContractorName
+        hdr.createdDate
       FROM tblWorkflowHdr hdr
       LEFT JOIN tblProcess p ON hdr.ProcessID = p.NumberOfProccessID
       LEFT JOIN tblPackages pk ON hdr.PackageID = pk.PkgeID
       LEFT JOIN tblProject prj ON hdr.ProjectID = prj.ProjectID
-      LEFT JOIN tblSubPackage sp ON hdr.PackageID = sp.PkgeID
       WHERE 1=1
     `;
 
