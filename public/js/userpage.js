@@ -667,7 +667,7 @@ const renderTaskRow = (task) => {
     <td data-label="Start Date"><span class="date-display ${startDate ? 'has-date' : ''}"><i class="fas fa-play-circle"></i> ${startDate || '-'}</span></td>
     <td data-label="Date Finished"><span class="date-display ${finishDate ? 'has-date' : ''}"><i class="fas fa-check-circle"></i> ${finishDate || '-'}</span></td>
     <td data-label="Status">${status}</td>
-    <td data-label="Days Delay">${task.TimeFinished ? (task.Delay !== null && task.Delay > 0 ? `${task.Delay} days` : 'On Time') : '-'}</td>
+    <td data-label="Days Delay">${task.TimeFinished ? (task.Delay !== null && task.Delay > 0 ? `${task.Delay}` : '0') : '-'}</td>
     <td data-label="Delay Reason">
         ${!isOwnDepartment || !task.TimeFinished ? 
             `<span class="status-text-unavailable">Not available</span>` :
