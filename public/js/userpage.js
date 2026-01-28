@@ -701,6 +701,74 @@ renderTasks(taskList);
 renderTaskTimeline(taskList);
 updateStatusCounts(taskList);
 
+// Export tasks to CSV function
+const exportTasksToCSV = () => {
+    if (taskList.length === 0) {
+        showError('No tasks to export');
+        return;
+    }
+
+    // CSV headers
+    const headers = ['Task Name', 'Department', 'Status', 'Start Date', 'Date Finished', 'Days Delay', 'Days Required', 'Priority'];
+    
+    // Convert tasks to CSV rows
+    const rows = taskList.map(task => {
+        const status = task.TimeStarted 
+            ? (task.TimeFinished ? 'Completed' : 'In Progress')
+            : 'Pending';
+        
+        const startDate = task.TimeStarted 
+            ? new Date(task.TimeStarted).toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' })
+            : '-';
+        
+        const finishDate = task.TimeFinished 
+            ? new Date(task.TimeFinished).toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' })
+            : '-';
+        
+        const delay = task.TimeFinished 
+            ? (task.Delay !== null && task.Delay > 0 ? task.Delay : 0)
+            : '-';
+
+        return [
+            `"${task.TaskName}"`,
+            `"${task.DeptName}"`,
+            `"${status}"`,
+            startDate,
+            finishDate,
+            delay,
+            task.DaysRequired,
+            task.Priority
+        ].join(',');
+    });
+
+    // Combine headers and rows
+    const csvContent = [
+        headers.join(','),
+        ...rows
+    ].join('\n');
+
+    // Create blob and download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute('href', url);
+    link.setAttribute('download', `tasks-export-${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    showSuccess('Tasks exported to CSV successfully');
+};
+
+// Export button event listener
+const exportBtn = document.getElementById('export-csv-btn');
+if (exportBtn) {
+    exportBtn.addEventListener('click', exportTasksToCSV);
+}
+
 // Optimized event handlers
 const handleClickEvents = async (e) => {
     // Department section toggling
