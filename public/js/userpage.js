@@ -1,3 +1,17 @@
+// Get delay color class based on delay range scaled to DaysRequired
+// For 10-day task: GREEN=1-4, YELLOW=5-9, RED=10+
+// GREEN: <= 40% of DaysRequired
+// YELLOW: 40% < delay <= 90% of DaysRequired  
+// RED: > 90% of DaysRequired
+const getDelayColor = (delayDays, daysRequired) => {
+  if (!daysRequired || daysRequired <= 0) return 'delay-red'; // Safety check
+  const delayPercentage = (delayDays / daysRequired) * 100;
+  
+  if (delayPercentage <= 40) return 'delay-green';
+  if (delayPercentage <= 90) return 'delay-yellow';
+  return 'delay-red';
+};
+
 // Cache DOM elements and initial data
 document.addEventListener('DOMContentLoaded', function() {
   // Read data from body attributes (injected by EJS in userpage.ejs)
@@ -294,8 +308,16 @@ const renderTaskTimeline = (tasks) => {
             if (task.TimeFinished) timelineItem.classList.add('completed');
             if (task.IsTaskSelected) timelineItem.classList.add('current');
 
+            // Get delay color class for the dot
+            let dotClass = 'timeline-dot';
+            if (task.TimeFinished && task.Delay !== null && task.Delay > 0) {
+                dotClass += ` ${getDelayColor(task.Delay, task.DaysRequired)}`;
+            } else if (task.TimeFinished && (task.Delay === null || task.Delay === 0)) {
+                dotClass += ' delay-on-time';
+            }
+
             timelineItem.innerHTML = `
-                <div class="timeline-dot"></div>
+                <div class="${dotClass}"></div>
                 <div class="timeline-label">${task.DeptName}</div>
             `;
 
@@ -645,7 +667,7 @@ const renderTaskRow = (task) => {
     <td data-label="Start Date"><span class="date-display ${startDate ? 'has-date' : ''}"><i class="fas fa-play-circle"></i> ${startDate || '-'}</span></td>
     <td data-label="Date Finished"><span class="date-display ${finishDate ? 'has-date' : ''}"><i class="fas fa-check-circle"></i> ${finishDate || '-'}</span></td>
     <td data-label="Status">${status}</td>
-    <td data-label="Days Delay">${task.TimeFinished ? (task.Delay !== null && task.Delay > 0 ? task.Delay : 'On Time') : '-'}</td>
+    <td data-label="Days Delay">${task.TimeFinished ? (task.Delay !== null && task.Delay > 0 ? `${task.Delay} days` : 'On Time') : '-'}</td>
     <td data-label="Delay Reason">
         ${!isOwnDepartment || !task.TimeFinished ? 
             `<span class="status-text-unavailable">Not available</span>` :

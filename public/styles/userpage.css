@@ -508,6 +508,47 @@ body {
   border: 1px solid rgba(59, 130, 246, 0.2);
 }
 
+/* Delay Badge Styles - Color coding based on delay percentage of DaysRequired */
+.delay-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.4rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  min-width: 50px;
+  text-align: center;
+}
+
+/* Green: <= 40% delay (1-4 days for 10-day task) */
+.delay-badge.delay-green {
+  background-color: #d1fae5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+
+/* Yellow: 41-90% delay (5-9 days for 10-day task) */
+.delay-badge.delay-yellow {
+  background-color: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
+/* Red: > 90% delay (10+ days for 10-day task) */
+.delay-badge.delay-red {
+  background-color: #fee2e2;
+  color: #7f1d1d;
+  border: 1px solid #fecaca;
+}
+
+/* On time badge */
+.delay-badge.delay-on-time {
+  background-color: #d1fae5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+
 .editable-days {
   padding: 0.5rem;
   border: 1px solid var(--border);
@@ -1286,6 +1327,27 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   background-color: var(--accent);
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
   animation: pulse 2s infinite;
+}
+
+/* Delay color for timeline dots - Higher specificity to override completed state */
+.timeline-item.completed .timeline-dot.delay-green {
+  background-color: #10b981 !important;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+}
+
+.timeline-item.completed .timeline-dot.delay-yellow {
+  background-color: #fbbf24 !important;
+  box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.2);
+}
+
+.timeline-item.completed .timeline-dot.delay-red {
+  background-color: #ef4444 !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
+}
+
+.timeline-item.completed .timeline-dot.delay-on-time {
+  background-color: #10b981 !important;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
 }
 
 .timeline-label {

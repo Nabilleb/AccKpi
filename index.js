@@ -3862,12 +3862,27 @@ app.post('/start-task/:taskId', async (req, res) => {
     const depResult = await reqDep
       .input('taskId', taskId)
       .query(`
-        SELECT DepId
+        SELECT DepId, PlannedDate
         FROM tblTasks
         WHERE TaskID = @taskId
       `);
 
     const currentDepId = depResult.recordset[0]?.DepId;
+    const currentPlannedDate = depResult.recordset[0]?.PlannedDate;
+
+    // Set PlannedDate if not already set (this marks when the task was supposed to finish)
+    if (!currentPlannedDate) {
+      const reqSetPlanned = sqlTransaction.request();
+      await reqSetPlanned
+        .input('taskId', taskId)
+        .query(`
+          UPDATE tblTasks
+          SET PlannedDate = DATEADD(DAY, DaysRequired, CAST(GETDATE() AS DATE))
+          WHERE TaskID = @taskId
+        `);
+
+      console.log('✅ PlannedDate set on tblTasks');
+    }
 
     // 6️⃣ Find the next task in the same department
     const reqNextTask = sqlTransaction.request();
