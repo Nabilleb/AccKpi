@@ -112,6 +112,24 @@ const month = String(now.getMonth() + 1).padStart(2, '0');
 const day = String(now.getDate()).padStart(2, '0');
 document.getElementById('startDate').value = `${year}-${month}-${day}`;
 
+// Handle location type change - show/hide payment installments
+const locationRadios = document.querySelectorAll('input[name="supplier-location"]');
+const paymentInstallmentsGroup = document.getElementById('payment-installments-group');
+
+locationRadios.forEach(radio => {
+    radio.addEventListener('change', (e) => {
+        if (e.target.value === 'International') {
+            paymentInstallmentsGroup.style.display = 'block';
+        } else {
+            paymentInstallmentsGroup.style.display = 'none';
+            // Uncheck all payment checkboxes when switching to Local
+            document.querySelectorAll('input[name="payment-installments"]').forEach(checkbox => {
+                checkbox.checked = false;
+            });
+        }
+    });
+});
+
 form.addEventListener('submit', async (e) => {
     e.preventDefault();
 

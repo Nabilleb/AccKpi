@@ -1836,7 +1836,6 @@ app.post('/add-task', ensureAuthenticated, async (req, res) => {
   const {
     TaskName,
     TaskPlanned,
-    PlannedDate,
     DaysRequired,
     DepId,
     ProcessID,
@@ -1894,53 +1893,12 @@ app.post('/add-task', ensureAuthenticated, async (req, res) => {
       `);
     const isFirstTask = taskCountResult.recordset[0].TaskCount === 0;
 
-    // 5. Determine IsTaskSelected and PlannedDate
+    // 5. Determine IsTaskSelected
     let IsTaskSelected = 0;
-    let PlannedDateToInsert = PlannedDate;
     let DaysRequiredInserted = parseInt(DaysRequired || 0, 10);
 
     if (isFirstTask && StepOrder === 1 && !PredecessorTaskID) {
       IsTaskSelected = 1;
-      const now = new Date();
-      now.setDate(now.getDate() + DaysRequiredInserted);
-      PlannedDateToInsert = now.toISOString().split('T')[0];
-    } else if (PredecessorTaskID) {
-      // If predecessor is set, schedule after it
-      const predResult = await poolConn.request()
-        .input('PredecessorTaskID', sql.Int, PredecessorTaskID)
-        .query(`
-          SELECT PlannedDate, DaysRequired
-          FROM tblTasks
-          WHERE TaskID = @PredecessorTaskID
-        `);
-
-      const predDateStr = predResult.recordset[0]?.PlannedDate;
-      const predDays = predResult.recordset[0]?.DaysRequired ?? 0;
-
-      if (predDateStr) {
-        const predDate = new Date(predDateStr);
-        predDate.setDate(predDate.getDate() + predDays);
-        PlannedDateToInsert = predDate.toISOString().split('T')[0];
-      }
-    } else {
-      // Fallback: after last planned date
-      const lastTaskResult = await poolConn.request()
-        .input('ProcessID', sql.Int, ProcessID)
-        .query(`
-          SELECT TOP 1 PlannedDate, DaysRequired
-          FROM tblTasks
-          WHERE proccessID = @ProcessID AND PlannedDate IS NOT NULL
-          ORDER BY PlannedDate DESC
-        `);
-
-      const lastPlannedDateStr = lastTaskResult.recordset[0]?.PlannedDate;
-      const lastDaysRequired = lastTaskResult.recordset[0]?.DaysRequired ?? 0;
-
-      if (lastPlannedDateStr) {
-        const lastPlannedDate = new Date(lastPlannedDateStr);
-        lastPlannedDate.setDate(lastPlannedDate.getDate() + lastDaysRequired);
-        PlannedDateToInsert = lastPlannedDate.toISOString().split('T')[0];
-      }
     }
 
     // 6. Get next Priority if not provided
@@ -1989,7 +1947,6 @@ app.post('/add-task', ensureAuthenticated, async (req, res) => {
       .input('TaskName', sql.NVarChar(150), TaskName)
       .input('TaskPlanned', sql.NVarChar, TaskPlanned)
       .input('IsTaskSelected', sql.Bit, IsTaskSelected)
-      .input('PlannedDate', sql.Date, PlannedDateToInsert)
       .input('DepId', sql.Int, DepId)
       .input('Priority', sql.Int, finalPriority)
       .input('PredecessorID', PredecessorID)
@@ -2003,13 +1960,13 @@ app.post('/add-task', ensureAuthenticated, async (req, res) => {
 
     const insertResult = await insertRequest.query(`
       INSERT INTO tblTasks (
-        TaskName, TaskPlanned, IsTaskSelected, PlannedDate,
+        TaskName, TaskPlanned, IsTaskSelected,
         DepId, Priority, PredecessorID, DaysRequired, proccessID, IsFixed
         ${workflowHdrId ? ', WorkFlowHdrID' : ''}
       )
       OUTPUT INSERTED.TaskID
       VALUES (
-        @TaskName, @TaskPlanned, @IsTaskSelected, @PlannedDate,
+        @TaskName, @TaskPlanned, @IsTaskSelected,
         @DepId, @Priority, @PredecessorID, @DaysRequired, @ProcessID, @IsFixed
         ${workflowHdrId ? ', @WorkFlowHdrID' : ''}
       )
@@ -2027,110 +1984,6 @@ app.post('/add-task', ensureAuthenticated, async (req, res) => {
           INSERT INTO tblWorkflowDtl (WorkflowName, TaskID, WorkFlowHdrID)
           VALUES (@WorkflowName, @TaskID, @WorkFlowHdrID)
         `);
-    }
-
-// 11. Enhanced cascading planned dates logic
-    const allTasksInCurrentDept = await poolConn.request()
-      .input('DepId', sql.Int, DepId)
-      .input('ProcessID', sql.Int, ProcessID)
-      .query(`
-        SELECT TaskID, DaysRequired, Priority
-        FROM tblTasks
-        WHERE DepId = @DepId AND proccessID = @ProcessID
-        ORDER BY Priority ASC
-      `);
-
-    // Initialize newStartDate with the new task's planned date
-    let newStartDate = PlannedDateToInsert ? new Date(PlannedDateToInsert) : new Date();
-
-    // Find the position where our new task was inserted
-    let newTaskPosition = allTasksInCurrentDept.recordset.findIndex(
-      t => t.TaskID === newTaskId
-    );
-
-    if (newTaskPosition > 0) {
-      // Get the previous task's end date as our starting point
-      const prevTask = allTasksInCurrentDept.recordset[newTaskPosition - 1];
-      const prevTaskDate = await poolConn.request()
-        .input('TaskID', sql.Int, prevTask.TaskID)
-        .query(`
-          SELECT PlannedDate FROM tblTasks WHERE TaskID = @TaskID
-        `);
-      newStartDate = new Date(prevTaskDate.recordset[0].PlannedDate);
-      newStartDate.setDate(newStartDate.getDate() + prevTask.DaysRequired);
-    }
-
-    // Update dates for current and subsequent tasks in this department
-    for (let i = newTaskPosition; i < allTasksInCurrentDept.recordset.length; i++) {
-      const task = allTasksInCurrentDept.recordset[i];
-      const taskDateStr = newStartDate.toISOString().split('T')[0];
-      
-      await poolConn.request()
-        .input('TaskID', sql.Int, task.TaskID)
-        .input('NewPlannedDate', sql.Date, taskDateStr)
-        .query(`
-          UPDATE tblTasks
-          SET PlannedDate = @NewPlannedDate
-          WHERE TaskID = @TaskID
-        `);
-
-      newStartDate.setDate(newStartDate.getDate() + task.DaysRequired);
-    }
-
-    // 12. Cascade to subsequent departments
-    const subsequentDepts = await poolConn.request()
-      .input('CurrentStepOrder', sql.Int, StepOrder)
-      .input('ProcessID', sql.Int, ProcessID)
-      .query(`
-        SELECT DepartmentID, StepOrder
-        FROM tblProcessDepartment
-        WHERE StepOrder > @CurrentStepOrder AND ProcessID = @ProcessID
-        ORDER BY StepOrder ASC
-      `);
-
-    let currentEndDate = new Date(newStartDate); // Initialize with last calculated date
-
-    for (const dept of subsequentDepts.recordset) {
-      // Get all tasks in next department ordered by priority
-      const tasksNextDept = await poolConn.request()
-        .input('DepId', sql.Int, dept.DepartmentID)
-        .input('ProcessID', sql.Int, ProcessID)
-        .query(`
-          SELECT TaskID, PlannedDate, DaysRequired
-          FROM tblTasks
-          WHERE DepId = @DepId AND proccessID = @ProcessID
-          ORDER BY Priority ASC
-        `);
-
-      if (tasksNextDept.recordset.length > 0) {
-        // Check if first task needs adjustment
-        const firstTaskDate = new Date(tasksNextDept.recordset[0].PlannedDate);
-        if (firstTaskDate < currentEndDate) {
-          let newDeptStartDate = new Date(currentEndDate);
-
-          // Update all tasks in this department
-          for (const task of tasksNextDept.recordset) {
-            const taskDateStr = newDeptStartDate.toISOString().split('T')[0];
-            
-            await poolConn.request()
-              .input('TaskID', sql.Int, task.TaskID)
-              .input('NewPlannedDate', sql.Date, taskDateStr)
-              .query(`
-                UPDATE tblTasks
-                SET PlannedDate = @NewPlannedDate
-                WHERE TaskID = @TaskID
-              `);
-
-            newDeptStartDate.setDate(newDeptStartDate.getDate() + task.DaysRequired);
-          }
-          currentEndDate = new Date(newDeptStartDate);
-        } else {
-          // No adjustment needed, just update currentEndDate
-          const lastTask = tasksNextDept.recordset[tasksNextDept.recordset.length - 1];
-          currentEndDate = new Date(lastTask.PlannedDate);
-          currentEndDate.setDate(currentEndDate.getDate() + lastTask.DaysRequired);
-        }
-      }
     }
 
     res.json({ success: true, message: 'Task created successfully', taskId: newTaskId });

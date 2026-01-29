@@ -13,7 +13,7 @@ const sortFunctions = {
   name: (a, b) => (a.TaskName || '').localeCompare(b.TaskName || ''),
   description: (a, b) => (a.TaskPlanned || '').localeCompare(b.TaskPlanned || ''),
   department: (a, b) => (a.DeptName || '').localeCompare(b.DeptName || ''),
-  duedate: (a, b) => new Date(a.PlannedDate) - new Date(b.PlannedDate),
+  duedate: (a, b) => 0,
   priority: (a, b) => (a.Priority ?? 0) - (b.Priority ?? 0),
   sequence: (a, b) => {
     const stepA = a.StepOrder ?? 0;
@@ -439,7 +439,6 @@ function renderTasks(tasks) {
               <tr>
                 <th>Task Name</th>
                 <th>Description</th>
-                <th>Planned Date</th>
                 <th>Days</th>
                 <th>Priority</th>
                 <th>Link Task</th>
@@ -462,7 +461,6 @@ function renderTasks(tasks) {
         <tr class="${isOverdue ? 'overdue-task' : ''}">
           <td>${task.TaskName || '-'}</td>
           <td>${task.TaskPlanned || '-'}</td>
-          <td>${task.PlannedDate ? formatDate(task.PlannedDate) : '-'}</td>
           <td>${task.DaysRequired !== null && task.DaysRequired !== undefined ? task.DaysRequired : '-'}</td>
           <td>${task.Priority ?? '-'}</td>
           <td>

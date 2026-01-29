@@ -28,20 +28,21 @@
         </div>
 
         <form id="add-package-form">
-            <div class="form-group">
-                <label for="process-id">New Workflow</label>
-                <select id="process-id" class="form-control" required>
-                    <option value="">Select New Workflow</option>
-                    <% processes.forEach(process => { %>
-                        <option value="<%= process.NumberOfProccessID %>"><%= process.ProcessName %></option>
-                    <% }) %>
-                </select>
-            </div>
+            <div class="form-section">
+                <h2 class="section-title">Workflow Setup</h2>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="process-id">New Workflow</label>
+                        <select id="process-id" class="form-control" required>
+                            <option value="">Select New Workflow</option>
+                            <% processes.forEach(process => { %>
+                                <option value="<%= process.NumberOfProccessID %>"><%= process.ProcessName %></option>
+                            <% }) %>
+                        </select>
+                    </div>
 
-            <div class="form-group">
-                <label for="project-id">Project</label>
-                <div style="display: flex; gap: 1rem; align-items: flex-start;">
-                    <div style="flex: 1;">
+                    <div class="form-group">
+                        <label for="project-id">Project</label>
                         <select id="project-id" class="form-control" required>
                             <option value="">Select Project</option>
                             <% projects.forEach(project => { %>
@@ -49,26 +50,84 @@
                             <% }) %>
                         </select>
                     </div>
-                    <div class="auto-select-toggle" style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.25rem;">
-                        <input type="checkbox" id="autoSelectToggle" class="toggle-checkbox">
-                        <label for="autoSelectToggle" class="toggle-label" title="Auto-select your login project">Auto</label>
+
+                    <div class="form-group">
+                        <label for="package-id">Package</label>
+                        <select id="package-id" class="form-control" required>
+                            <option value="">Select Package</option>
+                            <% packages.forEach(pkg => { %>
+                                <option value="<%= pkg.PkgeID %>" <% if(typeof selectedPackageId !== 'undefined' && selectedPackageId == pkg.PkgeID) { %>selected<% } %>><%= pkg.PkgeName %></option>
+                            <% }) %>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="startDate">Start Date</label>
+                        <input type="date" id="startDate" name="startDate" class="form-control" required>
                     </div>
                 </div>
             </div>
 
-            <div class="form-group">
-                <label for="package-id">Package</label>
-                <select id="package-id" class="form-control" required>
-                    <option value="">Select Package</option>
-                    <% packages.forEach(pkg => { %>
-                        <option value="<%= pkg.PkgeID %>" <% if(typeof selectedPackageId !== 'undefined' && selectedPackageId == pkg.PkgeID) { %>selected<% } %>><%= pkg.PkgeName %></option>
-                    <% }) %>
-                </select>
-            </div>
+            <div class="form-section">
+                <h2 class="section-title">Supplier Information</h2>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="supplier-type">Supplier Type</label>
+                        <select id="supplier-type" class="form-control" required>
+                            <option value="">Select Type</option>
+                            <option value="Subcontractor">Subcontractor</option>
+                            <option value="Supplier">Supplier</option>
+                        </select>
+                    </div>
 
-            <div class="form-group">
-                <label for="startDate">Start Date</label>
-                <input type="date" id="startDate" name="startDate" class="form-control" required>
+                    <div class="form-group">
+                        <label for="total-payment">Total Payment</label>
+                        <input type="number" id="total-payment" name="total-payment" class="form-control" placeholder="Enter amount" step="0.01" min="0" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="supplier-name">Subcontractor/Supplier Name</label>
+                        <select id="supplier-name" class="form-control" required>
+                            <option value="">Select Subcontractor/Supplier</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Location Type</label>
+                        <div class="location-options">
+                            <div class="location-option">
+                                <input type="radio" id="location-local" name="supplier-location" value="Local" required>
+                                <label for="location-local">Local</label>
+                            </div>
+                            <div class="location-option">
+                                <input type="radio" id="location-international" name="supplier-location" value="International" required>
+                                <label for="location-international">International</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group" id="payment-installments-group" style="display: none;">
+                        <label>Number of Payments</label>
+                        <div class="payment-checkboxes">
+                            <div class="payment-checkbox-item">
+                                <input type="checkbox" id="payment-1" name="payment-installments" value="1">
+                                <label for="payment-1">1 Payment</label>
+                            </div>
+                            <div class="payment-checkbox-item">
+                                <input type="checkbox" id="payment-2" name="payment-installments" value="2">
+                                <label for="payment-2">2 Payments</label>
+                            </div>
+                            <div class="payment-checkbox-item">
+                                <input type="checkbox" id="payment-3" name="payment-installments" value="3">
+                                <label for="payment-3">3 Payments</label>
+                            </div>
+                            <div class="payment-checkbox-item">
+                                <input type="checkbox" id="payment-4" name="payment-installments" value="4">
+                                <label for="payment-4">4 Payments</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div class="form-group">
