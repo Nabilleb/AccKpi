@@ -4511,8 +4511,22 @@ Engineering Project Dashboard`,
               .input('workFlowHdrId', workFlowHdrId)
               .query(`
                 UPDATE tblWorkflowDtl
-                SET TimeStarted = NULL, TimeFinished = NULL, Delay = NULL, DelayReason = NULL, IsTaskSelected = 0
+                SET TimeStarted = NULL, TimeFinished = NULL, Delay = NULL, DelayReason = NULL
                 WHERE workFlowHdrId = @workFlowHdrId
+              `);
+
+            // Reset all tasks as unselected for next payment cycle
+            await pool.request()
+              .input('workFlowHdrId', workFlowHdrId)
+              .query(`
+                UPDATE tblTasks
+                SET IsTaskSelected = 0
+                WHERE TaskID IN (
+                  SELECT t.TaskID
+                  FROM tblTasks t
+                  JOIN tblWorkflowDtl w ON t.TaskID = w.TaskID
+                  WHERE w.workFlowHdrId = @workFlowHdrId
+                )
               `);
 
             // Reset first task as selected for the next payment cycle
