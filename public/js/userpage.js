@@ -439,7 +439,25 @@ const finishTask = async (taskId) => {
         });
 
         if (!res.ok) throw new Error("Failed to finish task");
-        showSuccess('Task marked as finished');
+        
+        // Fetch updated workflow to check if it advanced to next step
+        try {
+            const workflowRes = await fetch(`/api/workflow-steps/${task.workFlowHdrId}`);
+            const stepsData = await workflowRes.json();
+            
+            const activeStep = stepsData.steps.find(s => s.isActive === 1);
+            const totalSteps = stepsData.steps.length;
+            
+            if (totalSteps > 1 && activeStep) {
+                showSuccess(`✅ Task marked as finished!\n🎉 Workflow advanced to Payment Step ${activeStep.stepNumber} of ${totalSteps}`);
+            } else {
+                showSuccess('Task marked as finished');
+            }
+        } catch (stepError) {
+            console.log('Could not fetch workflow step info:', stepError);
+            showSuccess('Task marked as finished');
+        }
+        
         window.location.reload();
     } catch (err) {
         if (err.message === 'Cancelled') {

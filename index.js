@@ -919,6 +919,116 @@ app.get("/api/workflow-steps/:workFlowID", ensureAuthenticated, async (req, res)
   }
 });
 
+// API: Advance Workflow to Next Step
+app.post("/api/workflow-steps/advance/:workFlowID", ensureAuthenticated, async (req, res) => {
+  try {
+    const { workFlowID } = req.params;
+
+    // Get current active step
+    const currentStepResult = await pool.request()
+      .input('workFlowID', sql.Int, workFlowID)
+      .query(`
+        SELECT workflowStepID, stepNumber 
+        FROM tblWorkflowSteps
+        WHERE workFlowID = @workFlowID AND isActive = 1
+        ORDER BY stepNumber
+      `);
+
+    if (currentStepResult.recordset.length === 0) {
+      return res.status(400).json({ error: "No active step found for this workflow" });
+    }
+
+    const currentStep = currentStepResult.recordset[0];
+
+    // Get next step
+    const nextStepResult = await pool.request()
+      .input('workFlowID', sql.Int, workFlowID)
+      .input('currentStepNumber', sql.Int, currentStep.stepNumber)
+      .query(`
+        SELECT workflowStepID, stepNumber 
+        FROM tblWorkflowSteps
+        WHERE workFlowID = @workFlowID AND stepNumber > @currentStepNumber
+        ORDER BY stepNumber
+      `);
+
+    if (nextStepResult.recordset.length === 0) {
+      return res.status(400).json({ error: "No next step available for this workflow" });
+    }
+
+    const nextStep = nextStepResult.recordset[0];
+
+    // Deactivate current step
+    await pool.request()
+      .input('workflowStepID', sql.Int, currentStep.workflowStepID)
+      .query(`
+        UPDATE tblWorkflowSteps
+        SET isActive = 0
+        WHERE workflowStepID = @workflowStepID
+      `);
+
+    // Activate next step
+    await pool.request()
+      .input('workflowStepID', sql.Int, nextStep.workflowStepID)
+      .query(`
+        UPDATE tblWorkflowSteps
+        SET isActive = 1
+        WHERE workflowStepID = @workflowStepID
+      `);
+
+    // Reset all tasks for this workflow to prepare for next step
+    // Reset TimeStarted, TimeFinished, Delay, DelayReason, and IsTaskSelected
+    await pool.request()
+      .input('workFlowID', sql.Int, workFlowID)
+      .query(`
+        UPDATE tblWorkflowDtl
+        SET 
+          TimeStarted = NULL,
+          TimeFinished = NULL,
+          Delay = NULL,
+          DelayReason = NULL,
+          IsTaskSelected = 0
+        WHERE workFlowHdrId = @workFlowID
+      `);
+
+    // Reset task selection for the first task in first department
+    await pool.request()
+      .input('workFlowID', sql.Int, workFlowID)
+      .query(`
+        UPDATE tblTasks
+        SET IsTaskSelected = 1
+        WHERE WorkFlowHdrID = @workFlowID
+          AND DepId = (
+            SELECT TOP 1 DepId 
+            FROM tblTasks 
+            WHERE WorkFlowHdrID = @workFlowID 
+            ORDER BY Priority ASC
+          )
+          AND Priority = (
+            SELECT TOP 1 Priority 
+            FROM tblTasks 
+            WHERE WorkFlowHdrID = @workFlowID 
+              AND DepId = (
+                SELECT TOP 1 DepId 
+                FROM tblTasks 
+                WHERE WorkFlowHdrID = @workFlowID 
+                ORDER BY Priority ASC
+              )
+            ORDER BY Priority ASC
+          )
+      `);
+
+    res.json({
+      success: true,
+      message: `Workflow advanced to step ${nextStep.stepNumber}. All tasks have been reset.`,
+      currentStep: nextStep.stepNumber,
+      totalSteps: nextStepResult.recordset.length + 1
+    });
+  } catch (err) {
+    console.error("Error advancing workflow step:", err);
+    res.status(500).json({ error: "Failed to advance workflow: " + err.message });
+  }
+});
+
 // API: Get Projects (for login page)
 app.get("/api/projects", async (req, res) => {
   try {
@@ -4328,6 +4438,110 @@ Engineering Project Dashboard`,
           }
         }
       }
+    }
+
+    // ========== AUTO-ADVANCE WORKFLOW STEPS IF ALL TASKS COMPLETE ==========
+    try {
+      // Check if ALL tasks in this workflow are now finished (across all departments)
+      const allTasksFinishedResult = await pool.request()
+        .input('workFlowHdrId', workFlowHdrId)
+        .query(`
+          SELECT COUNT(*) AS UnfinishedCount
+          FROM tblWorkflowDtl
+          WHERE workFlowHdrId = @workFlowHdrId AND TimeFinished IS NULL
+        `);
+
+      const unfinishedCount = allTasksFinishedResult.recordset[0].UnfinishedCount;
+      console.log(`All tasks finished check: Unfinished count = ${unfinishedCount}`);
+
+      if (unfinishedCount === 0) {
+        // Check if this workflow has multiple steps (multi-payment workflow)
+        const workflowStepsResult = await pool.request()
+          .input('workFlowHdrId', workFlowHdrId)
+          .query(`
+            SELECT COUNT(*) AS StepCount,
+                   (SELECT stepNumber FROM tblWorkflowSteps WHERE workFlowID = @workFlowHdrId AND isActive = 1) AS CurrentStep
+            FROM tblWorkflowSteps
+            WHERE workFlowID = @workFlowHdrId
+          `);
+
+        const stepInfo = workflowStepsResult.recordset[0];
+        const stepCount = stepInfo ? stepInfo.StepCount : 0;
+        const currentStepNumber = stepInfo ? stepInfo.CurrentStep : null;
+
+        console.log(`Workflow steps info: StepCount = ${stepCount}, CurrentStep = ${currentStepNumber}`);
+
+        if (stepCount > 1 && currentStepNumber) {
+          // Multi-step workflow - advance to next step
+          const nextStepResult = await pool.request()
+            .input('workFlowHdrId', workFlowHdrId)
+            .input('currentStep', currentStepNumber)
+            .query(`
+              SELECT TOP 1 stepNumber FROM tblWorkflowSteps
+              WHERE workFlowID = @workFlowHdrId AND stepNumber > @currentStep
+              ORDER BY stepNumber ASC
+            `);
+
+          if (nextStepResult.recordset.length > 0) {
+            const nextStepNumber = nextStepResult.recordset[0].stepNumber;
+            console.log(`Found next step: ${nextStepNumber}`);
+
+            // Deactivate current step
+            await pool.request()
+              .input('workFlowHdrId', workFlowHdrId)
+              .input('currentStep', currentStepNumber)
+              .query(`
+                UPDATE tblWorkflowSteps
+                SET isActive = 0
+                WHERE workFlowID = @workFlowHdrId AND stepNumber = @currentStep
+              `);
+
+            // Activate next step
+            await pool.request()
+              .input('workFlowHdrId', workFlowHdrId)
+              .input('nextStep', nextStepNumber)
+              .query(`
+                UPDATE tblWorkflowSteps
+                SET isActive = 1
+                WHERE workFlowID = @workFlowHdrId AND stepNumber = @nextStep
+              `);
+
+            // Reset all workflow detail records for next payment cycle
+            await pool.request()
+              .input('workFlowHdrId', workFlowHdrId)
+              .query(`
+                UPDATE tblWorkflowDtl
+                SET TimeStarted = NULL, TimeFinished = NULL, Delay = NULL, DelayReason = NULL, IsTaskSelected = 0
+                WHERE workFlowHdrId = @workFlowHdrId
+              `);
+
+            // Reset first task as selected for the next payment cycle
+            const firstTaskResult = await pool.request()
+              .input('workFlowHdrId', workFlowHdrId)
+              .query(`
+                SELECT TOP 1 t.TaskID
+                FROM tblTasks t
+                JOIN tblWorkflowDtl w ON t.TaskID = w.TaskID
+                WHERE w.workFlowHdrId = @workFlowHdrId
+                ORDER BY t.DepId ASC, t.Priority ASC, t.TaskID ASC
+              `);
+
+            if (firstTaskResult.recordset.length > 0) {
+              const firstTaskId = firstTaskResult.recordset[0].TaskID;
+              await pool.request()
+                .input('taskId', firstTaskId)
+                .query(`UPDATE tblTasks SET IsTaskSelected = 1 WHERE TaskID = @taskId`);
+            }
+
+            console.log(`✅ Workflow ${workFlowHdrId} auto-advanced from step ${currentStepNumber} to ${nextStepNumber}`);
+          }
+        } else {
+          console.log(`No multi-step advancement needed (StepCount: ${stepCount})`);
+        }
+      }
+    } catch (advanceError) {
+      console.error('Error checking/advancing workflow steps:', advanceError);
+      // Continue with response even if advancement fails
     }
 
     res.sendStatus(200);
