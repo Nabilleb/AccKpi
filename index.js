@@ -4003,7 +4003,7 @@ app.post('/start-task/:taskId', async (req, res) => {
 app.post('/finish-task/:taskId', async (req, res) => {
   const { taskId } = req.params;
   const { finishTime, workFlowHdrId, processID } = req.body;
-console.log(req.body)
+  console.log(req.body)
   if (!workFlowHdrId) {
     return res.status(400).json({ error: 'Missing workFlowHdrId' });
   }
@@ -4026,27 +4026,27 @@ console.log(req.body)
     if (taskResult.recordset.length === 0) {
       return res.status(404).json({ error: 'Task not found' });
     }
-const { PlannedDate, DepId, DaysRequired } = taskResult.recordset[0];
+    const { PlannedDate, DepId, DaysRequired } = taskResult.recordset[0];
 
-// Calculate delay in days using UTC to avoid timezone issues
-// PlannedDate from DB might be ISO format already, just parse it directly
-const plannedDateObj = new Date(PlannedDate);
+    // Calculate delay in days using UTC to avoid timezone issues
+    // PlannedDate from DB might be ISO format already, just parse it directly
+    const plannedDateObj = new Date(PlannedDate);
 
-// Parse finishTime date string (YYYY-MM-DD) as UTC
-const finishDateObj = new Date(finishTime + 'T00:00:00Z');
+    // Parse finishTime date string (YYYY-MM-DD) as UTC
+    const finishDateObj = new Date(finishTime + 'T00:00:00Z');
 
-// Calculate delay in days (Finished Date - Planned Date)
-const delayMs = finishDateObj.getTime() - plannedDateObj.getTime();
-const delay = Math.max(0, Math.round(delayMs / (1000 * 60 * 60 * 24)));
+    // Calculate delay in days (Finished Date - Planned Date)
+    const delayMs = finishDateObj.getTime() - plannedDateObj.getTime();
+    const delay = Math.max(0, Math.round(delayMs / (1000 * 60 * 60 * 24)));
 
-console.log('========== DELAY CALCULATION ==========');
-console.log('Raw PlannedDate from DB:', PlannedDate);
-console.log('Raw finishTime from request:', finishTime);
-console.log('Parsed Planned Date:', plannedDateObj.toISOString());
-console.log('Parsed Finish Date:', finishDateObj.toISOString());
-console.log('Delay Ms:', delayMs);
-console.log('Delay Days:', delay);
-console.log('=========================================');
+    console.log('========== DELAY CALCULATION ==========');
+    console.log('Raw PlannedDate from DB:', PlannedDate);
+    console.log('Raw finishTime from request:', finishTime);
+    console.log('Parsed Planned Date:', plannedDateObj.toISOString());
+    console.log('Parsed Finish Date:', finishDateObj.toISOString());
+    console.log('Delay Ms:', delayMs);
+    console.log('Delay Days:', delay);
+    console.log('=========================================');
 
     // Mark workflow detail as finished
     await pool.request()
@@ -4250,8 +4250,8 @@ console.log('=========================================');
       }
     }
 
-    if (remaining.recordset[0].Remaining === 0 && (!currentTaskIsLinked || linkedDependencyFinished)) {
-      // All tasks in this department are finished AND this task's dependency is not blocking
+    if (remaining.recordset[0].Remaining === 0) {
+      // All tasks in this department are finished - move to next department
       const processInfo = await pool.request()
         .input('depId', DepId)
         .input('processID', processID)
@@ -4267,173 +4267,133 @@ console.log('=========================================');
         // Get the NEXT department
         const nextDeptInfoResult = await pool.request()
           .input('processId', ProcessID)
-          .input('currentStep', StepOrder)
+          .input('nextStep', StepOrder + 1)
           .query(`
             SELECT DepartmentID
             FROM tblProcessDepartment
-            WHERE ProcessID = @processId AND StepOrder = @currentStep + 1
-          `);
-
-        // If there's a next department, check its first task's linked dependency
-        if (nextDeptInfoResult.recordset.length > 0) {
-          const nextDepId = nextDeptInfoResult.recordset[0].DepartmentID;
-
-          // Get the FIRST task in the next department
-          const nextTaskResult = await pool.request()
-            .input('nextDepId', nextDepId)
-            .input('workFlowHdrId', workFlowHdrId)
-            .query(`
-              SELECT TOP 1 t.TaskID, t.linkTasks
-              FROM tblTasks t
-              JOIN tblWorkflowDtl w ON t.TaskID = w.TaskID
-              WHERE t.DepId = @nextDepId
-              AND w.workFlowHdrId = @workFlowHdrId
-              ORDER BY t.Priority ASC, t.TaskID ASC
-            `);
-
-          // If the next task has a linked dependency, check if it's finished
-          if (nextTaskResult.recordset.length > 0 && nextTaskResult.recordset[0].linkTasks) {
-            const nextTaskId = nextTaskResult.recordset[0].TaskID;
-            const linkedTaskId = nextTaskResult.recordset[0].linkTasks;
-            
-            // Check if the NEXT TASK ITSELF is finished, not just its linked dependency
-            const nextTaskFinishedCheck = await pool.request()
-              .input('nextTaskId', nextTaskId)
-              .input('workFlowHdrId', workFlowHdrId)
-              .query(`
-                SELECT w.TimeFinished
-                FROM tblWorkflowDtl w
-                WHERE w.TaskID = @nextTaskId AND w.workFlowHdrId = @workFlowHdrId
-              `);
-
-            console.log('🔗 Checking next task:', nextTaskId, 'is finished:', nextTaskFinishedCheck.recordset[0]?.TimeFinished);
-
-            // If the next task is NOT finished, don't proceed with department transition
-            if (nextTaskFinishedCheck.recordset.length === 0 || nextTaskFinishedCheck.recordset[0].TimeFinished === null) {
-              console.log('⛔ Blocking department transition - next task not finished yet');
-              res.sendStatus(200);
-              return;
-            }
-          }
-        }
-
-        const nextDeptResult = await pool.request()
-          .input('processId', ProcessID)
-          .input('nextStep', StepOrder + 1)
-          .query(`
-            UPDATE tblProcessDepartment
-            SET IsActive = 1
-            OUTPUT INSERTED.DepartmentID
             WHERE ProcessID = @processId AND StepOrder = @nextStep
           `);
 
-        if (nextDeptResult.recordset.length > 0) {
-          const nextDepId = nextDeptResult.recordset[0].DepartmentID;
+        // If there's a next department, activate it and select first task
+        if (nextDeptInfoResult.recordset.length > 0) {
+          const nextDepId = nextDeptInfoResult.recordset[0].DepartmentID;
 
-         const usersEmailResult = await pool.request()
-  .input('depId', nextDepId)
-  .query(`
-    SELECT usrEmail 
-    FROM tblUsers 
-    WHERE DepartmentID = @depId AND usrEmail IS NOT NULL
-  `);
+          const nextDeptResult = await pool.request()
+            .input('processId', ProcessID)
+            .input('nextStep', StepOrder + 1)
+            .query(`
+              UPDATE tblProcessDepartment
+              SET IsActive = 1
+              OUTPUT INSERTED.DepartmentID
+              WHERE ProcessID = @processId AND StepOrder = @nextStep
+            `);
 
-const userEmails = usersEmailResult.recordset.map(row => row.usrEmail);
-console.log("emails", userEmails)
-// Send to each email via Resend
-  try {
-    for (const email of userEmails){
-  const mailOptions = {
-    from: '"Engineering Dashboard" <Nabilgreen500@gmail.com>', 
-    to: email,                             
-    subject: "New Process Activated for Your Department",
-    text: `Hello,
+          if (nextDeptResult.recordset.length > 0) {
+            const usersEmailResult = await pool.request()
+              .input('depId', nextDepId)
+              .query(`
+                SELECT usrEmail 
+                FROM tblUsers 
+                WHERE DepartmentID = @depId AND usrEmail IS NOT NULL
+              `);
+
+            const userEmails = usersEmailResult.recordset.map(row => row.usrEmail);
+            console.log("emails", userEmails)
+            // Send to each email via Resend
+            try {
+              for (const email of userEmails) {
+                const mailOptions = {
+                  from: '"Engineering Dashboard" <Nabilgreen500@gmail.com>', 
+                  to: email,                             
+                  subject: "New Process Activated for Your Department",
+                  text: `Hello,
 
 Your department has been activated for the next step in the project workflow.
 
 Regards,
 Engineering Project Dashboard`,
-  };
+                };
 
-  const info = await transporter.sendMail(mailOptions);
-  console.log(`✅ Email sent successfully: ${info.response}`);
-}
-} catch (err) {
-  console.error(`❌ Email send error:`, err);
-}
+                const info = await transporter.sendMail(mailOptions);
+                console.log(`✅ Email sent successfully: ${info.response}`);
+              }
+            } catch (err) {
+              console.error(`❌ Email send error:`, err);
+            }
   
-     await pool.request()
-            .input('nextDepId', nextDepId)
-            .input('workFlowHdrId', workFlowHdrId)
-            .query(`
-              ;WITH NextTask AS (
-                SELECT TOP 1 t.TaskID
+            await pool.request()
+              .input('nextDepId', nextDepId)
+              .input('workFlowHdrId', workFlowHdrId)
+              .query(`
+                ;WITH NextTask AS (
+                  SELECT TOP 1 t.TaskID
+                  FROM tblTasks t
+                  JOIN tblWorkflowDtl w ON t.TaskID = w.TaskID
+                  WHERE t.DepId = @nextDepId
+                    AND w.workFlowHdrId = @workFlowHdrId
+                    AND t.IsTaskSelected = 0
+                    AND w.TimeFinished IS NULL
+                  ORDER BY t.Priority ASC, t.PlannedDate ASC
+                )
+                UPDATE tblTasks
+                SET IsTaskSelected = 1
+                FROM tblTasks t
+                JOIN NextTask nt ON t.TaskID = nt.TaskID
+              `);
+
+            // (ADDED) Set planned date for that first task in the new department
+            const nextDeptTask = await pool.request()
+              .input('nextDepId', nextDepId)
+              .input('workFlowHdrId', workFlowHdrId)
+              .query(`
+                SELECT TOP 1 t.TaskID, t.DaysRequired
                 FROM tblTasks t
                 JOIN tblWorkflowDtl w ON t.TaskID = w.TaskID
                 WHERE t.DepId = @nextDepId
                   AND w.workFlowHdrId = @workFlowHdrId
-                  AND t.IsTaskSelected = 0
+                  AND t.IsTaskSelected = 1
                   AND w.TimeFinished IS NULL
-                ORDER BY t.Priority ASC, t.PlannedDate ASC
-              )
-              UPDATE tblTasks
-              SET IsTaskSelected = 1
-              FROM tblTasks t
-              JOIN NextTask nt ON t.TaskID = nt.TaskID
-            `);
-
-          // (ADDED) Set planned date for that first task in the new department
-          const nextDeptTask = await pool.request()
-            .input('nextDepId', nextDepId)
-            .input('workFlowHdrId', workFlowHdrId)
-            .query(`
-              SELECT TOP 1 t.TaskID, t.DaysRequired
-              FROM tblTasks t
-              JOIN tblWorkflowDtl w ON t.TaskID = w.TaskID
-              WHERE t.DepId = @nextDepId
-                AND w.workFlowHdrId = @workFlowHdrId
-                AND t.IsTaskSelected = 1
-                AND w.TimeFinished IS NULL
-              ORDER BY t.Priority ASC, t.TaskID ASC
-            `);
-
-          if (nextDeptTask.recordset.length > 0) {
-            const nextDeptTaskId = nextDeptTask.recordset[0].TaskID;
-            const nextDeptDays = Number(nextDeptTask.recordset[0].DaysRequired) || 1;
-
-            // Count finished tasks to determine task sequence position
-            const finishedTasksCount = await pool.request()
-              .input('workFlowHdrId', workFlowHdrId)
-              .query(`
-                SELECT COUNT(*) AS Count
-                FROM tblWorkflowDtl
-                WHERE workFlowHdrId = @workFlowHdrId AND TimeFinished IS NOT NULL
+                ORDER BY t.Priority ASC, t.TaskID ASC
               `);
-            
-            const taskSequenceNumber = finishedTasksCount.recordset[0].Count + 1;
-            
-            // Buffer logic: Task 3+ gets +1 buffer, ONLY if DaysRequired < 20
-            const buffer = (taskSequenceNumber >= 3 && nextDeptDays < 20) ? 1 : 0;
 
-            const plannedDate = new Date(finishDateObj);
-            plannedDate.setDate(plannedDate.getDate() + nextDeptDays + buffer);
+            if (nextDeptTask.recordset.length > 0) {
+              const nextDeptTaskId = nextDeptTask.recordset[0].TaskID;
+              const nextDeptDays = Number(nextDeptTask.recordset[0].DaysRequired) || 1;
 
-            // Update the next department task's PlannedDate
-            await pool.request()
-              .input('plannedDate', plannedDate.toISOString().split('T')[0])
-              .input('nextDeptTaskId', nextDeptTaskId)
-              .query(`UPDATE tblTasks SET PlannedDate = @plannedDate WHERE TaskID = @nextDeptTaskId`);
+              // Count finished tasks to determine task sequence position
+              const finishedTasksCount = await pool.request()
+                .input('workFlowHdrId', workFlowHdrId)
+                .query(`
+                  SELECT COUNT(*) AS Count
+                  FROM tblWorkflowDtl
+                  WHERE workFlowHdrId = @workFlowHdrId AND TimeFinished IS NOT NULL
+                `);
+              
+              const taskSequenceNumber = finishedTasksCount.recordset[0].Count + 1;
+              
+              // Buffer logic: Task 3+ gets +1 buffer, ONLY if DaysRequired < 20
+              const buffer = (taskSequenceNumber >= 3 && nextDeptDays < 20) ? 1 : 0;
 
-            // Update linked tasks
-            const linked = await pool.request()
-              .input('linkTo', nextDeptTaskId)
-              .query(`SELECT TaskID FROM tblTasks WHERE linkTasks = @linkTo`);
+              const plannedDate = new Date(finishDateObj);
+              plannedDate.setDate(plannedDate.getDate() + nextDeptDays + buffer);
 
-            for (const row of linked.recordset) {
+              // Update the next department task's PlannedDate
               await pool.request()
                 .input('plannedDate', plannedDate.toISOString().split('T')[0])
-                .input('linkedId', row.TaskID)
-                .query(`UPDATE tblTasks SET PlannedDate = @plannedDate WHERE TaskID = @linkedId`);
+                .input('nextDeptTaskId', nextDeptTaskId)
+                .query(`UPDATE tblTasks SET PlannedDate = @plannedDate WHERE TaskID = @nextDeptTaskId`);
+
+              // Update linked tasks
+              const linked = await pool.request()
+                .input('linkTo', nextDeptTaskId)
+                .query(`SELECT TaskID FROM tblTasks WHERE linkTasks = @linkTo`);
+
+              for (const row of linked.recordset) {
+                await pool.request()
+                  .input('plannedDate', plannedDate.toISOString().split('T')[0])
+                  .input('linkedId', row.TaskID)
+                  .query(`UPDATE tblTasks SET PlannedDate = @plannedDate WHERE TaskID = @linkedId`);
+              }
             }
           }
         }
