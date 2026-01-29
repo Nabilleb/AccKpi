@@ -1240,11 +1240,19 @@ app.get("/userpage/:hdrId", async (req, res) => {
   }
 
   try {
-    // Use helper functions for cleaner, faster code
-    const [tasks, department, userInfo] = await Promise.all([
+    // Get tasks and payment steps in parallel
+    const [tasks, department, userInfo, paymentStepsResult] = await Promise.all([
       getWorkflowTasks(pool, hdrId),
       getDepartmentById(pool, sessionUser.DepartmentId),
-      sessionUser.name ? Promise.resolve(null) : getUserById(pool, sessionUser.id)
+      sessionUser.name ? Promise.resolve(null) : getUserById(pool, sessionUser.id),
+      pool.request()
+        .input('workFlowID', sql.Int, hdrId)
+        .query(`
+          SELECT workflowStepID, workFlowID, supplierID, stepNumber, isActive, createdDate
+          FROM tblWorkflowSteps
+          WHERE workFlowID = @workFlowID
+          ORDER BY stepNumber ASC
+        `)
     ]);
 
     // Get user name (from session or database)
@@ -1256,10 +1264,13 @@ app.get("/userpage/:hdrId", async (req, res) => {
       name: userName 
     }, department);
 
+    const paymentSteps = paymentStepsResult.recordset;
+
     res.render("userpage.ejs", {
       tasks,
       hdrId,
-      user
+      user,
+      paymentSteps
     });
 
   } catch (err) {

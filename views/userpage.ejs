@@ -143,6 +143,83 @@
             <span class="info-value"><%= (typeof tasks !== 'undefined' && tasks && tasks[0]) ? tasks[0].PkgeName : 'N/A' %></span>
           </div>
         </div>
+
+        <!-- Payment Status Tracker -->
+        <% if (typeof paymentSteps !== 'undefined' && paymentSteps && paymentSteps.length > 0) { %>
+        <div class="payment-tracker">
+          <h3 class="payment-title">
+            <i class="fas fa-credit-card"></i>
+            Payment Progress
+          </h3>
+          
+          <% 
+            const activeIndex = paymentSteps.findIndex(s => s.isActive);
+            const activeStep = paymentSteps[activeIndex];
+            const nextStep = activeIndex < paymentSteps.length - 1 ? paymentSteps[activeIndex + 1] : null;
+          %>
+          
+          <% if (activeStep) { %>
+          <div class="payment-transition-banner">
+            <div class="transition-content">
+              <div class="transition-icon">
+                <i class="fas fa-exchange-alt"></i>
+              </div>
+              <div class="transition-text">
+                <p class="transition-primary">
+                  Payment <%= activeStep.stepNumber %> <span class="highlight">In Process</span>
+                </p>
+                <% if (nextStep) { %>
+                  <p class="transition-secondary">
+                    <i class="fas fa-arrow-right"></i> Transitioning to Payment <%= nextStep.stepNumber %>
+                  </p>
+                <% } else { %>
+                  <p class="transition-secondary">
+                    <i class="fas fa-flag-checkered"></i> Final Payment
+                  </p>
+                <% } %>
+              </div>
+            </div>
+          </div>
+          <% } %>
+          
+          <div class="payment-steps-container">
+            <% paymentSteps.forEach((step, index) => { %>
+              <div class="payment-step <%= step.isActive ? 'active' : index < activeIndex ? 'completed' : 'waiting' %>">
+                <div class="payment-icon">
+                  <% if (step.isActive) { %>
+                    <i class="fas fa-spinner fa-spin"></i>
+                  <% } else if (index < activeIndex) { %>
+                    <i class="fas fa-check-circle"></i>
+                  <% } else { %>
+                    <i class="fas fa-clock"></i>
+                  <% } %>
+                </div>
+                <div class="payment-details">
+                  <div class="payment-label">Payment <%= step.stepNumber %></div>
+                  <div class="payment-status">
+                    <% if (step.isActive) { %>
+                      <span class="status-badge in-process">
+                        <i class="fas fa-play-circle"></i> In Process
+                      </span>
+                    <% } else if (index < activeIndex) { %>
+                      <span class="status-badge completed">
+                        <i class="fas fa-check"></i> Completed
+                      </span>
+                    <% } else { %>
+                      <span class="status-badge waiting">
+                        <i class="fas fa-hourglass-half"></i> Waiting
+                      </span>
+                    <% } %>
+                  </div>
+                </div>
+              </div>
+              <% if (index < paymentSteps.length - 1) { %>
+                <div class="payment-connector"></div>
+              <% } %>
+            <% }); %>
+          </div>
+        </div>
+        <% } %>
         
         <div id="department-tables-container">
           <!-- Department tables will be inserted here by JavaScript -->

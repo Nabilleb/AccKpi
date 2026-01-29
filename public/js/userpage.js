@@ -106,6 +106,15 @@ const showMessage = (element, textElement, message, duration) => {
 const showError = (message) => showMessage(errorEl, errorText, message, 5000);
 const showSuccess = (message) => showMessage(successEl, successText, message, 3000);
 
+const showPaymentTransition = (previousPayment, nextPayment, totalPayments) => {
+    const message = `✅ Payment ${previousPayment} Complete!\n🎉 Transitioning to Payment ${nextPayment} of ${totalPayments}\n⏳ Preparing next phase...`;
+    textElement.textContent = message;
+    successEl.classList.add('show', 'payment-transition');
+    setTimeout(() => {
+        successEl.classList.remove('show', 'payment-transition');
+    }, 5000);
+};
+
 const showConfirmation = (message, confirmCallback) => {
     modalMessage.textContent = message;
     currentAction = confirmCallback;
@@ -447,15 +456,18 @@ const finishTask = async (taskId) => {
             
             const activeStep = stepsData.find(s => s.isActive === 1);
             const totalSteps = stepsData.length;
+            const previousStep = activeStep ? activeStep.stepNumber - 1 : 0;
             
-            if (totalSteps > 1 && activeStep) {
+            if (totalSteps > 1 && activeStep && previousStep > 0) {
+                showPaymentTransition(previousStep, activeStep.stepNumber, totalSteps);
+            } else if (totalSteps > 1 && activeStep) {
                 showSuccess(`✅ Task marked as finished!\n🎉 Workflow advanced to Payment Step ${activeStep.stepNumber} of ${totalSteps}`);
             } else {
-                showSuccess('Task marked as finished');
+                showSuccess('✅ Task marked as finished');
             }
         } catch (stepError) {
             console.log('Could not fetch workflow step info:', stepError);
-            showSuccess('Task marked as finished');
+            showSuccess('✅ Task marked as finished');
         }
         
         window.location.reload();

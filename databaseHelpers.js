@@ -119,7 +119,8 @@ export async function getWorkflowTasks(pool, workflowId) {
         pj.ProjectName,
         pk.PkgeName,
         dp.DeptName,
-        pd.StepOrder 
+        pd.StepOrder,
+        (SELECT COUNT(*) FROM tblWorkflowSteps WHERE workFlowID = @workflowId) AS PaymentCount
       FROM tblWorkflowDtl d
       INNER JOIN tblTasks t ON d.TaskID = t.TaskID
       INNER JOIN tblWorkflowHdr hdr ON d.workFlowHdrId = hdr.WorkFlowID
