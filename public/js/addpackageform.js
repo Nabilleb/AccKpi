@@ -112,6 +112,29 @@ const month = String(now.getMonth() + 1).padStart(2, '0');
 const day = String(now.getDate()).padStart(2, '0');
 document.getElementById('startDate').value = `${year}-${month}-${day}`;
 
+// Load supplier names from database
+async function loadSupplierNames() {
+    try {
+        const response = await fetch('/api/supplier-names');
+        const supplierNames = await response.json();
+        
+        const supplierNameSelect = document.getElementById('supplier-name');
+        supplierNameSelect.innerHTML = '<option value="">Select Subcontractor/Supplier</option>';
+        
+        supplierNames.forEach(supplier => {
+            const option = document.createElement('option');
+            option.value = supplier.supplierNameID;
+            option.textContent = supplier.supplierName;
+            supplierNameSelect.appendChild(option);
+        });
+    } catch (err) {
+        console.error('Error loading supplier names:', err);
+    }
+}
+
+// Load supplier names when page loads
+loadSupplierNames();
+
 // Handle location type change - show/hide payment installments
 const locationRadios = document.querySelectorAll('input[name="supplier-location"]');
 const paymentInstallmentsGroup = document.getElementById('payment-installments-group');
@@ -138,7 +161,12 @@ form.addEventListener('submit', async (e) => {
         projectID: document.getElementById('project-id').value,
         packageID: document.getElementById('package-id').value,
         startDate: document.getElementById('startDate').value,
-        status: document.getElementById('status').value
+        status: document.getElementById('status').value,
+        supplierType: document.getElementById('supplier-type').value,
+        supplierName: document.getElementById('supplier-name').value,
+        totalPayment: document.getElementById('total-payment').value,
+        locationtype: document.querySelector('input[name="supplier-location"]:checked')?.value,
+        paymentInstallments: Array.from(document.querySelectorAll('input[name="payment-installments"]:checked')).map(cb => cb.value)
     };
 
     // Validation
@@ -147,11 +175,16 @@ form.addEventListener('submit', async (e) => {
         showAlert('Please fill in all required fields', 'danger');
         return;
     }
-    // Commented out - startDate is now optional
-    // if (!formData.startDate) {
-    //     showAlert('Please select a start date', 'danger');
-    //     return;
-    // }
+
+    if (!formData.supplierType || !formData.supplierName || !formData.totalPayment || !formData.locationtype) {
+        showAlert('Please fill in all supplier information', 'danger');
+        return;
+    }
+
+    if (formData.locationtype === 'International' && formData.paymentInstallments.length === 0) {
+        showAlert('Please select number of payments for international suppliers', 'danger');
+        return;
+    }
 
     try {
         const response = await fetch('/addPackageForm', {
@@ -165,12 +198,56 @@ form.addEventListener('submit', async (e) => {
         const data = await response.json();
 
         if (response.ok) {
-            showAlert('workflow added successfully!', 'success');
-            form.reset();
-            // Redirect to workflow dashboard after alert
-            setTimeout(() => {
-                window.location.href = '/workFlowDash';
-            }, 3000);
+            // After workflow is created, insert supplier information
+            const supplierResponse = await fetch('/api/supplier/add', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    supplierName: formData.supplierName,
+                    supplierType: formData.supplierType,
+                    workFlowID: data.workflowID,
+                    totalPayment: formData.totalPayment
+                })
+            });
+
+            if (supplierResponse.ok) {
+                const supplierData = await supplierResponse.json();
+                const supplierID = supplierData.supplier.supplierID;
+                
+                // Create workflow steps if international with multiple payments
+                if (formData.locationtype === 'International' && formData.paymentInstallments.length > 0) {
+                    const stepsResponse = await fetch('/api/workflow-steps/add', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            workFlowID: data.workflowID,
+                            supplierID: supplierID,
+                            numberOfPayments: parseInt(formData.paymentInstallments[0])
+                        })
+                    });
+
+                    if (!stepsResponse.ok) {
+                        console.error('Failed to create workflow steps');
+                    }
+                }
+
+                showAlert('Workflow and supplier added successfully!', 'success');
+                form.reset();
+                // Redirect to workflow dashboard after alert
+                setTimeout(() => {
+                    window.location.href = '/workFlowDash';
+                }, 3000);
+            } else {
+                // Workflow created but supplier failed
+                showAlert('Workflow created but supplier save failed. Check console.', 'warning');
+                setTimeout(() => {
+                    window.location.href = '/workFlowDash';
+                }, 3000);
+            }
         } else {
             showAlert(data.error || 'Failed to add package. Please try again.', 'danger');
         }

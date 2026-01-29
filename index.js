@@ -786,6 +786,139 @@ app.get("/api/packages", ensureAuthenticated, async (req, res) => {
   }
 });
 
+// API: Get Supplier Names
+app.get("/api/supplier-names", ensureAuthenticated, async (req, res) => {
+  try {
+    const result = await pool.request().query(`
+      SELECT supplierNameID, supplierName 
+      FROM tblSupplierNames 
+      ORDER BY supplierName
+    `);
+    res.json(result.recordset);
+  } catch (err) {
+    console.error("Error fetching supplier names:", err);
+    res.status(500).json({ error: "Failed to fetch supplier names" });
+  }
+});
+
+// API: Get Suppliers by Type
+app.get("/api/suppliers", ensureAuthenticated, async (req, res) => {
+  const { supplierType } = req.query;
+
+  try {
+    let query = "SELECT supplierID, supplierName, supplierType FROM tblSupplier";
+    const request = pool.request();
+    
+    if (supplierType) {
+      query += " WHERE supplierType = @supplierType";
+      request.input('supplierType', sql.VarChar, supplierType);
+    }
+    
+    query += " ORDER BY supplierName";
+    const result = await request.query(query);
+    res.json(result.recordset);
+  } catch (err) {
+    console.error("Error fetching suppliers:", err);
+    res.status(500).json({ error: "Failed to fetch suppliers" });
+  }
+});
+
+// API: Insert Supplier
+app.post("/api/supplier/add", ensureAuthenticated, async (req, res) => {
+  try {
+    const { supplierName, supplierType, workFlowID, totalPayment } = req.body;
+
+    // Validation
+    if (!supplierName || !supplierType || !workFlowID) {
+      return res.status(400).json({ error: "Supplier name, type, and workflow ID are required" });
+    }
+
+    const result = await pool.request()
+      .input('supplierName', sql.NVarChar, supplierName)
+      .input('supplierType', sql.VarChar, supplierType)
+      .input('workFlowID', sql.Int, workFlowID)
+      .input('totalPayment', sql.Decimal(18, 2), totalPayment || 0)
+      .query(`
+        INSERT INTO tblSupplier (supplierName, supplierType, workFlowID, totalPayment, createdDate)
+        OUTPUT INSERTED.supplierID, INSERTED.supplierName, INSERTED.supplierType
+        VALUES (@supplierName, @supplierType, @workFlowID, @totalPayment, GETDATE())
+      `);
+
+    res.status(201).json({
+      success: true,
+      message: "Supplier added successfully",
+      supplier: result.recordset[0]
+    });
+  } catch (err) {
+    console.error("Error adding supplier:", err);
+    res.status(500).json({ error: "Failed to add supplier: " + err.message });
+  }
+});
+
+// API: Create Workflow Steps
+app.post("/api/workflow-steps/add", ensureAuthenticated, async (req, res) => {
+  try {
+    const { workFlowID, supplierID, numberOfPayments } = req.body;
+
+    // Validation
+    if (!workFlowID || !supplierID || !numberOfPayments) {
+      return res.status(400).json({ error: "WorkFlowID, SupplierID, and number of payments are required" });
+    }
+
+    const numPayments = parseInt(numberOfPayments);
+    if (numPayments < 1 || numPayments > 4) {
+      return res.status(400).json({ error: "Number of payments must be between 1 and 4" });
+    }
+
+    // Create workflow steps based on payment count
+    const steps = [];
+    for (let i = 1; i <= numPayments; i++) {
+      const stepResult = await pool.request()
+        .input('workFlowID', sql.Int, workFlowID)
+        .input('supplierID', sql.Int, supplierID)
+        .input('stepNumber', sql.Int, i)
+        .input('isActive', sql.Bit, i === 1 ? 1 : 0) // Only first step is active
+        .query(`
+          INSERT INTO tblWorkflowSteps (workFlowID, supplierID, stepNumber, isActive, createdDate)
+          OUTPUT INSERTED.workflowStepID, INSERTED.workFlowID, INSERTED.supplierID, INSERTED.stepNumber, INSERTED.isActive
+          VALUES (@workFlowID, @supplierID, @stepNumber, @isActive, GETDATE())
+        `);
+      
+      steps.push(stepResult.recordset[0]);
+    }
+
+    res.status(201).json({
+      success: true,
+      message: `${numPayments} workflow step(s) created successfully`,
+      steps: steps
+    });
+  } catch (err) {
+    console.error("Error creating workflow steps:", err);
+    res.status(500).json({ error: "Failed to create workflow steps: " + err.message });
+  }
+});
+
+// API: Get Workflow Steps
+app.get("/api/workflow-steps/:workFlowID", ensureAuthenticated, async (req, res) => {
+  try {
+    const { workFlowID } = req.params;
+
+    const result = await pool.request()
+      .input('workFlowID', sql.Int, workFlowID)
+      .query(`
+        SELECT workflowStepID, workFlowID, supplierID, stepNumber, isActive, createdDate
+        FROM tblWorkflowSteps
+        WHERE workFlowID = @workFlowID
+        ORDER BY stepNumber
+      `);
+
+    res.json(result.recordset);
+  } catch (err) {
+    console.error("Error fetching workflow steps:", err);
+    res.status(500).json({ error: "Failed to fetch workflow steps" });
+  }
+});
+
 // API: Get Projects (for login page)
 app.get("/api/projects", async (req, res) => {
   try {
