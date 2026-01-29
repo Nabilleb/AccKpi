@@ -445,8 +445,8 @@ const finishTask = async (taskId) => {
             const workflowRes = await fetch(`/api/workflow-steps/${task.workFlowHdrId}`);
             const stepsData = await workflowRes.json();
             
-            const activeStep = stepsData.steps.find(s => s.isActive === 1);
-            const totalSteps = stepsData.steps.length;
+            const activeStep = stepsData.find(s => s.isActive === 1);
+            const totalSteps = stepsData.length;
             
             if (totalSteps > 1 && activeStep) {
                 showSuccess(`✅ Task marked as finished!\n🎉 Workflow advanced to Payment Step ${activeStep.stepNumber} of ${totalSteps}`);
