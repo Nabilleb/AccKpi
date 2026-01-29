@@ -1082,27 +1082,6 @@ body {
   color: #fff;
 }
 
-.success-message.payment-transition {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  animation: pulse-payment 0.5s ease-out;
-  max-width: 500px;
-  font-weight: 500;
-}
-
-@keyframes pulse-payment {
-  0% {
-    transform: translateY(20px) scale(0.95);
-    opacity: 0;
-  }
-  50% {
-    box-shadow: 0 0 30px rgba(16, 185, 129, 0.6);
-  }
-  100% {
-    transform: translateY(0) scale(1);
-    opacity: 1;
-  }
-}
-
 .message i {
   font-size: 1.25rem;
 }
