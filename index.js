@@ -919,6 +919,67 @@ app.get("/api/workflow-steps/:workFlowID", ensureAuthenticated, async (req, res)
   }
 });
 
+// API: Delete Workflow Step (and all subsequent steps)
+app.delete("/api/workflow-steps/delete/:stepId", ensureAuthenticated, async (req, res) => {
+  try {
+    const { stepId } = req.params;
+    
+    // Only accounting department (ID 11) can delete payments
+    if (req.session.user.DepartmentId !== 11) {
+      return res.status(403).json({ error: "Only Accounting department can delete payments" });
+    }
+
+    // Get the step being deleted
+    const stepResult = await pool.request()
+      .input('stepId', sql.Int, stepId)
+      .query(`
+        SELECT workflowStepID, workFlowID, stepNumber
+        FROM tblWorkflowSteps
+        WHERE workflowStepID = @stepId
+      `);
+
+    if (!stepResult.recordset.length) {
+      return res.status(404).json({ error: "Payment step not found" });
+    }
+
+    const step = stepResult.recordset[0];
+    const workFlowID = step.workFlowID;
+    const stepNumber = step.stepNumber;
+
+    // Check total payment count
+    const countResult = await pool.request()
+      .input('workFlowID', sql.Int, workFlowID)
+      .query(`
+        SELECT COUNT(*) as TotalPayments
+        FROM tblWorkflowSteps
+        WHERE workFlowID = @workFlowID
+      `);
+
+    const totalPayments = countResult.recordset[0].TotalPayments;
+
+    // Prevent deleting if it's the only payment
+    if (totalPayments <= 1) {
+      return res.status(400).json({ error: "Cannot delete the only payment. At least one payment must exist." });
+    }
+
+    // Delete only this specific payment step
+    await pool.request()
+      .input('stepId', sql.Int, stepId)
+      .query(`
+        DELETE FROM tblWorkflowSteps
+        WHERE workflowStepID = @stepId
+      `);
+
+    res.json({
+      success: true,
+      message: `Payment ${stepNumber} deleted successfully`
+    });
+  } catch (err) {
+    console.error("Error deleting workflow step:", err);
+    res.status(500).json({ error: "Failed to delete payment: " + err.message });
+  }
+});
+
 // API: Advance Workflow to Next Step
 app.post("/api/workflow-steps/advance/:workFlowID", ensureAuthenticated, async (req, res) => {
   try {

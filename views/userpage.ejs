@@ -147,10 +147,17 @@
         <!-- Payment Status Tracker -->
         <% if (typeof paymentSteps !== 'undefined' && paymentSteps && paymentSteps.length > 0) { %>
         <div class="payment-tracker">
-          <h3 class="payment-title">
-            <i class="fas fa-credit-card"></i>
-            Payment Progress
-          </h3>
+          <div class="payment-header">
+            <h3 class="payment-title">
+              <i class="fas fa-credit-card"></i>
+              Payment Progress
+            </h3>
+            <% if (user.DepartmentId === 11) { %>
+              <button id="delete-payment-btn" class="btn-delete-payment">
+                <i class="fas fa-trash-alt"></i> Delete Payment
+              </button>
+            <% } %>
+          </div>
           
           <% 
             const activeIndex = paymentSteps.findIndex(s => s.isActive);
@@ -212,6 +219,7 @@
                     <% } %>
                   </div>
                 </div>
+
               </div>
               <% if (index < paymentSteps.length - 1) { %>
                 <div class="payment-connector"></div>

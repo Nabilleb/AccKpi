@@ -886,6 +886,95 @@ document.addEventListener('keydown', handleKeyEvents);
 document.addEventListener('focusin', handleFocusEvents);
 document.addEventListener('focusout', handleFocusEvents);
 
+// Delete payment handler
+const deleteLastPayment = async () => {
+    try {
+        // Get hdrId from the tasks data
+        const tasksData = JSON.parse(document.body.dataset.taskList || '[]');
+        if (!tasksData || tasksData.length === 0) {
+            showError('Workflow ID not found');
+            return;
+        }
+        
+        const hdrId = tasksData[0].workFlowHdrId;
+        
+        if (!hdrId) {
+            showError('Workflow ID not found');
+            return;
+        }
+        
+        const stepsRes = await fetch(`/api/workflow-steps/${hdrId}`);
+        if (!stepsRes.ok) {
+            showError('Failed to fetch payment steps');
+            return;
+        }
+        
+        const steps = await stepsRes.json();
+        
+        if (!steps || steps.length === 0) {
+            showError('No payments found');
+            return;
+        }
+        
+        // Find the last payment (highest step number)
+        const lastPayment = steps.reduce((max, step) => 
+            step.stepNumber > max.stepNumber ? step : max
+        );
+        
+        showConfirmation(
+            `Delete Payment ${lastPayment.stepNumber}?\n\nThis will remove the last payment step.`,
+            async () => {
+                try {
+                    const res = await fetch(`/api/workflow-steps/delete/${lastPayment.workflowStepID}`, {
+                        method: 'DELETE',
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+                    
+                    if (!res.ok) {
+                        const error = await res.json();
+                        throw new Error(error.error || 'Failed to delete payment');
+                    }
+                    
+                    showSuccess(`Payment ${lastPayment.stepNumber} deleted successfully`);
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 2000);
+                } catch (err) {
+                    showError(err.message);
+                }
+            }
+        );
+    } catch (err) {
+        showError('Error deleting payment: ' + err.message);
+    }
+};
+
+// Add event listener for delete payment button
+const deleteBtn = document.getElementById('delete-payment-btn');
+if (deleteBtn) {
+    // Get payment steps to check if there's more than 1
+    const taskData = document.body.dataset.taskList;
+    if (taskData) {
+        const tasks = JSON.parse(taskData);
+        if (tasks && tasks.length > 0) {
+            // Check payment count from first task
+            const paymentCount = tasks[0].PaymentCount;
+            
+            if (paymentCount <= 1) {
+                deleteBtn.disabled = true;
+                deleteBtn.title = 'Cannot delete the only payment';
+                deleteBtn.style.opacity = '0.5';
+                deleteBtn.style.cursor = 'not-allowed';
+            } else {
+                deleteBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    deleteLastPayment();
+                });
+            }
+        }
+    }
+}
+
 // Modal event handlers
 modalConfirmBtn?.addEventListener('click', async () => {
     if (currentAction) await currentAction();
