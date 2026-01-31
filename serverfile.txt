@@ -44146,3 +44146,985 @@
 ---
 [2026-01-30T11:11:48.955Z]      Problem: ProjectID filter expects 9, got 9 - MATCH
 ---
+[2026-01-31T14:47:43.426Z] 
+================================================================================
+---
+[2026-01-31T14:47:43.426Z] 📊 GET /api/workFlowDashData - User info:
+---
+[2026-01-31T14:47:43.426Z]   - Is Admin: false
+---
+[2026-01-31T14:47:43.426Z]   - User Project ID: 9
+---
+[2026-01-31T14:47:43.426Z]   - User Dept ID: 8
+---
+[2026-01-31T14:47:43.433Z] 📊 Total workflows in database: 5
+---
+[2026-01-31T14:47:43.453Z] 🔍 All workflows in DB (unfiltered): 5 total
+---
+[2026-01-31T14:47:43.453Z]    - ID: 5, ProjectID: 19, ProcessID: 1, Status: Pending, startDate: Sat Jan 31 2026 02:00:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-31T14:47:43.453Z]    - ID: 4, ProjectID: 9, ProcessID: 1, Status: Pending, startDate: Sat Jan 31 2026 02:00:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-31T14:47:43.453Z]    - ID: 3, ProjectID: 9, ProcessID: 1, Status: Pending, startDate: Sat Jan 31 2026 02:00:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-31T14:47:43.453Z]    - ID: 2, ProjectID: 9, ProcessID: 1, Status: Pending, startDate: Sat Jan 31 2026 02:00:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-31T14:47:43.453Z]    - ID: 1, ProjectID: 9, ProcessID: 1, Status: Pending, startDate: Sat Jan 31 2026 02:00:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-31T14:47:43.455Z]   - Adding filter: Project ID = 9
+---
+[2026-01-31T14:47:43.455Z]   - Adding filter: User Department ID = 8
+---
+[2026-01-31T14:47:43.456Z]   - Final WHERE clause: hdr.ProjectID = @ProjectID AND 
+        EXISTS (
+          SELECT 1 FROM tblProcessDepartment pd
+          WHERE pd.ProcessID = hdr.ProcessID
+            AND pd.DepartmentID = @UserDeptId
+        )
+      
+---
+[2026-01-31T14:47:43.471Z] ✅ Query executed - Returning 0 workflows
+---
+[2026-01-31T14:47:43.472Z]      Problem: ProjectID filter expects 9, got 19 - MISMATCH
+---
+[2026-01-31T14:47:43.472Z] 
+⚠️  WORKFLOWS FILTERED OUT:
+---
+[2026-01-31T14:47:43.472Z]    - ID: 4, ProjectID: 9, Status: Pending
+---
+[2026-01-31T14:47:43.472Z]      Problem: ProjectID filter expects 9, got 9 - MATCH
+---
+[2026-01-31T14:47:43.473Z]    - ID: 3, ProjectID: 9, Status: Pending
+---
+[2026-01-31T14:47:43.472Z]    - ID: 5, ProjectID: 19, Status: Pending
+---
+[2026-01-31T14:47:43.473Z]      Problem: ProjectID filter expects 9, got 9 - MATCH
+---
+[2026-01-31T14:47:43.473Z]      Problem: ProjectID filter expects 9, got 9 - MATCH
+---
+[2026-01-31T14:47:43.473Z]    - ID: 2, ProjectID: 9, Status: Pending
+---
+[2026-01-31T14:47:43.473Z]      Problem: ProjectID filter expects 9, got 9 - MATCH
+---
+[2026-01-31T14:47:43.473Z] 📋 Final returned workflows count: 0
+
+---
+[2026-01-31T14:47:43.473Z]    - ID: 1, ProjectID: 9, Status: Pending
+---
+[2026-01-31T14:51:55.345Z]   - Is Admin: false
+---
+[2026-01-31T14:51:55.344Z] 
+================================================================================
+---
+[2026-01-31T14:51:55.344Z] 📊 GET /api/workFlowDashData - User info:
+---
+[2026-01-31T14:51:55.345Z]   - User Project ID: 9
+---
+[2026-01-31T14:51:55.345Z]   - User Dept ID: 8
+---
+[2026-01-31T14:51:55.351Z] 📊 Total workflows in database: 0
+---
+[2026-01-31T14:51:55.371Z] 🔍 All workflows in DB (unfiltered): 0 total
+---
+[2026-01-31T14:51:55.372Z]   - Final WHERE clause: hdr.ProjectID = @ProjectID AND 
+        EXISTS (
+          SELECT 1 FROM tblProcessDepartment pd
+          WHERE pd.ProcessID = hdr.ProcessID
+            AND pd.DepartmentID = @UserDeptId
+        )
+      
+---
+[2026-01-31T14:51:55.371Z]   - Adding filter: User Department ID = 8
+---
+[2026-01-31T14:51:55.371Z]   - Adding filter: Project ID = 9
+---
+[2026-01-31T14:51:55.384Z] ✅ Query executed - Returning 0 workflows
+---
+[2026-01-31T14:51:55.384Z] ✅ No workflows filtered out - all match criteria
+---
+[2026-01-31T14:51:55.384Z] 📋 Final returned workflows count: 0
+
+---
+[2026-01-31T14:52:13.314Z] 
+📝 POST /addPackageForm - Received workflow request
+---
+[2026-01-31T14:52:13.314Z]   - projectID: 19
+---
+[2026-01-31T14:52:13.314Z]   - processID: 3
+---
+[2026-01-31T14:52:13.314Z]   - packageID: 4
+---
+[2026-01-31T14:52:13.314Z]   - startDate: 2026-01-31
+---
+[2026-01-31T14:52:13.314Z]   - status: Pending
+---
+[2026-01-31T14:52:13.330Z] ✅ Workflow inserted successfully:
+---
+[2026-01-31T14:52:13.330Z]   - Saved startDate: Sat Jan 31 2026 02:00:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-31T14:52:13.330Z]   - Saved status: Pending
+---
+[2026-01-31T14:52:13.330Z]   - Saved projectID: 19
+---
+[2026-01-31T14:52:13.330Z]   - New Workflow ID: 1
+---
+[2026-01-31T14:52:13.341Z] ✅ Task created for workflow:
+---
+[2026-01-31T14:52:13.341Z]   - Task ID: 2
+---
+[2026-01-31T14:52:13.341Z]   - Task Name: test
+---
+[2026-01-31T14:52:13.341Z]   - Calculated PlannedDate: Sat Jan 31 2026 02:00:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-31T14:52:13.341Z]   - Days Required: 5
+---
+[2026-01-31T14:52:16.449Z] 
+================================================================================
+---
+[2026-01-31T14:52:16.449Z]   - Is Admin: false
+---
+[2026-01-31T14:52:16.449Z] 📊 GET /api/workFlowDashData - User info:
+---
+[2026-01-31T14:52:16.449Z]   - User Project ID: 9
+---
+[2026-01-31T14:52:16.449Z]   - User Dept ID: 8
+---
+[2026-01-31T14:52:16.454Z] 📊 Total workflows in database: 1
+---
+[2026-01-31T14:52:16.469Z]    - ID: 1, ProjectID: 19, ProcessID: 3, Status: Pending, startDate: Sat Jan 31 2026 02:00:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-31T14:52:16.469Z] 🔍 All workflows in DB (unfiltered): 1 total
+---
+[2026-01-31T14:52:16.471Z]   - Final WHERE clause: hdr.ProjectID = @ProjectID AND 
+        EXISTS (
+          SELECT 1 FROM tblProcessDepartment pd
+          WHERE pd.ProcessID = hdr.ProcessID
+            AND pd.DepartmentID = @UserDeptId
+        )
+      
+---
+[2026-01-31T14:52:16.470Z]   - Adding filter: Project ID = 9
+---
+[2026-01-31T14:52:16.471Z]   - Adding filter: User Department ID = 8
+---
+[2026-01-31T14:52:16.484Z] 
+⚠️  WORKFLOWS FILTERED OUT:
+---
+[2026-01-31T14:52:16.484Z]    - ID: 1, ProjectID: 19, Status: Pending
+---
+[2026-01-31T14:52:16.484Z] 📋 Final returned workflows count: 0
+
+---
+[2026-01-31T14:52:16.484Z]      Problem: ProjectID filter expects 9, got 19 - MISMATCH
+---
+[2026-01-31T14:52:16.483Z] ✅ Query executed - Returning 0 workflows
+---
+[2026-01-31T14:54:56.245Z] 
+================================================================================
+---
+[2026-01-31T14:54:56.245Z] 📊 GET /api/workFlowDashData - User info:
+---
+[2026-01-31T14:54:56.245Z]   - Is Admin: false
+---
+[2026-01-31T14:54:56.245Z]   - User Dept ID: 8
+---
+[2026-01-31T14:54:56.245Z]   - User Project ID: 9
+---
+[2026-01-31T14:54:56.251Z] 📊 Total workflows in database: 1
+---
+[2026-01-31T14:54:56.271Z] 🔍 All workflows in DB (unfiltered): 1 total
+---
+[2026-01-31T14:54:56.271Z]    - ID: 1, ProjectID: 19, ProcessID: 3, Status: Pending, startDate: Sat Jan 31 2026 02:00:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-31T14:54:56.272Z]   - Adding filter: Project ID = 9
+---
+[2026-01-31T14:54:56.272Z]   - Adding filter: User Department ID = 8
+---
+[2026-01-31T14:54:56.273Z]   - Final WHERE clause: hdr.ProjectID = @ProjectID AND 
+        EXISTS (
+          SELECT 1 FROM tblProcessDepartment pd
+          WHERE pd.ProcessID = hdr.ProcessID
+            AND pd.DepartmentID = @UserDeptId
+        )
+      
+---
+[2026-01-31T14:54:56.289Z] 
+⚠️  WORKFLOWS FILTERED OUT:
+---
+[2026-01-31T14:54:56.288Z] ✅ Query executed - Returning 0 workflows
+---
+[2026-01-31T14:54:56.290Z] 📋 Final returned workflows count: 0
+
+---
+[2026-01-31T14:54:56.289Z]      Problem: ProjectID filter expects 9, got 19 - MISMATCH
+---
+[2026-01-31T14:54:56.289Z]    - ID: 1, ProjectID: 19, Status: Pending
+---
+[2026-01-31T15:05:26.124Z] 📊 GET /api/workFlowDashData - User info:
+---
+[2026-01-31T15:05:26.124Z]   - Is Admin: false
+---
+[2026-01-31T15:05:26.124Z] 
+================================================================================
+---
+[2026-01-31T15:05:26.124Z]   - User Dept ID: 8
+---
+[2026-01-31T15:05:26.124Z]   - User Project ID: 9
+---
+[2026-01-31T15:05:26.133Z] 📊 Total workflows in database: 1
+---
+[2026-01-31T15:05:26.155Z]    - ID: 1, ProjectID: 19, ProcessID: 3, Status: Pending, startDate: Sat Jan 31 2026 02:00:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-31T15:05:26.155Z] 🔍 All workflows in DB (unfiltered): 1 total
+---
+[2026-01-31T15:05:26.156Z]   - Adding filter: User Department ID = 8
+---
+[2026-01-31T15:05:26.156Z]   - Final WHERE clause: hdr.ProjectID = @ProjectID AND 
+        EXISTS (
+          SELECT 1 FROM tblProcessDepartment pd
+          WHERE pd.ProcessID = hdr.ProcessID
+            AND pd.DepartmentID = @UserDeptId
+        )
+      
+---
+[2026-01-31T15:05:26.155Z]   - Adding filter: Project ID = 9
+---
+[2026-01-31T15:05:26.170Z] ✅ Query executed - Returning 0 workflows
+---
+[2026-01-31T15:05:26.171Z]      Problem: ProjectID filter expects 9, got 19 - MISMATCH
+---
+[2026-01-31T15:05:26.171Z]    - ID: 1, ProjectID: 19, Status: Pending
+---
+[2026-01-31T15:05:26.171Z] 📋 Final returned workflows count: 0
+
+---
+[2026-01-31T15:05:26.171Z] 
+⚠️  WORKFLOWS FILTERED OUT:
+---
+[2026-01-31T15:05:27.545Z] 
+================================================================================
+---
+[2026-01-31T15:05:27.545Z]   - Is Admin: false
+---
+[2026-01-31T15:05:27.545Z]   - User Dept ID: 8
+---
+[2026-01-31T15:05:27.545Z] 📊 GET /api/workFlowDashData - User info:
+---
+[2026-01-31T15:05:27.545Z]   - User Project ID: 9
+---
+[2026-01-31T15:05:27.549Z] 📊 Total workflows in database: 1
+---
+[2026-01-31T15:05:27.557Z] 🔍 All workflows in DB (unfiltered): 1 total
+---
+[2026-01-31T15:05:27.557Z]    - ID: 1, ProjectID: 19, ProcessID: 3, Status: Pending, startDate: Sat Jan 31 2026 02:00:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-31T15:05:27.558Z]   - Final WHERE clause: hdr.ProjectID = @ProjectID AND 
+        EXISTS (
+          SELECT 1 FROM tblProcessDepartment pd
+          WHERE pd.ProcessID = hdr.ProcessID
+            AND pd.DepartmentID = @UserDeptId
+        )
+      
+---
+[2026-01-31T15:05:27.558Z]   - Adding filter: Project ID = 9
+---
+[2026-01-31T15:05:27.558Z]   - Adding filter: User Department ID = 8
+---
+[2026-01-31T15:05:27.563Z] ✅ Query executed - Returning 0 workflows
+---
+[2026-01-31T15:05:27.564Z]      Problem: ProjectID filter expects 9, got 19 - MISMATCH
+---
+[2026-01-31T15:05:27.564Z] 📋 Final returned workflows count: 0
+
+---
+[2026-01-31T15:05:27.563Z] 
+⚠️  WORKFLOWS FILTERED OUT:
+---
+[2026-01-31T15:05:27.564Z]    - ID: 1, ProjectID: 19, Status: Pending
+---
+[2026-01-31T15:05:27.987Z] 
+================================================================================
+---
+[2026-01-31T15:05:27.988Z]   - User Dept ID: 8
+---
+[2026-01-31T15:05:27.988Z] 📊 GET /api/workFlowDashData - User info:
+---
+[2026-01-31T15:05:27.988Z]   - Is Admin: false
+---
+[2026-01-31T15:05:27.988Z]   - User Project ID: 9
+---
+[2026-01-31T15:05:27.994Z] 📊 Total workflows in database: 1
+---
+[2026-01-31T15:05:28.017Z]    - ID: 1, ProjectID: 19, ProcessID: 3, Status: Pending, startDate: Sat Jan 31 2026 02:00:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-31T15:05:28.018Z]   - Adding filter: User Department ID = 8
+---
+[2026-01-31T15:05:28.017Z] 🔍 All workflows in DB (unfiltered): 1 total
+---
+[2026-01-31T15:05:28.018Z]   - Final WHERE clause: hdr.ProjectID = @ProjectID AND 
+        EXISTS (
+          SELECT 1 FROM tblProcessDepartment pd
+          WHERE pd.ProcessID = hdr.ProcessID
+            AND pd.DepartmentID = @UserDeptId
+        )
+      
+---
+[2026-01-31T15:05:28.018Z]   - Adding filter: Project ID = 9
+---
+[2026-01-31T15:05:28.038Z] ✅ Query executed - Returning 0 workflows
+---
+[2026-01-31T15:05:28.039Z]      Problem: ProjectID filter expects 9, got 19 - MISMATCH
+---
+[2026-01-31T15:05:28.039Z]    - ID: 1, ProjectID: 19, Status: Pending
+---
+[2026-01-31T15:05:28.039Z] 📋 Final returned workflows count: 0
+
+---
+[2026-01-31T15:05:28.039Z] 
+⚠️  WORKFLOWS FILTERED OUT:
+---
+[2026-01-31T15:05:28.360Z] 📊 GET /api/workFlowDashData - User info:
+---
+[2026-01-31T15:05:28.360Z] 
+================================================================================
+---
+[2026-01-31T15:05:28.360Z]   - Is Admin: false
+---
+[2026-01-31T15:05:28.360Z]   - User Project ID: 9
+---
+[2026-01-31T15:05:28.360Z]   - User Dept ID: 8
+---
+[2026-01-31T15:05:28.367Z] 📊 Total workflows in database: 1
+---
+[2026-01-31T15:05:28.385Z]    - ID: 1, ProjectID: 19, ProcessID: 3, Status: Pending, startDate: Sat Jan 31 2026 02:00:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-31T15:05:28.386Z]   - Adding filter: Project ID = 9
+---
+[2026-01-31T15:05:28.385Z] 🔍 All workflows in DB (unfiltered): 1 total
+---
+[2026-01-31T15:05:28.386Z]   - Adding filter: User Department ID = 8
+---
+[2026-01-31T15:05:28.386Z]   - Final WHERE clause: hdr.ProjectID = @ProjectID AND 
+        EXISTS (
+          SELECT 1 FROM tblProcessDepartment pd
+          WHERE pd.ProcessID = hdr.ProcessID
+            AND pd.DepartmentID = @UserDeptId
+        )
+      
+---
+[2026-01-31T15:05:28.401Z] ✅ Query executed - Returning 0 workflows
+---
+[2026-01-31T15:05:28.401Z]      Problem: ProjectID filter expects 9, got 19 - MISMATCH
+---
+[2026-01-31T15:05:28.401Z] 
+⚠️  WORKFLOWS FILTERED OUT:
+---
+[2026-01-31T15:05:28.402Z] 📋 Final returned workflows count: 0
+
+---
+[2026-01-31T15:05:28.401Z]    - ID: 1, ProjectID: 19, Status: Pending
+---
+[2026-01-31T15:05:28.688Z] 📊 GET /api/workFlowDashData - User info:
+---
+[2026-01-31T15:05:28.688Z] 
+================================================================================
+---
+[2026-01-31T15:05:28.688Z]   - Is Admin: false
+---
+[2026-01-31T15:05:28.688Z]   - User Dept ID: 8
+---
+[2026-01-31T15:05:28.688Z]   - User Project ID: 9
+---
+[2026-01-31T15:05:28.692Z] 📊 Total workflows in database: 1
+---
+[2026-01-31T15:05:28.711Z]    - ID: 1, ProjectID: 19, ProcessID: 3, Status: Pending, startDate: Sat Jan 31 2026 02:00:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-31T15:05:28.711Z]   - Adding filter: Project ID = 9
+---
+[2026-01-31T15:05:28.712Z]   - Adding filter: User Department ID = 8
+---
+[2026-01-31T15:05:28.711Z] 🔍 All workflows in DB (unfiltered): 1 total
+---
+[2026-01-31T15:05:28.712Z]   - Final WHERE clause: hdr.ProjectID = @ProjectID AND 
+        EXISTS (
+          SELECT 1 FROM tblProcessDepartment pd
+          WHERE pd.ProcessID = hdr.ProcessID
+            AND pd.DepartmentID = @UserDeptId
+        )
+      
+---
+[2026-01-31T15:05:28.740Z] ✅ Query executed - Returning 0 workflows
+---
+[2026-01-31T15:05:28.740Z]      Problem: ProjectID filter expects 9, got 19 - MISMATCH
+---
+[2026-01-31T15:05:28.740Z] 📋 Final returned workflows count: 0
+
+---
+[2026-01-31T15:05:28.740Z]    - ID: 1, ProjectID: 19, Status: Pending
+---
+[2026-01-31T15:05:28.740Z] 
+⚠️  WORKFLOWS FILTERED OUT:
+---
+[2026-01-31T15:05:29.042Z] 
+================================================================================
+---
+[2026-01-31T15:05:29.042Z] 📊 GET /api/workFlowDashData - User info:
+---
+[2026-01-31T15:05:29.042Z]   - User Dept ID: 8
+---
+[2026-01-31T15:05:29.042Z]   - User Project ID: 9
+---
+[2026-01-31T15:05:29.042Z]   - Is Admin: false
+---
+[2026-01-31T15:05:29.048Z] 📊 Total workflows in database: 1
+---
+[2026-01-31T15:05:29.065Z]    - ID: 1, ProjectID: 19, ProcessID: 3, Status: Pending, startDate: Sat Jan 31 2026 02:00:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-31T15:05:29.065Z] 🔍 All workflows in DB (unfiltered): 1 total
+---
+[2026-01-31T15:05:29.066Z]   - Final WHERE clause: hdr.ProjectID = @ProjectID AND 
+        EXISTS (
+          SELECT 1 FROM tblProcessDepartment pd
+          WHERE pd.ProcessID = hdr.ProcessID
+            AND pd.DepartmentID = @UserDeptId
+        )
+      
+---
+[2026-01-31T15:05:29.065Z]   - Adding filter: Project ID = 9
+---
+[2026-01-31T15:05:29.065Z]   - Adding filter: User Department ID = 8
+---
+[2026-01-31T15:05:29.080Z] ✅ Query executed - Returning 0 workflows
+---
+[2026-01-31T15:05:29.081Z]      Problem: ProjectID filter expects 9, got 19 - MISMATCH
+---
+[2026-01-31T15:05:29.081Z]    - ID: 1, ProjectID: 19, Status: Pending
+---
+[2026-01-31T15:05:29.081Z] 📋 Final returned workflows count: 0
+
+---
+[2026-01-31T15:05:29.081Z] 
+⚠️  WORKFLOWS FILTERED OUT:
+---
+[2026-01-31T15:07:03.890Z] 
+📝 POST /addPackageForm - Received workflow request
+---
+[2026-01-31T15:07:03.890Z]   - processID: 3
+---
+[2026-01-31T15:07:03.890Z]   - projectID: 9
+---
+[2026-01-31T15:07:03.890Z]   - packageID: 10
+---
+[2026-01-31T15:07:03.890Z]   - startDate: 2026-01-31
+---
+[2026-01-31T15:07:03.890Z]   - status: Pending
+---
+[2026-01-31T15:07:03.906Z] ✅ Workflow inserted successfully:
+---
+[2026-01-31T15:07:03.907Z]   - Saved startDate: Sat Jan 31 2026 02:00:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-31T15:07:03.907Z]   - Saved status: Pending
+---
+[2026-01-31T15:07:03.907Z]   - Saved projectID: 9
+---
+[2026-01-31T15:07:03.907Z]   - New Workflow ID: 2
+---
+[2026-01-31T15:07:03.917Z] ✅ Task created for workflow:
+---
+[2026-01-31T15:07:03.917Z]   - Task ID: 3
+---
+[2026-01-31T15:07:03.917Z]   - Days Required: 5
+---
+[2026-01-31T15:07:03.917Z]   - Calculated PlannedDate: Sat Jan 31 2026 02:00:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-31T15:07:03.917Z]   - Task Name: test
+---
+[2026-01-31T15:07:07.100Z] 
+================================================================================
+---
+[2026-01-31T15:07:07.100Z] 📊 GET /api/workFlowDashData - User info:
+---
+[2026-01-31T15:07:07.100Z]   - User Dept ID: 8
+---
+[2026-01-31T15:07:07.100Z]   - Is Admin: false
+---
+[2026-01-31T15:07:07.100Z]   - User Project ID: 9
+---
+[2026-01-31T15:07:07.104Z] 📊 Total workflows in database: 2
+---
+[2026-01-31T15:07:07.120Z]    - ID: 1, ProjectID: 19, ProcessID: 3, Status: Pending, startDate: Sat Jan 31 2026 02:00:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-31T15:07:07.120Z]    - ID: 2, ProjectID: 9, ProcessID: 3, Status: Pending, startDate: Sat Jan 31 2026 02:00:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-31T15:07:07.121Z]   - Adding filter: User Department ID = 8
+---
+[2026-01-31T15:07:07.120Z]   - Adding filter: Project ID = 9
+---
+[2026-01-31T15:07:07.120Z] 🔍 All workflows in DB (unfiltered): 2 total
+---
+[2026-01-31T15:07:07.121Z]   - Final WHERE clause: hdr.ProjectID = @ProjectID AND 
+        EXISTS (
+          SELECT 1 FROM tblProcessDepartment pd
+          WHERE pd.ProcessID = hdr.ProcessID
+            AND pd.DepartmentID = @UserDeptId
+        )
+      
+---
+[2026-01-31T15:07:07.132Z] ✅ Query executed - Returning 1 workflows
+---
+[2026-01-31T15:07:07.133Z]      Problem: ProjectID filter expects 9, got 19 - MISMATCH
+---
+[2026-01-31T15:07:07.133Z] 📋 Final returned workflows count: 1
+
+---
+[2026-01-31T15:07:07.133Z]    - ID: 1, ProjectID: 19, Status: Pending
+---
+[2026-01-31T15:07:07.133Z] 
+⚠️  WORKFLOWS FILTERED OUT:
+---
+[2026-01-31T15:13:36.572Z] 📊 GET /api/workFlowDashData - User info:
+---
+[2026-01-31T15:13:36.572Z] 
+================================================================================
+---
+[2026-01-31T15:13:36.572Z]   - Is Admin: false
+---
+[2026-01-31T15:13:36.572Z]   - User Dept ID: 9
+---
+[2026-01-31T15:13:36.572Z]   - User Project ID: 12
+---
+[2026-01-31T15:13:36.581Z] 📊 Total workflows in database: 2
+---
+[2026-01-31T15:13:36.601Z] 🔍 All workflows in DB (unfiltered): 2 total
+---
+[2026-01-31T15:13:36.601Z]    - ID: 1, ProjectID: 19, ProcessID: 3, Status: Pending, startDate: Sat Jan 31 2026 02:00:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-31T15:13:36.601Z]    - ID: 2, ProjectID: 9, ProcessID: 3, Status: Completed, startDate: Sat Jan 31 2026 02:00:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-31T15:13:36.602Z]   - Adding filter: Project ID = 12
+---
+[2026-01-31T15:13:36.603Z]   - Final WHERE clause: hdr.ProjectID = @ProjectID AND 
+        EXISTS (
+          SELECT 1 FROM tblProcessDepartment pd
+          WHERE pd.ProcessID = hdr.ProcessID
+            AND pd.DepartmentID = @UserDeptId
+        )
+      
+---
+[2026-01-31T15:13:36.603Z]   - Adding filter: User Department ID = 9
+---
+[2026-01-31T15:13:36.618Z] ✅ Query executed - Returning 0 workflows
+---
+[2026-01-31T15:13:36.619Z]    - ID: 2, ProjectID: 9, Status: Completed
+---
+[2026-01-31T15:13:36.619Z]      Problem: ProjectID filter expects 12, got 9 - MISMATCH
+---
+[2026-01-31T15:13:36.620Z]    - ID: 1, ProjectID: 19, Status: Pending
+---
+[2026-01-31T15:13:36.620Z]      Problem: ProjectID filter expects 12, got 19 - MISMATCH
+---
+[2026-01-31T15:13:36.620Z] 📋 Final returned workflows count: 0
+
+---
+[2026-01-31T15:13:36.619Z] 
+⚠️  WORKFLOWS FILTERED OUT:
+---
+[2026-01-31T15:13:53.077Z] 
+📝 POST /addPackageForm - Received workflow request
+---
+[2026-01-31T15:13:53.077Z]   - processID: 4
+---
+[2026-01-31T15:13:53.077Z]   - startDate: 2026-01-31
+---
+[2026-01-31T15:13:53.077Z]   - projectID: 19
+---
+[2026-01-31T15:13:53.077Z]   - packageID: 5
+---
+[2026-01-31T15:13:53.077Z]   - status: Pending
+---
+[2026-01-31T15:13:53.106Z] ✅ Workflow inserted successfully:
+---
+[2026-01-31T15:13:53.106Z]   - Saved startDate: Sat Jan 31 2026 02:00:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-31T15:13:53.106Z]   - New Workflow ID: 3
+---
+[2026-01-31T15:13:53.106Z]   - Saved projectID: 19
+---
+[2026-01-31T15:13:53.106Z]   - Saved status: Pending
+---
+[2026-01-31T15:13:53.119Z] ✅ Task created for workflow:
+---
+[2026-01-31T15:13:53.119Z]   - Task ID: 8
+---
+[2026-01-31T15:13:53.119Z]   - Task Name: jhg
+---
+[2026-01-31T15:13:53.119Z]   - Days Required: 5
+---
+[2026-01-31T15:13:53.119Z]   - Calculated PlannedDate: Sat Jan 31 2026 02:00:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-31T15:13:53.128Z]   - Task ID: 9
+---
+[2026-01-31T15:13:53.128Z] ✅ Task created for workflow:
+---
+[2026-01-31T15:13:53.128Z]   - Calculated PlannedDate: null
+---
+[2026-01-31T15:13:53.128Z]   - Days Required: 5
+---
+[2026-01-31T15:13:53.128Z]   - Task Name: jhg
+---
+[2026-01-31T15:13:53.137Z] ✅ Task created for workflow:
+---
+[2026-01-31T15:13:53.137Z]   - Task ID: 10
+---
+[2026-01-31T15:13:53.137Z]   - Task Name: ng
+---
+[2026-01-31T15:13:53.137Z]   - Days Required: 5
+---
+[2026-01-31T15:13:53.137Z]   - Calculated PlannedDate: null
+---
+[2026-01-31T15:13:53.147Z] ✅ Task created for workflow:
+---
+[2026-01-31T15:13:53.147Z]   - Task ID: 11
+---
+[2026-01-31T15:13:53.147Z]   - Task Name: jh
+---
+[2026-01-31T15:13:53.147Z]   - Days Required: 2
+---
+[2026-01-31T15:13:53.147Z]   - Calculated PlannedDate: null
+---
+[2026-01-31T15:13:56.315Z] 
+================================================================================
+---
+[2026-01-31T15:13:56.315Z] 📊 GET /api/workFlowDashData - User info:
+---
+[2026-01-31T15:13:56.315Z]   - Is Admin: false
+---
+[2026-01-31T15:13:56.315Z]   - User Project ID: 12
+---
+[2026-01-31T15:13:56.315Z]   - User Dept ID: 9
+---
+[2026-01-31T15:13:56.320Z] 📊 Total workflows in database: 3
+---
+[2026-01-31T15:13:56.343Z] 🔍 All workflows in DB (unfiltered): 3 total
+---
+[2026-01-31T15:13:56.343Z]    - ID: 1, ProjectID: 19, ProcessID: 3, Status: Pending, startDate: Sat Jan 31 2026 02:00:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-31T15:13:56.344Z]   - Adding filter: Project ID = 12
+---
+[2026-01-31T15:13:56.343Z]    - ID: 3, ProjectID: 19, ProcessID: 4, Status: Pending, startDate: Sat Jan 31 2026 02:00:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-31T15:13:56.343Z]    - ID: 2, ProjectID: 9, ProcessID: 3, Status: Completed, startDate: Sat Jan 31 2026 02:00:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-31T15:13:56.345Z]   - Final WHERE clause: hdr.ProjectID = @ProjectID AND 
+        EXISTS (
+          SELECT 1 FROM tblProcessDepartment pd
+          WHERE pd.ProcessID = hdr.ProcessID
+            AND pd.DepartmentID = @UserDeptId
+        )
+      
+---
+[2026-01-31T15:13:56.344Z]   - Adding filter: User Department ID = 9
+---
+[2026-01-31T15:13:56.362Z] ✅ Query executed - Returning 0 workflows
+---
+[2026-01-31T15:13:56.363Z]      Problem: ProjectID filter expects 12, got 19 - MISMATCH
+---
+[2026-01-31T15:13:56.363Z]    - ID: 2, ProjectID: 9, Status: Completed
+---
+[2026-01-31T15:13:56.363Z]      Problem: ProjectID filter expects 12, got 9 - MISMATCH
+---
+[2026-01-31T15:13:56.362Z] 
+⚠️  WORKFLOWS FILTERED OUT:
+---
+[2026-01-31T15:13:56.363Z]      Problem: ProjectID filter expects 12, got 19 - MISMATCH
+---
+[2026-01-31T15:13:56.363Z]    - ID: 3, ProjectID: 19, Status: Pending
+---
+[2026-01-31T15:13:56.363Z]    - ID: 1, ProjectID: 19, Status: Pending
+---
+[2026-01-31T15:13:56.363Z] 📋 Final returned workflows count: 0
+
+---
+[2026-01-31T15:14:15.306Z] 
+📝 POST /addPackageForm - Received workflow request
+---
+[2026-01-31T15:14:15.306Z]   - processID: 4
+---
+[2026-01-31T15:14:15.307Z]   - projectID: 12
+---
+[2026-01-31T15:14:15.307Z]   - status: Pending
+---
+[2026-01-31T15:14:15.307Z]   - packageID: 10
+---
+[2026-01-31T15:14:15.307Z]   - startDate: 2026-01-31
+---
+[2026-01-31T15:14:15.342Z]   - New Workflow ID: 4
+---
+[2026-01-31T15:14:15.342Z] ✅ Workflow inserted successfully:
+---
+[2026-01-31T15:14:15.343Z]   - Saved status: Pending
+---
+[2026-01-31T15:14:15.342Z]   - Saved projectID: 12
+---
+[2026-01-31T15:14:15.342Z]   - Saved startDate: Sat Jan 31 2026 02:00:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-31T15:14:15.353Z] ✅ Task created for workflow:
+---
+[2026-01-31T15:14:15.353Z]   - Days Required: 5
+---
+[2026-01-31T15:14:15.353Z]   - Task Name: jhg
+---
+[2026-01-31T15:14:15.353Z]   - Calculated PlannedDate: Sat Jan 31 2026 02:00:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-31T15:14:15.353Z]   - Task ID: 12
+---
+[2026-01-31T15:14:15.362Z] ✅ Task created for workflow:
+---
+[2026-01-31T15:14:15.362Z]   - Task ID: 13
+---
+[2026-01-31T15:14:15.362Z]   - Task Name: jhg
+---
+[2026-01-31T15:14:15.362Z]   - Days Required: 5
+---
+[2026-01-31T15:14:15.362Z]   - Calculated PlannedDate: null
+---
+[2026-01-31T15:14:15.370Z] ✅ Task created for workflow:
+---
+[2026-01-31T15:14:15.370Z]   - Task ID: 14
+---
+[2026-01-31T15:14:15.370Z]   - Days Required: 5
+---
+[2026-01-31T15:14:15.370Z]   - Task Name: ng
+---
+[2026-01-31T15:14:15.370Z]   - Calculated PlannedDate: null
+---
+[2026-01-31T15:14:15.381Z]   - Task ID: 15
+---
+[2026-01-31T15:14:15.381Z]   - Days Required: 2
+---
+[2026-01-31T15:14:15.381Z]   - Calculated PlannedDate: null
+---
+[2026-01-31T15:14:15.381Z] ✅ Task created for workflow:
+---
+[2026-01-31T15:14:15.381Z]   - Task Name: jh
+---
+[2026-01-31T15:14:18.548Z] 
+================================================================================
+---
+[2026-01-31T15:14:18.548Z] 📊 GET /api/workFlowDashData - User info:
+---
+[2026-01-31T15:14:18.548Z]   - Is Admin: false
+---
+[2026-01-31T15:14:18.549Z]   - User Project ID: 12
+---
+[2026-01-31T15:14:18.549Z]   - User Dept ID: 9
+---
+[2026-01-31T15:14:18.553Z] 📊 Total workflows in database: 4
+---
+[2026-01-31T15:14:18.570Z]    - ID: 3, ProjectID: 19, ProcessID: 4, Status: Pending, startDate: Sat Jan 31 2026 02:00:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-31T15:14:18.570Z]    - ID: 2, ProjectID: 9, ProcessID: 3, Status: Completed, startDate: Sat Jan 31 2026 02:00:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-31T15:14:18.570Z]    - ID: 1, ProjectID: 19, ProcessID: 3, Status: Pending, startDate: Sat Jan 31 2026 02:00:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-31T15:14:18.570Z]    - ID: 4, ProjectID: 12, ProcessID: 4, Status: Pending, startDate: Sat Jan 31 2026 02:00:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-31T15:14:18.571Z]   - Adding filter: User Department ID = 9
+---
+[2026-01-31T15:14:18.570Z] 🔍 All workflows in DB (unfiltered): 4 total
+---
+[2026-01-31T15:14:18.572Z]   - Final WHERE clause: hdr.ProjectID = @ProjectID AND 
+        EXISTS (
+          SELECT 1 FROM tblProcessDepartment pd
+          WHERE pd.ProcessID = hdr.ProcessID
+            AND pd.DepartmentID = @UserDeptId
+        )
+      
+---
+[2026-01-31T15:14:18.571Z]   - Adding filter: Project ID = 12
+---
+[2026-01-31T15:14:18.587Z] ✅ Query executed - Returning 1 workflows
+---
+[2026-01-31T15:14:18.587Z]      Problem: ProjectID filter expects 12, got 19 - MISMATCH
+---
+[2026-01-31T15:14:18.587Z] 
+⚠️  WORKFLOWS FILTERED OUT:
+---
+[2026-01-31T15:14:18.587Z]    - ID: 3, ProjectID: 19, Status: Pending
+---
+[2026-01-31T15:14:18.587Z]    - ID: 2, ProjectID: 9, Status: Completed
+---
+[2026-01-31T15:14:18.587Z]      Problem: ProjectID filter expects 12, got 9 - MISMATCH
+---
+[2026-01-31T15:14:18.588Z]      Problem: ProjectID filter expects 12, got 19 - MISMATCH
+---
+[2026-01-31T15:14:18.588Z]    - ID: 1, ProjectID: 19, Status: Pending
+---
+[2026-01-31T15:14:18.588Z] 📋 Final returned workflows count: 1
+
+---
+[2026-01-31T15:17:25.241Z] 📊 GET /api/workFlowDashData - User info:
+---
+[2026-01-31T15:17:25.241Z]   - Is Admin: false
+---
+[2026-01-31T15:17:25.241Z] 
+================================================================================
+---
+[2026-01-31T15:17:25.242Z]   - User Project ID: 9
+---
+[2026-01-31T15:17:25.241Z]   - User Dept ID: 8
+---
+[2026-01-31T15:17:25.246Z] 📊 Total workflows in database: 4
+---
+[2026-01-31T15:17:25.263Z] 🔍 All workflows in DB (unfiltered): 4 total
+---
+[2026-01-31T15:17:25.263Z]    - ID: 4, ProjectID: 12, ProcessID: 4, Status: Pending, startDate: Sat Jan 31 2026 02:00:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-31T15:17:25.263Z]    - ID: 3, ProjectID: 19, ProcessID: 4, Status: Pending, startDate: Sat Jan 31 2026 02:00:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-31T15:17:25.263Z]    - ID: 1, ProjectID: 19, ProcessID: 3, Status: Pending, startDate: Sat Jan 31 2026 02:00:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-31T15:17:25.263Z]    - ID: 2, ProjectID: 9, ProcessID: 3, Status: Completed, startDate: Sat Jan 31 2026 02:00:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-31T15:17:25.264Z]   - Adding filter: Project ID = 9
+---
+[2026-01-31T15:17:25.264Z]   - Adding filter: User Department ID = 8
+---
+[2026-01-31T15:17:25.264Z]   - Final WHERE clause: hdr.ProjectID = @ProjectID AND 
+        EXISTS (
+          SELECT 1 FROM tblProcessDepartment pd
+          WHERE pd.ProcessID = hdr.ProcessID
+            AND pd.DepartmentID = @UserDeptId
+        )
+      
+---
+[2026-01-31T15:17:25.281Z] ✅ Query executed - Returning 1 workflows
+---
+[2026-01-31T15:17:25.282Z]      Problem: ProjectID filter expects 9, got 12 - MISMATCH
+---
+[2026-01-31T15:17:25.282Z]    - ID: 4, ProjectID: 12, Status: Pending
+---
+[2026-01-31T15:17:25.283Z]    - ID: 3, ProjectID: 19, Status: Pending
+---
+[2026-01-31T15:17:25.283Z]    - ID: 1, ProjectID: 19, Status: Pending
+---
+[2026-01-31T15:17:25.282Z] 
+⚠️  WORKFLOWS FILTERED OUT:
+---
+[2026-01-31T15:17:25.283Z]      Problem: ProjectID filter expects 9, got 19 - MISMATCH
+---
+[2026-01-31T15:17:25.283Z]      Problem: ProjectID filter expects 9, got 19 - MISMATCH
+---
+[2026-01-31T15:17:25.283Z] 📋 Final returned workflows count: 1
+
+---
+[2026-01-31T15:17:28.764Z] 
+================================================================================
+---
+[2026-01-31T15:17:28.764Z] 📊 GET /api/workFlowDashData - User info:
+---
+[2026-01-31T15:17:28.764Z]   - User Dept ID: 8
+---
+[2026-01-31T15:17:28.764Z]   - User Project ID: 9
+---
+[2026-01-31T15:17:28.764Z]   - Is Admin: false
+---
+[2026-01-31T15:17:28.768Z] 📊 Total workflows in database: 4
+---
+[2026-01-31T15:17:28.777Z]    - ID: 4, ProjectID: 12, ProcessID: 4, Status: Pending, startDate: Sat Jan 31 2026 02:00:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-31T15:17:28.777Z]    - ID: 2, ProjectID: 9, ProcessID: 3, Status: Completed, startDate: Sat Jan 31 2026 02:00:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-31T15:17:28.777Z]    - ID: 3, ProjectID: 19, ProcessID: 4, Status: Pending, startDate: Sat Jan 31 2026 02:00:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-31T15:17:28.777Z]   - Adding filter: Project ID = 9
+---
+[2026-01-31T15:17:28.777Z]    - ID: 1, ProjectID: 19, ProcessID: 3, Status: Pending, startDate: Sat Jan 31 2026 02:00:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-31T15:17:28.778Z]   - Final WHERE clause: hdr.ProjectID = @ProjectID AND 
+        EXISTS (
+          SELECT 1 FROM tblProcessDepartment pd
+          WHERE pd.ProcessID = hdr.ProcessID
+            AND pd.DepartmentID = @UserDeptId
+        )
+      
+---
+[2026-01-31T15:17:28.778Z]   - Adding filter: User Department ID = 8
+---
+[2026-01-31T15:17:28.776Z] 🔍 All workflows in DB (unfiltered): 4 total
+---
+[2026-01-31T15:17:28.784Z] ✅ Query executed - Returning 1 workflows
+---
+[2026-01-31T15:17:28.784Z]      Problem: ProjectID filter expects 9, got 12 - MISMATCH
+---
+[2026-01-31T15:17:28.785Z]    - ID: 3, ProjectID: 19, Status: Pending
+---
+[2026-01-31T15:17:28.785Z]    - ID: 1, ProjectID: 19, Status: Pending
+---
+[2026-01-31T15:17:28.785Z]      Problem: ProjectID filter expects 9, got 19 - MISMATCH
+---
+[2026-01-31T15:17:28.784Z] 
+⚠️  WORKFLOWS FILTERED OUT:
+---
+[2026-01-31T15:17:28.786Z]      Problem: ProjectID filter expects 9, got 19 - MISMATCH
+---
+[2026-01-31T15:17:28.787Z] 📋 Final returned workflows count: 1
+
+---
+[2026-01-31T15:17:28.784Z]    - ID: 4, ProjectID: 12, Status: Pending
+---
+[2026-01-31T15:17:36.247Z] 
+================================================================================
+---
+[2026-01-31T15:17:36.247Z] 📊 GET /api/workFlowDashData - User info:
+---
+[2026-01-31T15:17:36.247Z]   - Is Admin: false
+---
+[2026-01-31T15:17:36.247Z]   - User Project ID: 12
+---
+[2026-01-31T15:17:36.247Z]   - User Dept ID: 8
+---
+[2026-01-31T15:17:36.253Z] 📊 Total workflows in database: 4
+---
+[2026-01-31T15:17:36.271Z] 🔍 All workflows in DB (unfiltered): 4 total
+---
+[2026-01-31T15:17:36.271Z]    - ID: 4, ProjectID: 12, ProcessID: 4, Status: Pending, startDate: Sat Jan 31 2026 02:00:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-31T15:17:36.271Z]    - ID: 2, ProjectID: 9, ProcessID: 3, Status: Completed, startDate: Sat Jan 31 2026 02:00:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-31T15:17:36.273Z]   - Adding filter: Project ID = 12
+---
+[2026-01-31T15:17:36.271Z]    - ID: 3, ProjectID: 19, ProcessID: 4, Status: Pending, startDate: Sat Jan 31 2026 02:00:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-31T15:17:36.273Z]   - Final WHERE clause: hdr.ProjectID = @ProjectID AND 
+        EXISTS (
+          SELECT 1 FROM tblProcessDepartment pd
+          WHERE pd.ProcessID = hdr.ProcessID
+            AND pd.DepartmentID = @UserDeptId
+        )
+      
+---
+[2026-01-31T15:17:36.271Z]    - ID: 1, ProjectID: 19, ProcessID: 3, Status: Pending, startDate: Sat Jan 31 2026 02:00:00 GMT+0200 (Eastern European Standard Time)
+---
+[2026-01-31T15:17:36.273Z]   - Adding filter: User Department ID = 8
+---
+[2026-01-31T15:17:36.287Z] ✅ Query executed - Returning 1 workflows
+---
+[2026-01-31T15:17:36.288Z]      Problem: ProjectID filter expects 12, got 19 - MISMATCH
+---
+[2026-01-31T15:17:36.287Z] 
+⚠️  WORKFLOWS FILTERED OUT:
+---
+[2026-01-31T15:17:36.288Z]    - ID: 3, ProjectID: 19, Status: Pending
+---
+[2026-01-31T15:17:36.288Z]      Problem: ProjectID filter expects 12, got 9 - MISMATCH
+---
+[2026-01-31T15:17:36.288Z]      Problem: ProjectID filter expects 12, got 19 - MISMATCH
+---
+[2026-01-31T15:17:36.288Z]    - ID: 1, ProjectID: 19, Status: Pending
+---
+[2026-01-31T15:17:36.289Z] 📋 Final returned workflows count: 1
+
+---
+[2026-01-31T15:17:36.288Z]    - ID: 2, ProjectID: 9, Status: Completed
+---

@@ -1036,8 +1036,23 @@ app.post("/api/workflow-steps/advance/:workFlowID", ensureAuthenticated, async (
         WHERE workflowStepID = @workflowStepID
       `);
 
-    // Reset all tasks for this workflow to prepare for next step
-    // Reset TimeStarted, TimeFinished, Delay, DelayReason, and IsTaskSelected
+    // Delete tasks from MovePassOnce departments (Contract) from workflow
+    await pool.request()
+      .input('workFlowID', sql.Int, workFlowID)
+      .query(`
+        DELETE FROM tblWorkflowDtl
+        WHERE workFlowHdrId = @workFlowID
+          AND TaskID IN (
+            SELECT TaskID FROM tblTasks t
+            WHERE t.WorkFlowHdrID = @workFlowID
+              AND t.DepId IN (
+                SELECT DepartmentID FROM tblDepartments 
+                WHERE MovePassOnce = 1
+              )
+          )
+      `);
+
+    // Reset remaining tasks (reset times and deselect all)
     await pool.request()
       .input('workFlowID', sql.Int, workFlowID)
       .query(`
@@ -1051,32 +1066,33 @@ app.post("/api/workflow-steps/advance/:workFlowID", ensureAuthenticated, async (
         WHERE workFlowHdrId = @workFlowID
       `);
 
-    // Reset task selection for the first task in first department
-    await pool.request()
+    // Get first available department (excluding MovePassOnce departments)
+    const firstDeptResult = await pool.request()
       .input('workFlowID', sql.Int, workFlowID)
       .query(`
-        UPDATE tblTasks
-        SET IsTaskSelected = 1
-        WHERE WorkFlowHdrID = @workFlowID
-          AND DepId = (
-            SELECT TOP 1 DepId 
-            FROM tblTasks 
-            WHERE WorkFlowHdrID = @workFlowID 
-            ORDER BY Priority ASC
-          )
-          AND Priority = (
-            SELECT TOP 1 Priority 
-            FROM tblTasks 
-            WHERE WorkFlowHdrID = @workFlowID 
-              AND DepId = (
-                SELECT TOP 1 DepId 
-                FROM tblTasks 
-                WHERE WorkFlowHdrID = @workFlowID 
-                ORDER BY Priority ASC
-              )
-            ORDER BY Priority ASC
-          )
+        SELECT TOP 1 t.DepId
+        FROM tblTasks t
+        INNER JOIN tblDepartments d ON t.DepId = d.DepartmentID
+        WHERE t.WorkFlowHdrID = @workFlowID
+          AND ISNULL(d.MovePassOnce, 0) = 0
+        ORDER BY t.DepId ASC
       `);
+
+    if (firstDeptResult.recordset.length > 0) {
+      const firstDeptId = firstDeptResult.recordset[0].DepId;
+
+      // Select first task (Priority 1) from first available department
+      await pool.request()
+        .input('workFlowID', sql.Int, workFlowID)
+        .input('firstDeptId', sql.Int, firstDeptId)
+        .query(`
+          UPDATE tblTasks
+          SET IsTaskSelected = 1
+          WHERE WorkFlowHdrID = @workFlowID
+            AND DepId = @firstDeptId
+            AND Priority = 1
+        `);
+    }
 
     res.json({
       success: true,
@@ -4136,6 +4152,13 @@ app.post('/finish-task/:taskId', async (req, res) => {
     await pool.request()
       .input('taskId', taskId)
       .query(`UPDATE tblTasks SET IsTaskSelected = 0 WHERE TaskID = @taskId`);
+
+    // Mark task as isDoneOnce = 1 if it's from Contract department (DepId = 9)
+    if (DepId === 9) {
+      await pool.request()
+        .input('taskId', taskId)
+        .query(`UPDATE tblTasks SET isDoneOnce = 1 WHERE TaskID = @taskId`);
+    }
 
     // 🔗 ACTIVATE TASKS THAT DEPEND ON THIS FINISHED TASK
     // Find any tasks that have linkTasks = finishedTaskId (tasks that depend on this task)
