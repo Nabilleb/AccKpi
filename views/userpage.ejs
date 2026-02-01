@@ -161,11 +161,13 @@
           
           <% 
             const activeIndex = paymentSteps.findIndex(s => s.isActive);
-            const activeStep = paymentSteps[activeIndex];
-            const nextStep = activeIndex < paymentSteps.length - 1 ? paymentSteps[activeIndex + 1] : null;
+            const activeStep = paymentSteps[activeIndex] || null;
+            const nextStep = activeIndex >= 0 && activeIndex < paymentSteps.length - 1 ? paymentSteps[activeIndex + 1] : null;
+            const allStepsCompleted = paymentSteps.every(s => !s.isActive); // All steps have no active flag
+            const allCompleted = allStepsCompleted && activeIndex === -1 && paymentSteps.length > 0;
           %>
           
-          <% if (activeStep) { %>
+          <% if (!allCompleted && activeStep) { %>
           <div class="payment-transition-banner">
             <div class="transition-content">
               <div class="transition-icon">
@@ -173,7 +175,11 @@
               </div>
               <div class="transition-text">
                 <p class="transition-primary">
-                  Payment <%= activeStep.stepNumber %> <span class="highlight">In Process</span>
+                  <% if (!nextStep) { %>
+                    Payment <%= activeStep.stepNumber %> <span class="highlight">Finishing</span>
+                  <% } else { %>
+                    Payment <%= activeStep.stepNumber %> <span class="highlight">In Process</span>
+                  <% } %>
                 </p>
                 <% if (nextStep) { %>
                   <p class="transition-secondary">
@@ -181,7 +187,7 @@
                   </p>
                 <% } else { %>
                   <p class="transition-secondary">
-                    <i class="fas fa-flag-checkered"></i> Final Payment
+                    <i class="fas fa-flag-checkered"></i> Final Payment Stage
                   </p>
                 <% } %>
               </div>
@@ -189,13 +195,31 @@
           </div>
           <% } %>
           
+          <% if (allCompleted) { %>
+          <div class="payment-transition-banner">
+            <div class="transition-content">
+              <div class="transition-icon">
+                <i class="fas fa-check-double"></i>
+              </div>
+              <div class="transition-text">
+                <p class="transition-primary">
+                  All Payments <span class="highlight">Finished</span>
+                </p>
+                <p class="transition-secondary">
+                  <i class="fas fa-check-circle"></i> All tasks completed successfully
+                </p>
+              </div>
+            </div>
+          </div>
+          <% } %>
+          
           <div class="payment-steps-container">
             <% paymentSteps.forEach((step, index) => { %>
-              <div class="payment-step <%= step.isActive ? 'active' : index < activeIndex ? 'completed' : 'waiting' %>">
+              <div class="payment-step <%= step.isActive ? 'active' : allCompleted || (activeIndex >= 0 && index < activeIndex) ? 'completed' : 'waiting' %>">
                 <div class="payment-icon">
                   <% if (step.isActive) { %>
                     <i class="fas fa-spinner fa-spin"></i>
-                  <% } else if (index < activeIndex) { %>
+                  <% } else if (allCompleted || (activeIndex >= 0 && index < activeIndex)) { %>
                     <i class="fas fa-check-circle"></i>
                   <% } else { %>
                     <i class="fas fa-clock"></i>
@@ -208,7 +232,7 @@
                       <span class="status-badge in-process">
                         <i class="fas fa-play-circle"></i> In Process
                       </span>
-                    <% } else if (index < activeIndex) { %>
+                    <% } else if (allCompleted || (activeIndex >= 0 && index < activeIndex)) { %>
                       <span class="status-badge completed">
                         <i class="fas fa-check"></i> Completed
                       </span>

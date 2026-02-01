@@ -1684,51 +1684,53 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 
 /* Payment Tracker Styles */
 .payment-tracker {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--white);
   border-radius: var(--radius-lg);
-  padding: 2rem;
+  padding: 1.5rem;
   margin: 2rem 0;
-  box-shadow: var(--shadow-lg);
-  color: var(--white);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
 }
 
 .payment-title {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   font-weight: 700;
   margin-bottom: 1.5rem;
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  color: var(--primary-dark);
 }
 
 .payment-title i {
-  font-size: 1.75rem;
+  font-size: 1.5rem;
+  color: var(--accent);
 }
 
 /* Payment Transition Banner */
 .payment-transition-banner {
-  background: rgba(255, 255, 255, 0.15);
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  background: var(--primary-light);
+  border: 1px solid rgba(37, 99, 235, 0.2);
   border-radius: var(--radius-md);
-  padding: 1.5rem;
+  padding: 1.25rem;
   margin-bottom: 1.5rem;
-  backdrop-filter: blur(10px);
 }
 
 .transition-content {
   display: flex;
   align-items: center;
-  gap: 1.5rem;
+  gap: 1rem;
 }
 
 .transition-icon {
-  font-size: 2rem;
+  font-size: 1.5rem;
+  color: var(--accent);
   animation: slideRight 2s ease-in-out infinite;
 }
 
 @keyframes slideRight {
   0%, 100% { transform: translateX(0); }
-  50% { transform: translateX(10px); }
+  50% { transform: translateX(8px); }
 }
 
 .transition-text {
@@ -1736,40 +1738,43 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 }
 
 .transition-primary {
-  font-size: 1.25rem;
-  font-weight: 700;
-  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0 0 0.25rem 0;
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.5rem;
+  color: var(--text);
 }
 
 .transition-primary .highlight {
-  background: rgba(255, 255, 255, 0.3);
+  background: var(--accent);
+  color: var(--white);
   padding: 0.25rem 0.75rem;
   border-radius: var(--radius-sm);
-  font-size: 0.9rem;
+  font-size: 0.85rem;
+  font-weight: 500;
   animation: pulse 2s ease-in-out infinite;
 }
 
 @keyframes pulse {
   0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
+  50% { opacity: 0.85; }
 }
 
 .transition-secondary {
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   margin: 0;
-  opacity: 0.95;
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  color: var(--text-light);
 }
 
 .payment-steps-container {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 1rem;
   flex-wrap: wrap;
   justify-content: center;
 }
@@ -1778,10 +1783,9 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   display: flex;
   flex-direction: column;
   align-items: center;
-  flex: 1;
-  min-width: 140px;
+  flex: 0 1 auto;
   position: relative;
-  padding: 0.75rem;
+  padding: 1rem;
 }
 
 .payment-header {
@@ -1796,8 +1800,8 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 
 .btn-delete-payment {
   padding: 0.5rem 1rem;
-  background: #ef4444;
-  color: #fff;
+  background: var(--danger);
+  color: var(--white);
   border: none;
   border-radius: var(--radius-md);
   cursor: pointer;
@@ -1817,36 +1821,38 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 }
 
 .payment-icon {
-  width: 60px;
-  height: 60px;
+  width: 50px;
+  height: 50px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.75rem;
+  font-size: 1.5rem;
   margin-bottom: 0.75rem;
   transition: var(--transition);
-  background: rgba(255, 255, 255, 0.2);
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  background: var(--primary-light);
+  border: 2px solid var(--border);
+  color: var(--primary-dark);
 }
 
 .payment-step.active .payment-icon {
-  background: rgba(34, 197, 94, 0.9);
-  border-color: #22c55e;
-  box-shadow: 0 0 20px rgba(34, 197, 94, 0.5);
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--white);
+  box-shadow: 0 0 15px rgba(37, 99, 235, 0.3);
   animation: pulse 2s infinite;
 }
 
 .payment-step.completed .payment-icon {
-  background: rgba(34, 197, 94, 0.7);
-  border-color: #22c55e;
-  color: #dcfce7;
+  background: var(--success);
+  border-color: var(--success);
+  color: var(--white);
 }
 
 .payment-step.waiting .payment-icon {
-  background: rgba(229, 231, 235, 0.2);
-  border-color: rgba(255, 255, 255, 0.3);
-  color: rgba(255, 255, 255, 0.7);
+  background: #f3f4f6;
+  border-color: var(--border);
+  color: var(--text-light);
 }
 
 .payment-details {
@@ -1854,9 +1860,10 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 }
 
 .payment-label {
-  font-weight: 700;
+  font-weight: 600;
   font-size: 0.95rem;
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.5rem;
+  color: var(--text);
 }
 
 .payment-status {
@@ -1867,72 +1874,70 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 .status-badge {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.35rem 0.75rem;
-  border-radius: 20px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  gap: 0.4rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-transform: capitalize;
 }
 
 .status-badge.in-process {
-  background: rgba(34, 197, 94, 0.2);
-  color: #dcfce7;
-  border: 1px solid rgba(34, 197, 94, 0.5);
+  background: rgba(37, 99, 235, 0.1);
+  color: var(--accent);
+  border: 1px solid rgba(37, 99, 235, 0.2);
 }
 
 .status-badge.completed {
-  background: rgba(34, 197, 94, 0.3);
-  color: #dcfce7;
-  border: 1px solid rgba(34, 197, 94, 0.6);
+  background: rgba(16, 185, 129, 0.1);
+  color: var(--success);
+  border: 1px solid rgba(16, 185, 129, 0.2);
 }
 
 .status-badge.waiting {
-  background: rgba(229, 231, 235, 0.15);
-  color: rgba(255, 255, 255, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(107, 114, 128, 0.05);
+  color: var(--text-light);
+  border: 1px solid rgba(107, 114, 128, 0.1);
 }
 
 .payment-connector {
-  width: 30px;
-  height: 3px;
-  background: rgba(255, 255, 255, 0.3);
-  margin: 1rem -0.5rem;
+  width: 20px;
+  height: 2px;
+  background: var(--border);
+  margin: 0 -0.5rem;
   flex-shrink: 0;
 }
 
 @keyframes pulse {
   0%, 100% {
-    box-shadow: 0 0 20px rgba(34, 197, 94, 0.5), 0 0 0 0 rgba(34, 197, 94, 0.7);
+    box-shadow: 0 0 15px rgba(37, 99, 235, 0.3), 0 0 0 0 rgba(37, 99, 235, 0.5);
   }
   50% {
-    box-shadow: 0 0 20px rgba(34, 197, 94, 0.5), 0 0 0 10px rgba(34, 197, 94, 0);
+    box-shadow: 0 0 15px rgba(37, 99, 235, 0.3), 0 0 0 8px rgba(37, 99, 235, 0);
   }
 }
 
 @media (max-width: 768px) {
   .payment-tracker {
-    padding: 1.5rem 1rem;
+    padding: 1.25rem;
   }
 
   .payment-title {
-    font-size: 1.25rem;
+    font-size: 1.1rem;
     margin-bottom: 1rem;
   }
 
   .payment-steps-container {
-    gap: 0.25rem;
+    gap: 0.75rem;
   }
 
   .payment-step {
-    min-width: 100px;
-    padding: 0.5rem;
+    padding: 0.75rem;
   }
 
   .payment-icon {
-    width: 50px;
-    height: 50px;
+    width: 45px;
+    height: 45px;
     font-size: 1.25rem;
     margin-bottom: 0.5rem;
   }
@@ -1942,12 +1947,12 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   }
 
   .status-badge {
-    font-size: 0.65rem;
-    padding: 0.25rem 0.5rem;
+    font-size: 0.7rem;
+    padding: 0.3rem 0.6rem;
   }
 
   .payment-connector {
-    width: 20px;
-    margin: 1rem -0.25rem;
+    width: 15px;
+    margin: 0 -0.25rem;
   }
 }
