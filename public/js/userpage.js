@@ -750,12 +750,36 @@ updateStatusCounts(taskList);
 
 // Check if all tasks are finished and update payment status
 const updatePaymentStatus = () => {
-    const allTasksFinished = taskList.every(t => t.TimeFinished);
+    console.log('Updating payment status...');
+    console.log('taskList:', taskList);
+    console.log('paymentSteps:', window.paymentSteps);
+    
+    // Filter tasks: exclude Contract tasks (DepId=9) when in Payment 2+
+    const activePayment = window.paymentSteps ? window.paymentSteps.find(s => s.isActive) : null;
+    const activeStepNumber = activePayment ? activePayment.stepNumber : null;
+    const isPayment1 = activeStepNumber === 1 || !window.paymentSteps || window.paymentSteps.length === 0;
+    
+    const visibleTasks = taskList.filter(t => {
+        // Show Contract tasks only in Payment 1
+        if (t.DepId === 9 && !isPayment1) {
+            return false;
+        }
+        return true;
+    });
+    
+    // Count finished tasks among visible tasks
+    const finishedCount = visibleTasks.filter(t => t.TimeFinished).length;
+    const allTasksFinished = visibleTasks.length > 0 && finishedCount === visibleTasks.length;
+    
+    console.log(`Visible tasks: ${visibleTasks.length}, Finished: ${finishedCount}, allFinished: ${allTasksFinished}`);
+    
     if (allTasksFinished && window.paymentSteps && window.paymentSteps.length > 0) {
-        const activeStep = window.paymentSteps.find(s => s.isActive);
-        const isLastPayment = activeStep && activeStep.stepNumber === window.paymentSteps[window.paymentSteps.length - 1].stepNumber;
+        const isLastPayment = activePayment && activePayment.stepNumber === window.paymentSteps[window.paymentSteps.length - 1].stepNumber;
+        
+        console.log(`activeStepNumber: ${activeStepNumber}, isLastPayment: ${isLastPayment}`);
         
         if (isLastPayment) {
+            console.log('Marking last payment as completed...');
             // Mark the active payment step as completed
             const activePaymentStep = document.querySelector('.payment-step.active');
             if (activePaymentStep) {
@@ -770,6 +794,7 @@ const updatePaymentStatus = () => {
                     badge.className = 'status-badge completed';
                     badge.innerHTML = '<i class="fas fa-check"></i> Completed';
                 }
+                console.log('Payment step updated to completed');
             }
         }
     }
