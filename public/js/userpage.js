@@ -19,7 +19,10 @@ document.addEventListener('DOMContentLoaded', function() {
   const userId = body.dataset.userId;
   const deptId = body.dataset.deptId;
   const taskList = JSON.parse(body.dataset.taskList || '[]');
+  const paymentSteps = JSON.parse(body.dataset.paymentSteps || '[]');
   const isAdmin = body.dataset.isAdmin === 'true';
+  
+  window.paymentSteps = paymentSteps;
   
   const container = document.getElementById('department-tables-container');
   const timelineContainer = document.getElementById('task-timeline');
@@ -478,6 +481,23 @@ const assignUserToTask = async (taskId, userId) => {
 const renderTasks = async (tasks) => {
     if (!container) return;
     
+    // Fetch paymentSteps if not available
+    if (!window.paymentSteps || window.paymentSteps.length === 0) {
+        const hdrId = tasks[0]?.workFlowHdrId;
+        if (hdrId) {
+            try {
+                const response = await fetch(`/api/workflow-steps/${hdrId}`);
+                if (response.ok) {
+                    window.paymentSteps = await response.json();
+                    console.log('Fetched paymentSteps from API:', window.paymentSteps);
+                }
+            } catch (err) {
+                console.error('Failed to fetch paymentSteps:', err);
+                window.paymentSteps = [];
+            }
+        }
+    }
+    
     // Clear container once
     container.innerHTML = '';
     
@@ -515,7 +535,29 @@ const renderTasks = async (tasks) => {
 
     // Group tasks by department
     const grouped = {};
+    
+    // Determine if we're in Payment 1
+    const activePayment = window.paymentSteps ? window.paymentSteps.find(s => s.isActive) : null;
+    const activeStepNumber = activePayment ? activePayment.stepNumber : null;
+    const isPayment1 = activeStepNumber === 1 || !window.paymentSteps || window.paymentSteps.length === 0;
+    
+    console.log('Payment Filter Debug:', {
+        paymentStepsExists: !!window.paymentSteps,
+        paymentStepsLength: window.paymentSteps?.length,
+        activePayment,
+        activeStepNumber,
+        isPayment1
+    });
+    
     tasks.forEach(task => {
+        // Filter out Contract department (DepId = 9) if not in Payment 1
+        if (task.DepId === 9) {
+            console.log(`Contract task ${task.TaskID} (${task.TaskName}): isPayment1=${isPayment1}, will ${isPayment1 ? 'SHOW' : 'HIDE'}`);
+            if (!isPayment1) {
+                return; // Skip this task
+            }
+        }
+        
         if (!grouped[task.DepId]) {
             grouped[task.DepId] = {
                 deptName: task.DeptName || `Department ${task.DepId}`,

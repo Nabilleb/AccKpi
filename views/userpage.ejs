@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="/styles/utils.css">
 
 </head>
-<body data-user-id="<%= user.id %>" data-dept-id="<%= user.DepartmentId %>" data-task-list="<%= JSON.stringify(tasks) %>" data-is-admin="<%= user.usrAdmin || false %>">
+<body data-user-id="<%= user.id %>" data-dept-id="<%= user.DepartmentId %>" data-task-list="<%= JSON.stringify(tasks) %>" data-payment-steps="<%= (typeof paymentSteps !== 'undefined' && paymentSteps) ? JSON.stringify(paymentSteps) : '[]' %>" data-is-admin="<%= user.usrAdmin || false %>">
 
   <!-- Main Content Area -->
   <main class="main-content">
