@@ -4526,6 +4526,9 @@ Engineering Project Dashboard`,
             }
 
             console.log(`✅ Workflow ${workFlowHdrId} auto-advanced from step ${currentStepNumber} to ${nextStepNumber}`);
+          } else {
+            // No next step found - this is the last payment, mark workflow as complete
+            console.log(`✅ Workflow ${workFlowHdrId} completed all payments (last step was ${currentStepNumber})`);
           }
         } else {
           console.log(`No multi-step advancement needed (StepCount: ${stepCount})`);

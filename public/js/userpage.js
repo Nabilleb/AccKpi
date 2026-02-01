@@ -443,10 +443,12 @@ const finishTask = async (taskId) => {
 
         if (!res.ok) throw new Error("Failed to finish task");
         
-        showSuccess('✅ Task marked as finished');
+        console.log('✅ Task finished successfully, reloading in 5 seconds...');
+        showSuccess('✅ Task marked as finished. Refreshing...');
         setTimeout(() => {
+            console.log('Reloading page...');
             window.location.reload();
-        }, 3000);
+        }, 5000);
     } catch (err) {
         if (err.message === 'Cancelled') {
             throw err;
@@ -745,6 +747,35 @@ const renderTaskRow = (task) => {
 renderTasks(taskList);
 renderTaskTimeline(taskList);
 updateStatusCounts(taskList);
+
+// Check if all tasks are finished and update payment status
+const updatePaymentStatus = () => {
+    const allTasksFinished = taskList.every(t => t.TimeFinished);
+    if (allTasksFinished && window.paymentSteps && window.paymentSteps.length > 0) {
+        const activeStep = window.paymentSteps.find(s => s.isActive);
+        const isLastPayment = activeStep && activeStep.stepNumber === window.paymentSteps[window.paymentSteps.length - 1].stepNumber;
+        
+        if (isLastPayment) {
+            // Mark the active payment step as completed
+            const activePaymentStep = document.querySelector('.payment-step.active');
+            if (activePaymentStep) {
+                activePaymentStep.classList.remove('active');
+                activePaymentStep.classList.add('completed');
+                const icon = activePaymentStep.querySelector('.payment-icon i');
+                if (icon) {
+                    icon.className = 'fas fa-check-circle';
+                }
+                const badge = activePaymentStep.querySelector('.status-badge');
+                if (badge) {
+                    badge.className = 'status-badge completed';
+                    badge.innerHTML = '<i class="fas fa-check"></i> Completed';
+                }
+            }
+        }
+    }
+};
+
+updatePaymentStatus();
 
 // Export tasks to CSV function
 const exportTasksToCSV = () => {
