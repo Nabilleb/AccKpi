@@ -455,12 +455,13 @@ const finishTask = async (taskId) => {
 
         if (!res.ok) throw new Error("Failed to finish task");
         
-        console.log('✅ Task finished successfully, reloading in 5 seconds...');
+        console.log('✅ Task finished successfully');
         showSuccess('✅ Task marked as finished. Refreshing...');
+        // Reduce reload delay to 1 second for faster feedback
         setTimeout(() => {
             console.log('Reloading page...');
             window.location.reload();
-        }, 5000);
+        }, 1000);
     } catch (err) {
         if (err.message === 'Cancelled') {
             throw err;
