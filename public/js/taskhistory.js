@@ -13,11 +13,19 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // Add event listeners
   const paymentFilter = document.getElementById('payment-filter');
+  const deptFilter = document.getElementById('dept-filter');
   const searchHistory = document.getElementById('search-history');
   const exportBtn = document.getElementById('export-csv-btn');
   
   if (paymentFilter) {
-    paymentFilter.addEventListener('change', filterHistory);
+    paymentFilter.addEventListener('change', () => {
+      updateDepartmentFilter();
+      filterHistory();
+    });
+  }
+  
+  if (deptFilter) {
+    deptFilter.addEventListener('change', filterHistory);
   }
   
   if (searchHistory) {
@@ -54,6 +62,8 @@ async function loadHistory() {
     document.getElementById('on-time-count').textContent = onTimeCount;
     
     filteredData = [...allHistoryData];
+    updatePaymentFilter();
+    updateDepartmentFilter();
     renderGroupedTable();
   } catch (error) {
     console.error('Error loading history:', error);
@@ -61,17 +71,65 @@ async function loadHistory() {
   }
 }
 
+function updatePaymentFilter() {
+  const paymentSelect = document.getElementById('payment-filter');
+  
+  // Get unique payment steps from data and sort them
+  const paymentSteps = Array.from(new Set(allHistoryData.map(t => t.PaymentStep))).sort((a, b) => a - b);
+  
+  // Keep the "All Payments" option and add payment step options
+  const options = ['<option value="">All Payments</option>'];
+  paymentSteps.forEach(step => {
+    options.push(`<option value="${step}">Payment Step ${step}</option>`);
+  });
+  
+  paymentSelect.innerHTML = options.join('');
+}
+
+function updateDepartmentFilter() {
+  const paymentFilter = document.getElementById('payment-filter').value;
+  const deptSelect = document.getElementById('dept-filter');
+  const currentDeptValue = deptSelect.value;
+  
+  // Get unique departments for selected payment
+  let departments = new Set();
+  allHistoryData.forEach(task => {
+    if (!paymentFilter || task.PaymentStep == paymentFilter) {
+      if (task.DeptName) {
+        departments.add(JSON.stringify({id: task.DepId, name: task.DeptName}));
+      }
+    }
+  });
+  
+  // Rebuild department options
+  const options = [{ id: '', name: 'All Departments' }];
+  Array.from(departments).sort().forEach(dept => {
+    const parsed = JSON.parse(dept);
+    options.push(parsed);
+  });
+  
+  deptSelect.innerHTML = options.map(opt => 
+    `<option value="${opt.id}">${opt.name}</option>`
+  ).join('');
+  
+  // Restore previous selection if still available
+  if (Array.from(deptSelect.options).some(o => o.value === currentDeptValue)) {
+    deptSelect.value = currentDeptValue;
+  }
+}
+
 function filterHistory() {
   const paymentFilter = document.getElementById('payment-filter').value;
+  const deptFilter = document.getElementById('dept-filter').value;
   const searchText = document.getElementById('search-history').value.toLowerCase();
   
   filteredData = allHistoryData.filter(task => {
     const paymentMatch = !paymentFilter || task.PaymentStep == paymentFilter;
+    const deptMatch = !deptFilter || task.DepId == deptFilter;
     const searchMatch = !searchText || 
-      task.TaskName.toLowerCase().includes(searchText) ||
-      (task.DeptName && task.DeptName.toLowerCase().includes(searchText));
+      task.TaskName.toLowerCase().includes(searchText);
     
-    return paymentMatch && searchMatch;
+    return paymentMatch && deptMatch && searchMatch;
   });
   
   currentPage = 1;
