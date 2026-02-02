@@ -177,7 +177,7 @@ app.use((req, res, next) => {
       console.log(`⏱️  User ${req.session.user.id} session expired due to inactivity`);
       return req.session.destroy((err) => {
         if (err) console.error('Session destruction error:', err);
-        res.redirect('/');
+        res.redirect('/login');
       });
     } else {
       // Update last activity timestamp
@@ -987,6 +987,16 @@ app.put("/api/workflow-steps/mark-complete/:stepId", ensureAuthenticated, async 
     const { completionDate, workFlowHdrId } = req.body;
     
     console.log(`Marking workflow step ${stepId} as complete...`, { completionDate, workFlowHdrId });
+
+    // 📦 SAVE completed tasks to history BEFORE marking step as complete
+    if (workFlowHdrId) {
+      try {
+        // Get the step number first
+      } catch (historyError) {
+        console.error('Error saving task history:', historyError.message);
+        // Continue even if history save fails
+      }
+    }
     
     // Update the step to mark as inactive (complete) with optional completion date
     const request = pool.request()
@@ -4222,6 +4232,83 @@ app.post('/finish-task/:taskId', async (req, res) => {
       `);
     
     console.log('✅ Update Result:', updateResult.rowsAffected);
+
+    // 📦 SAVE to history when finishing a task in Payment Step 1
+    try {
+      // Get current payment step
+      const currentPaymentResult = await pool.request()
+        .input('workFlowHdrId', workFlowHdrId)
+        .query(`
+          SELECT stepNumber FROM tblWorkflowSteps 
+          WHERE workFlowID = @workFlowHdrId AND isActive = 1
+        `);
+      
+      if (currentPaymentResult.recordset.length > 0) {
+        const currentStepNumber = currentPaymentResult.recordset[0].stepNumber;
+        
+        // Only save to history if in Payment Step 1
+        if (currentStepNumber === 1) {
+          console.log(`   💾 Saving finished task ${taskId} to history (Step ${currentStepNumber})...`);
+          
+          // Get task details for history
+          const taskDetailsResult = await pool.request()
+            .input('taskId', taskId)
+            .query(`
+              SELECT t.TaskName, t.DepId, t.IsTaskSelected, t.Priority, t.PlannedDate
+              FROM tblTasks t
+              WHERE t.TaskID = @taskId
+            `);
+          
+          if (taskDetailsResult.recordset.length > 0) {
+            const taskDetails = taskDetailsResult.recordset[0];
+            
+            // Get department name
+            const deptResult = await pool.request()
+              .input('depId', taskDetails.DepId)
+              .query(`SELECT DeptName FROM tblDepartments WHERE DepartmentID = @depId`);
+            
+            const deptName = deptResult.recordset.length > 0 ? deptResult.recordset[0].DeptName : 'Unknown';
+            
+            // Get TimeStarted from workflow detail
+            const timeStartedResult = await pool.request()
+              .input('taskId', taskId)
+              .input('workFlowHdrId', workFlowHdrId)
+              .query(`
+                SELECT TimeStarted FROM tblWorkflowDtl
+                WHERE TaskID = @taskId AND workFlowHdrId = @workFlowHdrId
+              `);
+            
+            const timeStarted = timeStartedResult.recordset.length > 0 ? timeStartedResult.recordset[0].TimeStarted : null;
+            
+            console.log(`   📊 Task data: TaskName=${taskDetails.TaskName}, TimeStarted=${timeStarted}, TimeFinished=${finishTimeFormatted}, Delay=${delay}`);
+            
+            // Insert directly with calculated values
+            const saveHistoryResult = await pool.request()
+              .input('workFlowHdrId', workFlowHdrId)
+              .input('taskId', taskId)
+              .input('stepNumber', currentStepNumber)
+              .input('taskName', taskDetails.TaskName)
+              .input('depId', taskDetails.DepId)
+              .input('deptName', deptName)
+              .input('isTaskSelected', taskDetails.IsTaskSelected)
+              .input('timeStarted', timeStarted)
+              .input('timeFinished', finishTimeFormatted)
+              .input('delayValue', delay)
+              .input('priority', taskDetails.Priority)
+              .input('plannedDate', taskDetails.PlannedDate)
+              .query(`
+                INSERT INTO tblWorkflowTaskHistory (workFlowID, PaymentStep, TaskID, TaskName, DepId, DeptName, IsTaskSelected, TimeStarted, TimeFinished, Delay, Priority, PlannedDate)
+                VALUES (@workFlowHdrId, @stepNumber, @taskId, @taskName, @depId, @deptName, @isTaskSelected, @timeStarted, @timeFinished, @delayValue, @priority, @plannedDate)
+              `);
+            console.log(`   ✓ Task ${taskId} saved to history`);
+          }
+        }
+      }
+    } catch (historyError) {
+      console.error('Error saving task to history:', historyError.message);
+      console.error('History error stack:', historyError.stack);
+      // Continue even if history save fails
+    }
 
     // Unselect the completed task
     await pool.request()
