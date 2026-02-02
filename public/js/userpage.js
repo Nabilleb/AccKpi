@@ -105,6 +105,65 @@ document.addEventListener('DOMContentLoaded', function() {
   const modalConfirmBtn = document.getElementById('modal-confirm-btn');
   const modalCancelBtn = document.getElementById('modal-cancel-btn');
 
+  // Payment Start Date Modal
+  const paymentStartDateModal = document.getElementById('payment-start-date-modal');
+  const paymentStartDateInput = document.getElementById('payment-start-date-input');
+  const paymentDateConfirmBtn = document.getElementById('payment-date-confirm-btn');
+  const paymentDateCancelBtn = document.getElementById('payment-date-cancel-btn');
+  
+  let pendingPaymentCompletion = null;
+  
+  // Handle payment start date modal confirm
+  if (paymentDateConfirmBtn) {
+    paymentDateConfirmBtn.addEventListener('click', async () => {
+      const selectedDate = paymentStartDateInput.value;
+      if (!selectedDate) {
+        showError('Please select a start date for the next payment');
+        return;
+      }
+      
+      paymentStartDateModal.style.display = 'none';
+      
+      if (pendingPaymentCompletion) {
+        // Send the request with the start date
+        try {
+          const response = await fetch(pendingPaymentCompletion.url, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              ...pendingPaymentCompletion.body,
+              nextPaymentStartDate: selectedDate
+            })
+          });
+          
+          if (response.ok) {
+            console.log('✅ Payment step marked as complete with next payment start date');
+            showSuccess('Payment marked as complete. Ready for next payment step!');
+            
+            // Trigger dashboard refresh
+            window.dispatchEvent(new CustomEvent('paymentCompleted', {
+              detail: { workFlowHdrId: pendingPaymentCompletion.body.workFlowHdrId }
+            }));
+          } else {
+            showError('Failed to update payment step');
+          }
+        } catch (err) {
+          console.error('Error updating payment step:', err);
+          showError('Error: ' + err.message);
+        }
+        
+        pendingPaymentCompletion = null;
+      }
+    });
+  }
+  
+  if (paymentDateCancelBtn) {
+    paymentDateCancelBtn.addEventListener('click', () => {
+      paymentStartDateModal.style.display = 'none';
+      pendingPaymentCompletion = null;
+    });
+  }
+
   // Button event listeners
   const sidebarLogoutBtn = document.getElementById('sidebarLogoutBtn');
   const backBtn = document.getElementById('backBtn');
@@ -910,30 +969,52 @@ const updatePaymentStatus = () => {
                 const workFlowHdrId = visibleTasks[0]?.workFlowHdrId;
                 
                 console.log(`Saving payment step ${activePayment.workflowStepID} as complete with finish date: ${latestFinishDate}, workFlowHdrId: ${workFlowHdrId}`);
-                fetch(`/api/workflow-steps/mark-complete/${activePayment.workflowStepID}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        isActive: false,
-                        completionDate: latestFinishDate,  // Send the last task's finish date
-                        workFlowHdrId: workFlowHdrId  // Send workflow header ID
-                    })
-                })
-                .then(res => {
-                    if (res.ok) {
-                        console.log('✅ Payment step marked as complete in database');
-                        activePayment.isActive = false;
-                        
-                        // Trigger dashboard refresh by sending a message
-                        window.dispatchEvent(new CustomEvent('paymentCompleted', {
-                            detail: { workFlowHdrId: workFlowHdrId }
-                        }));
-                        console.log('📢 Notified dashboard to refresh payment steps');
-                    } else {
-                        console.error('❌ Failed to update payment step');
+                
+                // Check if there are more payment steps after this one
+                const remainingSteps = paymentSteps.filter(step => step.stepNumber > activePayment.stepNumber);
+                
+                if (remainingSteps.length > 0) {
+                  // Show modal to get start date for next payment
+                  pendingPaymentCompletion = {
+                    url: `/api/workflow-steps/mark-complete/${activePayment.workflowStepID}`,
+                    body: {
+                      isActive: false,
+                      completionDate: latestFinishDate,
+                      workFlowHdrId: workFlowHdrId
                     }
-                })
-                .catch(err => console.error('Error updating payment step:', err));
+                  };
+                  
+                  // Set today as default date
+                  const today = new Date().toISOString().split('T')[0];
+                  paymentStartDateInput.value = today;
+                  paymentStartDateModal.style.display = 'flex';
+                  paymentStartDateInput.focus();
+                } else {
+                  // No more payment steps, proceed without modal
+                  fetch(`/api/workflow-steps/mark-complete/${activePayment.workflowStepID}`, {
+                      method: 'PUT',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ 
+                          isActive: false,
+                          completionDate: latestFinishDate,
+                          workFlowHdrId: workFlowHdrId
+                      })
+                  })
+                  .then(res => {
+                      if (res.ok) {
+                          console.log('✅ Payment step marked as complete in database');
+                          activePayment.isActive = false;
+                          showSuccess('All payments completed successfully!');
+                          
+                          window.dispatchEvent(new CustomEvent('paymentCompleted', {
+                              detail: { workFlowHdrId: workFlowHdrId }
+                          }));
+                      } else {
+                          showError('Failed to update payment step');
+                      }
+                  })
+                  .catch(err => console.error('Error updating payment step:', err));
+                }
             }
         }
     }

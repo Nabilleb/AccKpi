@@ -984,9 +984,9 @@ app.delete("/api/workflow-steps/delete/:stepId", ensureAuthenticated, async (req
 app.put("/api/workflow-steps/mark-complete/:stepId", ensureAuthenticated, async (req, res) => {
   try {
     const { stepId } = req.params;
-    const { completionDate, workFlowHdrId } = req.body;
+    const { completionDate, workFlowHdrId, nextPaymentStartDate } = req.body;
     
-    console.log(`Marking workflow step ${stepId} as complete...`, { completionDate, workFlowHdrId });
+    console.log(`Marking workflow step ${stepId} as complete...`, { completionDate, workFlowHdrId, nextPaymentStartDate });
 
     // 📦 SAVE completed tasks to history BEFORE marking step as complete
     if (workFlowHdrId) {
@@ -1035,6 +1035,40 @@ app.put("/api/workflow-steps/mark-complete/:stepId", ensureAuthenticated, async 
       `);
       
       console.log(`✅ Workflow header ${workFlowHdrId} updated with completion date`, { rowsAffected: hdrResult.rowsAffected });
+    }
+
+    // If nextPaymentStartDate is provided, reset PlannedDate for all tasks
+    if (workFlowHdrId && nextPaymentStartDate) {
+      console.log(`📅 Resetting PlannedDate for workflow ${workFlowHdrId} with next payment start date: ${nextPaymentStartDate}`);
+      
+      const startDate = new Date(nextPaymentStartDate);
+      
+      // Get all tasks for this workflow
+      const tasksResult = await pool.request()
+        .input('workFlowHdrId', sql.Int, workFlowHdrId)
+        .query(`
+          SELECT t.TaskID, t.DaysRequired
+          FROM tblTasks t
+          JOIN tblWorkflowDtl w ON t.TaskID = w.TaskID
+          WHERE w.workFlowHdrId = @workFlowHdrId
+        `);
+      
+      // Reset PlannedDate for each task based on DaysRequired
+      for (const task of tasksResult.recordset) {
+        const plannedDate = new Date(startDate);
+        plannedDate.setDate(plannedDate.getDate() + (task.DaysRequired || 1));
+        
+        await pool.request()
+          .input('taskId', sql.Int, task.TaskID)
+          .input('plannedDate', sql.Date, plannedDate)
+          .query(`
+            UPDATE tblTasks
+            SET PlannedDate = @plannedDate
+            WHERE TaskID = @taskId
+          `);
+      }
+      
+      console.log(`✅ Reset PlannedDate for ${tasksResult.recordset.length} tasks`);
     }
     
     res.json({
@@ -1660,6 +1694,9 @@ app.get('/api/task-history', ensureAuthenticated, async (req, res) => {
         const result = await pool.request()
             .input('workFlowID', sql.Int, parseInt(workFlowID))
             .query(`
+                WITH ProcessInfo AS (
+                    SELECT ProcessID FROM tblWorkflowHdr WHERE workFlowID = @workFlowID
+                )
                 SELECT 
                     h.TaskHistoryID,
                     h.workFlowID,
@@ -1675,8 +1712,11 @@ app.get('/api/task-history', ensureAuthenticated, async (req, res) => {
                     h.DelayReason,
                     h.Priority,
                     h.PlannedDate,
-                    h.CompletionDate
+                    h.CompletionDate,
+                    COALESCE(pd.StepOrder, 999) AS StepOrder
                 FROM tblWorkflowTaskHistory h
+                LEFT JOIN tblProcessDepartment pd ON h.DepId = pd.DepartmentID 
+                    AND pd.ProcessID = (SELECT ProcessID FROM ProcessInfo)
                 WHERE h.workFlowID = @workFlowID
                 ORDER BY h.TimeFinished DESC
             `);

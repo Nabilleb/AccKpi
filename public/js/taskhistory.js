@@ -154,6 +154,7 @@ function groupByPaymentAndDepartment(data) {
       grouped[paymentKey].departments[deptKey] = {
         depId: task.DepId,
         deptName: task.DeptName,
+        stepOrder: task.StepOrder || 0,
         tasks: []
       };
     }
@@ -211,11 +212,11 @@ function renderGroupedTable() {
       </tr>
     `;
     
-    // Sort departments by name
+    // Sort departments by StepOrder
     Object.keys(paymentData.departments).sort((a, b) => {
-      const deptA = paymentData.departments[a].deptName || '';
-      const deptB = paymentData.departments[b].deptName || '';
-      return deptA.localeCompare(deptB);
+      const stepOrderA = paymentData.departments[a].stepOrder;
+      const stepOrderB = paymentData.departments[b].stepOrder;
+      return stepOrderA - stepOrderB;
     }).forEach(deptKey => {
       const deptData = paymentData.departments[deptKey];
       
