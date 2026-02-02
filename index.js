@@ -4187,6 +4187,7 @@ app.post('/finish-task/:taskId', async (req, res) => {
       return res.status(404).json({ error: 'Task not found' });
     }
     const { PlannedDate, DepId, DaysRequired } = taskResult.recordset[0];
+    console.log(`📌 Task ${taskId} belongs to DepId: ${DepId}`);
 
     // Calculate delay in days using UTC to avoid timezone issues
     const plannedDateObj = new Date(PlannedDate);
@@ -4280,6 +4281,14 @@ app.post('/finish-task/:taskId', async (req, res) => {
     if (nextTaskResult.recordset.length > 0) {
       const nextTaskId = nextTaskResult.recordset[0].TaskID;
       const nextTaskDays = Number(nextTaskResult.recordset[0].DaysRequired) || 1;
+
+      // Get DepId of the next task
+      const nextTaskDepResult = await pool.request()
+        .input('taskId', nextTaskId)
+        .query(`SELECT DepId FROM tblTasks WHERE TaskID = @taskId`);
+      
+      const nextTaskDepId = nextTaskDepResult.recordset[0]?.DepId;
+      console.log(`   ✅ Next task ${nextTaskId} is in DepId: ${nextTaskDepId}`);
 
       // Count finished tasks to determine task sequence position
       const finishedTasksCount = await pool.request()
@@ -4527,7 +4536,7 @@ Engineering Project Dashboard`,
 
           if (nextStepResult.recordset.length > 0) {
             const nextStepNumber = nextStepResult.recordset[0].stepNumber;
-            console.log(`Found next step: ${nextStepNumber}`);
+            console.log(`✅ Found next step: ${nextStepNumber}`);
 
             // Deactivate current step
             await pool.request()
@@ -4538,6 +4547,7 @@ Engineering Project Dashboard`,
                 SET isActive = 0
                 WHERE workFlowID = @workFlowHdrId AND stepNumber = @currentStep
               `);
+            console.log(`   ✓ Deactivated step ${currentStepNumber}`);
 
             // Activate next step
             await pool.request()
@@ -4548,6 +4558,7 @@ Engineering Project Dashboard`,
                 SET isActive = 1
                 WHERE workFlowID = @workFlowHdrId AND stepNumber = @nextStep
               `);
+            console.log(`   ✓ Activated step ${nextStepNumber}`);
 
             // Reset all workflow detail records for next payment cycle
             await pool.request()
@@ -4557,6 +4568,7 @@ Engineering Project Dashboard`,
                 SET TimeStarted = NULL, TimeFinished = NULL, Delay = NULL, DelayReason = NULL
                 WHERE workFlowHdrId = @workFlowHdrId
               `);
+            console.log(`   ✓ Reset workflow detail records`);
 
             // Reset all tasks as unselected for next payment cycle
             await pool.request()
@@ -4571,23 +4583,27 @@ Engineering Project Dashboard`,
                   WHERE w.workFlowHdrId = @workFlowHdrId
                 )
               `);
+            console.log(`   ✓ Reset all tasks as unselected`);
 
             // Reset first task as selected for the next payment cycle
             const firstTaskResult = await pool.request()
               .input('workFlowHdrId', workFlowHdrId)
               .query(`
-                SELECT TOP 1 t.TaskID
+                SELECT TOP 1 t.TaskID, t.DepId
                 FROM tblTasks t
                 JOIN tblWorkflowDtl w ON t.TaskID = w.TaskID
                 WHERE w.workFlowHdrId = @workFlowHdrId
+                  AND t.DepId != 9
                 ORDER BY t.DepId ASC, t.Priority ASC, t.TaskID ASC
               `);
 
             if (firstTaskResult.recordset.length > 0) {
               const firstTaskId = firstTaskResult.recordset[0].TaskID;
+              const firstTaskDepId = firstTaskResult.recordset[0].DepId;
               await pool.request()
                 .input('taskId', firstTaskId)
                 .query(`UPDATE tblTasks SET IsTaskSelected = 1 WHERE TaskID = @taskId`);
+              console.log(`   ✓ Selected first task ${firstTaskId} (DepId: ${firstTaskDepId}) for next payment (DepId != 9)`);
             }
 
             console.log(`✅ Workflow ${workFlowHdrId} auto-advanced from step ${currentStepNumber} to ${nextStepNumber}`);

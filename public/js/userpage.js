@@ -86,6 +86,14 @@ document.addEventListener('DOMContentLoaded', function() {
   
   window.paymentSteps = paymentSteps;
   
+  // Helper function to get the active payment
+  const getActivePayment = () => window.paymentSteps ? window.paymentSteps.find(s => s.isActive) : null;
+  const getIsPayment1 = () => {
+    const activePayment = getActivePayment();
+    const activeStepNumber = activePayment ? activePayment.stepNumber : null;
+    return activeStepNumber === 1 || !window.paymentSteps || window.paymentSteps.length === 0;
+  };
+  
   const container = document.getElementById('department-tables-container');
   const timelineContainer = document.getElementById('task-timeline');
   const errorEl = document.getElementById('error-message');
@@ -361,9 +369,7 @@ const renderTaskTimeline = (tasks) => {
     const fragment = document.createDocumentFragment();
 
     // Determine if we're in Payment 1
-    const activePayment = window.paymentSteps ? window.paymentSteps.find(s => s.isActive) : null;
-    const activeStepNumber = activePayment ? activePayment.stepNumber : null;
-    const isPayment1 = activeStepNumber === 1 || !window.paymentSteps || window.paymentSteps.length === 0;
+    const isPayment1 = getIsPayment1();
 
     [...tasks]
         .sort((a, b) =>
@@ -592,9 +598,16 @@ const renderTasks = async (tasks) => {
     const activeIndex = sortedTasks.findIndex(t => t.IsTaskSelected);
     const hdrId = sortedTasks[0]?.workFlowHdrId; // Get workflow header ID from any task
     
+    // Determine if we should skip Contract tasks (DepId=9)
+    const isPayment1 = getIsPayment1();
+    
     if (activeIndex !== -1) {
         for (let i = activeIndex + 1; i < sortedTasks.length; i++) {
             const candidate = sortedTasks[i];
+            // Skip Contract tasks (DepId=9) when not in Payment 1
+            if (!isPayment1 && candidate.DepId === 9) {
+                continue;
+            }
             // Ensure next task is from same workflow and not selected/finished
             if (!candidate.IsTaskSelected && !candidate.TimeFinished && candidate.workFlowHdrId === hdrId) {
                 nextTask = candidate;
@@ -603,7 +616,15 @@ const renderTasks = async (tasks) => {
         }
     }
     
-    if (!nextTask) nextTask = sortedTasks.find(t => !t.IsTaskSelected && !t.TimeFinished && t.workFlowHdrId === hdrId);
+    if (!nextTask) {
+        nextTask = sortedTasks.find(t => {
+            // Skip Contract tasks (DepId=9) when not in Payment 1
+            if (!isPayment1 && t.DepId === 9) {
+                return false;
+            }
+            return !t.IsTaskSelected && !t.TimeFinished && t.workFlowHdrId === hdrId;
+        });
+    }
     if (activeIndex !== -1 && activeIndex !== sortedTasks.length - 1) await loadUsers(nextTask?.DepId);
 
     // Handle empty tasks
@@ -620,16 +641,10 @@ const renderTasks = async (tasks) => {
     // Group tasks by department
     const grouped = {};
     
-    // Determine if we're in Payment 1
-    const activePayment = window.paymentSteps ? window.paymentSteps.find(s => s.isActive) : null;
-    const activeStepNumber = activePayment ? activePayment.stepNumber : null;
-    const isPayment1 = activeStepNumber === 1 || !window.paymentSteps || window.paymentSteps.length === 0;
-    
     console.log('Payment Filter Debug:', {
         paymentStepsExists: !!window.paymentSteps,
         paymentStepsLength: window.paymentSteps?.length,
-        activePayment,
-        activeStepNumber,
+        activePayment: getActivePayment(),
         isPayment1
     });
     
@@ -837,9 +852,9 @@ const updatePaymentStatus = () => {
     console.log('paymentSteps:', window.paymentSteps);
     
     // Filter tasks: exclude Contract tasks (DepId=9) when in Payment 2+
-    const activePayment = window.paymentSteps ? window.paymentSteps.find(s => s.isActive) : null;
+    const activePayment = getActivePayment();
     const activeStepNumber = activePayment ? activePayment.stepNumber : null;
-    const isPayment1 = activeStepNumber === 1 || !window.paymentSteps || window.paymentSteps.length === 0;
+    const isPayment1 = getIsPayment1();
     
     const visibleTasks = taskList.filter(t => {
         // Show Contract tasks only in Payment 1
