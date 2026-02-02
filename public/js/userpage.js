@@ -1,15 +1,77 @@
-// Get delay color class based on delay range scaled to DaysRequired
-// For 10-day task: GREEN=1-4, YELLOW=5-9, RED=10+
-// GREEN: <= 40% of DaysRequired
-// YELLOW: 40% < delay <= 90% of DaysRequired  
-// RED: > 90% of DaysRequired
+// Get delay color based on difference between finish date and planned date
+// GREEN: finished well ahead (more than 3 days early)
+// YELLOW: finished close to deadline (within 3 days before planned date)
+// RED: finished late (1+ days after planned date)
 const getDelayColor = (delayDays, daysRequired) => {
-  if (!daysRequired || daysRequired <= 0) return 'delay-red'; // Safety check
-  const delayPercentage = (delayDays / daysRequired) * 100;
+  if (delayDays === null || delayDays === undefined) return 'delay-on-time';
+  if (!daysRequired || daysRequired <= 0) return 'delay-red';
   
-  if (delayPercentage <= 40) return 'delay-green';
-  if (delayPercentage <= 90) return 'delay-yellow';
-  return 'delay-red';
+  console.log(`getDelayColor: delayDays=${delayDays}, daysRequired=${daysRequired}`);
+  
+  // If any delay past deadline - RED (no buffer for late finishes)
+  if (delayDays > 0) {
+    console.log('  -> returning RED (any delay is late)');
+    return 'delay-red';
+  }
+  
+  // If finished within 3 days before deadline - YELLOW (close to deadline)
+  if (delayDays >= -3) {
+    console.log('  -> returning YELLOW (close to deadline)');
+    return 'delay-yellow';
+  }
+  
+  // If finished more than 3 days early - GREEN
+  console.log('  -> returning GREEN (well ahead of deadline)');
+  return 'delay-green';
+};
+
+// Calculate delay days from date difference (ignoring timezone/time component)
+// Returns signed value: negative = early, positive = late
+const calculateDelayFromDates = (finishDate, plannedDate, daysRequired) => {
+  if (!finishDate || !plannedDate) return 0;
+  
+  // Extract date and time parts from ISO string
+  const finishParts = finishDate.split('T');
+  const plannedParts = plannedDate.split('T');
+  
+  const finishDateStr = finishParts[0];
+  const plannedDateStr = plannedParts[0];
+  const finishTimeStr = finishParts[1] || '00:00:00';
+  
+  // Get hour from time string (HH:MM:SS)
+  const finishHour = parseInt(finishTimeStr.split(':')[0]);
+  
+  console.log(`Raw: finish=${finishDateStr} ${finishHour}:00, planned=${plannedDateStr}`);
+  
+  // Parse as local date
+  const [finishYear, finishMonth, finishDay] = finishDateStr.split('-');
+  const [plannedYear, plannedMonth, plannedDay] = plannedDateStr.split('-');
+  
+  let finish = new Date(parseInt(finishYear), parseInt(finishMonth) - 1, parseInt(finishDay));
+  const planned = new Date(parseInt(plannedYear), parseInt(plannedMonth) - 1, parseInt(plannedDay));
+  
+  // If finish time is late in the day (18:00+), round up to next day
+  if (finishHour >= 18) {
+    finish.setDate(finish.getDate() + 1);
+    console.log(`  (adjusted: hour ${finishHour} >= 18, treating as next day)`);
+  }
+  
+  const timeDiff = finish - planned;
+  const daysDiff = Math.round(timeDiff / (1000 * 60 * 60 * 24));
+  
+  console.log(`Date calc: finish=${finishDateStr}, planned=${plannedDateStr}, diff=${daysDiff} days, required=${daysRequired}`);
+  
+  return daysDiff; // Return signed value
+};
+
+// Check for 401 Unauthorized and redirect to login
+const checkAuth = (response) => {
+  if (response.status === 401) {
+    console.log('Session expired - redirecting to login');
+    window.location.href = '/login';
+    return false;
+  }
+  return true;
 };
 
 // Cache DOM elements and initial data
@@ -320,15 +382,19 @@ const renderTaskTimeline = (tasks) => {
             const timelineItem = document.createElement('div');
             timelineItem.className = 'timeline-item';
 
-            if (task.TimeFinished) timelineItem.classList.add('completed');
+            // Check if task is completed (has a finish date)
+            const isCompleted = task.TimeFinished && task.TimeFinished.toString().trim() !== '';
+            
+            if (isCompleted) timelineItem.classList.add('completed');
             if (task.IsTaskSelected) timelineItem.classList.add('current');
 
-            // Get delay color class for the dot
+            // Get delay color class for the dot using date difference
             let dotClass = 'timeline-dot';
-            if (task.TimeFinished && task.Delay !== null && task.Delay > 0) {
-                dotClass += ` ${getDelayColor(task.Delay, task.DaysRequired)}`;
-            } else if (task.TimeFinished && (task.Delay === null || task.Delay === 0)) {
-                dotClass += ' delay-on-time';
+            if (isCompleted) {
+                const calculatedDelay = calculateDelayFromDates(task.TimeFinished, task.PlannedDate, task.DaysRequired);
+                const colorClass = getDelayColor(calculatedDelay, task.DaysRequired);
+                console.log(`Timeline ${task.DeptName}: delay=${calculatedDelay}, color=${colorClass}`);
+                dotClass += ` ${colorClass}`;
             }
 
             timelineItem.innerHTML = `
@@ -373,6 +439,7 @@ const loadUsers = async (nextDepId) => {
     
     try {
         const res = await fetch(`/api/users?depId=${nextDepId}`);
+        if (!checkAuth(res)) return;
         if (!res.ok) throw new Error("Failed to load users");
         users = (await res.json()).users || [];
     } catch (err) {
@@ -416,6 +483,7 @@ const startTask = async (taskId) => {
                 processID: task.NumberOfProccessID
             })
         });
+        if (!checkAuth(res)) return;
 
         if (!res.ok) throw new Error("Failed to start task");
         showSuccess('Task started successfully');
@@ -452,6 +520,7 @@ const finishTask = async (taskId) => {
                 processID: task.NumberOfProccessID
             })
         });
+        if (!checkAuth(res)) return;
 
         if (!res.ok) throw new Error("Failed to finish task");
         
