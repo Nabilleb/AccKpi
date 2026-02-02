@@ -298,12 +298,24 @@ const renderTaskTimeline = (tasks) => {
 
     const fragment = document.createDocumentFragment();
 
+    // Determine if we're in Payment 1
+    const activePayment = window.paymentSteps ? window.paymentSteps.find(s => s.isActive) : null;
+    const activeStepNumber = activePayment ? activePayment.stepNumber : null;
+    const isPayment1 = activeStepNumber === 1 || !window.paymentSteps || window.paymentSteps.length === 0;
+
     [...tasks]
         .sort((a, b) =>
             (a.StepOrder - b.StepOrder) ||
             (a.Priority - b.Priority) ||
             (a.TaskID - b.TaskID)
         )
+        .filter(task => {
+            // Filter out Contract department (DepId = 9) if not in Payment 1
+            if (task.DepId === 9 && !isPayment1) {
+                return false;
+            }
+            return true;
+        })
         .forEach(task => {
             const timelineItem = document.createElement('div');
             timelineItem.className = 'timeline-item';
