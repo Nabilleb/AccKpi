@@ -33,6 +33,10 @@
             <i class="fas fa-arrow-left"></i>
             Back to Dashboard
           </button>
+          <a href="/taskhistory?workFlowID=<%= (typeof paymentSteps !== 'undefined' && paymentSteps && paymentSteps.length > 0) ? paymentSteps[0].workFlowID : '' %>" class="back-button">
+            <i class="fas fa-history"></i>
+            View History
+          </a>
           <a href="/logout">
     <i class="fas fa-sign-out-alt"></i>
     Logout

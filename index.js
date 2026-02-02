@@ -1603,6 +1603,101 @@ app.get('/userpage', isNotAdmin, async (req, res) => {
     }
 });
 
+// --- TASK HISTORY VIEW ---
+app.get('/taskhistory', isNotAdmin, async (req, res) => {
+    const sessionUserId = req.session.user.id;
+    const workFlowID = req.query.workFlowID || null;
+    
+    try {
+        // Get user details from database
+        const userResult = await pool
+            .request()
+            .input('userId', sessionUserId)
+            .query('SELECT usrDesc, DepartmentID FROM tblUsers WHERE usrID = @userId');
+
+        const usrDetails = userResult.recordset[0];
+
+        if (!usrDetails) {
+            return res.status(404).send('User not found');
+        }
+
+        const { usrDesc, DepartmentID } = usrDetails;
+
+        // Build user object
+        const user = {
+          id: sessionUserId,
+          name: usrDesc,
+          DepartmentId: DepartmentID
+        };
+
+        res.render('taskhistory', {
+            userId: sessionUserId,
+            usrDesc,
+            user,
+            workFlowID
+        });
+
+    } catch (error) {
+        console.error(error);
+        logToServerFile("Error loading task history page (GET /taskhistory)", error);
+        res.status(500).send('Server error');
+    }
+});
+
+// --- TASK HISTORY API ---
+app.get('/api/task-history', ensureAuthenticated, async (req, res) => {
+    const sessionUserId = req.session.user.id;
+    const workFlowID = req.query.workFlowID;
+
+    try {
+        if (!workFlowID) {
+            return res.status(400).json({
+                success: false,
+                message: 'Workflow ID is required'
+            });
+        }
+
+        const result = await pool.request()
+            .input('workFlowID', sql.Int, parseInt(workFlowID))
+            .query(`
+                SELECT 
+                    h.TaskHistoryID,
+                    h.workFlowID,
+                    h.PaymentStep,
+                    h.TaskID,
+                    h.TaskName,
+                    h.DepId,
+                    h.DeptName,
+                    h.IsTaskSelected,
+                    h.TimeStarted,
+                    h.TimeFinished,
+                    h.Delay,
+                    h.DelayReason,
+                    h.Priority,
+                    h.PlannedDate,
+                    h.CompletionDate
+                FROM tblWorkflowTaskHistory h
+                WHERE h.workFlowID = @workFlowID
+                ORDER BY h.TimeFinished DESC
+            `);
+
+        return res.json({
+            success: true,
+            history: result.recordset || [],
+            workFlowID: workFlowID
+        });
+
+    } catch (error) {
+        console.error('Error fetching task history:', error);
+        logToServerFile("Error fetching task history (GET /api/task-history)", error);
+        return res.status(500).json({
+            success: false,
+            message: 'Failed to fetch task history',
+            error: error.message
+        });
+    }
+});
+
 app.get('/api/tasks/my-department', async (req, res) => {
   try {
     const userId = req.session.user?.usrID || req.query.userId; // fallback if no session
@@ -4233,67 +4328,65 @@ app.post('/finish-task/:taskId', async (req, res) => {
     
     console.log('✅ Update Result:', updateResult.rowsAffected);
 
-    // 📦 SAVE to history when finishing a task in Payment Step 1
+    // 📦 SAVE to history when finishing a task
     try {
-      // Get current payment step
-      const currentPaymentResult = await pool.request()
+      // Get the currently active payment step for this workflow
+      const taskStepResult = await pool.request()
         .input('workFlowHdrId', workFlowHdrId)
         .query(`
           SELECT stepNumber FROM tblWorkflowSteps 
           WHERE workFlowID = @workFlowHdrId AND isActive = 1
         `);
       
-      if (currentPaymentResult.recordset.length > 0) {
-        const currentStepNumber = currentPaymentResult.recordset[0].stepNumber;
+      if (taskStepResult.recordset.length > 0) {
+        const taskStepNumber = taskStepResult.recordset[0].stepNumber;
         
-        // Only save to history if in Payment Step 1
-        if (currentStepNumber === 1) {
-          console.log(`   💾 Saving finished task ${taskId} to history (Step ${currentStepNumber})...`);
+        console.log(`   💾 Saving finished task ${taskId} to history (Step ${taskStepNumber})...`);
+        
+        // Get task details for history
+        const taskDetailsResult = await pool.request()
+          .input('taskId', taskId)
+          .query(`
+            SELECT t.TaskName, t.DepId, t.IsTaskSelected, t.Priority, t.PlannedDate
+            FROM tblTasks t
+            WHERE t.TaskID = @taskId
+          `);
+        
+        if (taskDetailsResult.recordset.length > 0) {
+          const taskDetails = taskDetailsResult.recordset[0];
           
-          // Get task details for history
-          const taskDetailsResult = await pool.request()
+          // Get department name
+          const deptResult = await pool.request()
+            .input('depId', taskDetails.DepId)
+            .query(`SELECT DeptName FROM tblDepartments WHERE DepartmentID = @depId`);
+          
+          const deptName = deptResult.recordset.length > 0 ? deptResult.recordset[0].DeptName : 'Unknown';
+          
+          // Get TimeStarted from workflow detail
+          const timeStartedResult = await pool.request()
             .input('taskId', taskId)
+            .input('workFlowHdrId', workFlowHdrId)
             .query(`
-              SELECT t.TaskName, t.DepId, t.IsTaskSelected, t.Priority, t.PlannedDate
-              FROM tblTasks t
-              WHERE t.TaskID = @taskId
+              SELECT TimeStarted FROM tblWorkflowDtl
+              WHERE TaskID = @taskId AND workFlowHdrId = @workFlowHdrId
             `);
           
-          if (taskDetailsResult.recordset.length > 0) {
-            const taskDetails = taskDetailsResult.recordset[0];
-            
-            // Get department name
-            const deptResult = await pool.request()
-              .input('depId', taskDetails.DepId)
-              .query(`SELECT DeptName FROM tblDepartments WHERE DepartmentID = @depId`);
-            
-            const deptName = deptResult.recordset.length > 0 ? deptResult.recordset[0].DeptName : 'Unknown';
-            
-            // Get TimeStarted from workflow detail
-            const timeStartedResult = await pool.request()
-              .input('taskId', taskId)
-              .input('workFlowHdrId', workFlowHdrId)
-              .query(`
-                SELECT TimeStarted FROM tblWorkflowDtl
-                WHERE TaskID = @taskId AND workFlowHdrId = @workFlowHdrId
-              `);
-            
-            const timeStarted = timeStartedResult.recordset.length > 0 ? timeStartedResult.recordset[0].TimeStarted : null;
-            
-            console.log(`   📊 Task data: TaskName=${taskDetails.TaskName}, TimeStarted=${timeStarted}, TimeFinished=${finishTimeFormatted}, Delay=${delay}`);
-            
-            // Insert directly with calculated values
-            const saveHistoryResult = await pool.request()
-              .input('workFlowHdrId', workFlowHdrId)
-              .input('taskId', taskId)
-              .input('stepNumber', currentStepNumber)
-              .input('taskName', taskDetails.TaskName)
-              .input('depId', taskDetails.DepId)
-              .input('deptName', deptName)
-              .input('isTaskSelected', taskDetails.IsTaskSelected)
-              .input('timeStarted', timeStarted)
-              .input('timeFinished', finishTimeFormatted)
-              .input('delayValue', delay)
+          const timeStarted = timeStartedResult.recordset.length > 0 ? timeStartedResult.recordset[0].TimeStarted : null;
+          
+          console.log(`   📊 Task data: TaskName=${taskDetails.TaskName}, TimeStarted=${timeStarted}, TimeFinished=${finishTimeFormatted}, Delay=${delay}`);
+          
+          // Insert directly with calculated values
+          const saveHistoryResult = await pool.request()
+            .input('workFlowHdrId', workFlowHdrId)
+            .input('taskId', taskId)
+            .input('stepNumber', taskStepNumber)
+            .input('taskName', taskDetails.TaskName)
+            .input('depId', taskDetails.DepId)
+            .input('deptName', deptName)
+            .input('isTaskSelected', taskDetails.IsTaskSelected)
+            .input('timeStarted', timeStarted)
+            .input('timeFinished', finishTimeFormatted)
+            .input('delayValue', delay)
               .input('priority', taskDetails.Priority)
               .input('plannedDate', taskDetails.PlannedDate)
               .query(`
@@ -4301,7 +4394,6 @@ app.post('/finish-task/:taskId', async (req, res) => {
                 VALUES (@workFlowHdrId, @stepNumber, @taskId, @taskName, @depId, @deptName, @isTaskSelected, @timeStarted, @timeFinished, @delayValue, @priority, @plannedDate)
               `);
             console.log(`   ✓ Task ${taskId} saved to history`);
-          }
         }
       }
     } catch (historyError) {

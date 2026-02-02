@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Task History | Engineering Task Management</title>
+  <link rel="stylesheet" href="/css/all.min.css">
+  <link rel="stylesheet" href="/fonts/inter/inter.css">
+  <link rel="stylesheet" href="/styles/userpage.css">
+  <link rel="stylesheet" href="/styles/utils.css">
+  <link rel="stylesheet" href="/styles/taskhistory.css">
+</head>
+<body data-user-id="<%= user.id %>" data-dept-id="<%= user.DepartmentId %>" data-workflow-id="<%= workFlowID %>">
+
+  <!-- Main Content Area -->
+  <main class="main-content">
+    <!-- Content Area -->
+    <div class="content-area">
+      <!-- Top Header -->
+      <header class="top-header">
+        <div class="breadcrumb">
+          <a href="/workFlowDash">
+            <i class="fas fa-home"></i>
+            Dashboard
+          </a>
+          
+          <span class="breadcrumb-separator">/</span>
+          <span>Task History</span>
+        </div>
+        
+        <div class="header-actions">
+          <button class="back-button" onclick="window.location.href='/userpage'">
+            <i class="fas fa-arrow-left"></i>
+            Back to Tasks
+          </button>
+          <a href="/logout">
+            <i class="fas fa-sign-out-alt"></i>
+            Logout
+          </a>
+        </div>
+      </header>
+
+      <!-- History Section -->
+      <section class="history-container">
+        <div class="history-header">
+          <h2 class="history-title">
+            <i class="fas fa-history"></i>
+            Task History
+          </h2>
+          <div class="history-actions">
+            <button class="export-btn" onclick="exportToCSV()">
+              <i class="fas fa-download"></i>
+              Export to CSV
+            </button>
+          </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon total">
+              <i class="fas fa-tasks"></i>
+            </div>
+            <div class="stat-content">
+              <h3>Total Completed</h3>
+              <div class="value" id="total-tasks">0</div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon payment">
+              <i class="fas fa-credit-card"></i>
+            </div>
+            <div class="stat-content">
+              <h3>Payment Steps</h3>
+              <div class="value" id="payment-steps">0</div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon success">
+              <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="stat-content">
+              <h3>On Time</h3>
+              <div class="value" id="on-time-count">0</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="filter-section">
+          <div class="filter-group">
+            <label for="payment-filter">Filter by Payment:</label>
+            <select id="payment-filter" onchange="filterHistory()">
+              <option value="">All Payments</option>
+              <option value="1">Payment Step 1</option>
+              <option value="2">Payment Step 2</option>
+              <option value="3">Payment Step 3</option>
+              <option value="4">Payment Step 4</option>
+              <option value="5">Payment Step 5</option>
+            </select>
+
+            <label for="search-history" style="margin-left: 2rem;">Search:</label>
+            <input type="text" id="search-history" placeholder="Task name or department..." onkeyup="filterHistory()">
+          </div>
+        </div>
+
+        <!-- History Table -->
+        <div class="history-table-wrapper">
+          <div class="table-responsive">
+            <table class="history-table">
+              <thead>
+                <tr>
+                  <th>Task Name</th>
+                  <th>Department</th>
+                  <th>Payment Step</th>
+                  <th>Started</th>
+                  <th>Finished</th>
+                  <th>Duration</th>
+                  <th>Delay</th>
+                  <th>Priority</th>
+                </tr>
+              </thead>
+              <tbody id="history-tbody">
+                <tr>
+                  <td colspan="8" style="text-align: center; padding: 3rem;">
+                    <div class="empty-state">
+                      <i class="fas fa-inbox"></i>
+                      <p>Loading task history...</p>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="pagination" id="pagination"></div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- Error Message -->
+  <div id="error-message" class="error-message message">
+    <i class="fas fa-exclamation-circle"></i>
+    <span id="error-text"></span>
+  </div>
+
+  <script src="/js/taskhistory.js"></script>
+</body>
+</html>
