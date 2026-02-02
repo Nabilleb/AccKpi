@@ -78,18 +78,29 @@ function filterHistory() {
   renderGroupedTable();
 }
 
-function groupByPayment(data) {
+function groupByPaymentAndDepartment(data) {
   const grouped = {};
   
   data.forEach(task => {
     const paymentKey = `payment-${task.PaymentStep}`;
+    const deptKey = `dept-${task.DepId}`;
+    
     if (!grouped[paymentKey]) {
       grouped[paymentKey] = {
         paymentStep: task.PaymentStep,
+        departments: {}
+      };
+    }
+    
+    if (!grouped[paymentKey].departments[deptKey]) {
+      grouped[paymentKey].departments[deptKey] = {
+        depId: task.DepId,
+        deptName: task.DeptName,
         tasks: []
       };
     }
-    grouped[paymentKey].tasks.push(task);
+    
+    grouped[paymentKey].departments[deptKey].tasks.push(task);
   });
   
   return grouped;
@@ -113,9 +124,9 @@ function renderGroupedTable() {
     return;
   }
 
-  const grouped = groupByPayment(filteredData);
+  const grouped = groupByPaymentAndDepartment(filteredData);
   let html = '';
-  let isFirst = true;
+  let isFirstPayment = true;
 
   // Sort payments by step number
   Object.keys(grouped).sort((a, b) => {
@@ -125,10 +136,10 @@ function renderGroupedTable() {
     const paymentStep = paymentData.paymentStep;
     
     // Add gap between payment sections (not before first one)
-    if (!isFirst) {
+    if (!isFirstPayment) {
       html += `<tr class="payment-gap-row"><td colspan="8"></td></tr>`;
     }
-    isFirst = false;
+    isFirstPayment = false;
     
     // Payment header
     html += `
@@ -142,52 +153,73 @@ function renderGroupedTable() {
       </tr>
     `;
     
-    // Table header for this payment
-    html += `
-      <tr class="payment-column-header">
-        <th>Task Name</th>
-        <th>Department</th>
-        <th>Payment Step</th>
-        <th>Started</th>
-        <th>Finished</th>
-        <th>Duration</th>
-        <th>Delay</th>
-        <th>Priority</th>
-      </tr>
-    `;
-    
-    // Tasks for this payment
-    paymentData.tasks.forEach(task => {
-      const startTime = new Date(task.TimeStarted);
-      const endTime = new Date(task.TimeFinished);
-      const duration = Math.round((endTime - startTime) / (1000 * 60)); // minutes
+    // Sort departments by name
+    Object.keys(paymentData.departments).sort((a, b) => {
+      const deptA = paymentData.departments[a].deptName || '';
+      const deptB = paymentData.departments[b].deptName || '';
+      return deptA.localeCompare(deptB);
+    }).forEach(deptKey => {
+      const deptData = paymentData.departments[deptKey];
       
-      const delay = parseInt(task.Delay) || 0;
-      const delayClass = delay === 0 ? 'on-time' : 'delayed';
-      const delayText = delay === 0 ? 'On Time' : `${delay} days`;
-
-      const priorityClass = task.Priority === 1 ? 'priority-high' : 
-                           task.Priority === 2 ? 'priority-medium' : 'priority-low';
-      const priorityText = task.Priority === 1 ? 'High' : 
-                          task.Priority === 2 ? 'Medium' : 'Low';
-
+      // Department subheader
       html += `
-        <tr class="task-row">
-          <td><span class="task-name">${task.TaskName}</span></td>
-          <td><span class="dept-badge">${task.DeptName || 'N/A'}</span></td>
-          <td><span class="payment-badge payment-${paymentStep}">Payment ${paymentStep}</span></td>
-          <td><span class="time-cell">${formatDateTime(task.TimeStarted)}</span></td>
-          <td><span class="time-cell">${formatDateTime(task.TimeFinished)}</span></td>
-          <td>${duration} min</td>
-          <td>
-            <span class="delay-cell ${delayClass}">
-              ${delayText}
-            </span>
-            ${task.DelayReason ? `<div class="delay-reason">${task.DelayReason}</div>` : ''}
+        <tr class="dept-header-row">
+          <td colspan="8">
+            <div class="dept-header">
+              <i class="fas fa-building"></i>
+              ${deptData.deptName || 'Unknown Department'}
+            </div>
           </td>
-          <td><span class="priority-badge ${priorityClass}">${priorityText}</span></td>
         </tr>
       `;
+      
+      // Table header for this department
+      html += `
+        <tr class="dept-column-header">
+          <th>Task Name</th>
+          <th>Department</th>
+          <th>Payment Step</th>
+          <th>Started</th>
+          <th>Finished</th>
+          <th>Duration</th>
+          <th>Delay</th>
+          <th>Priority</th>
+        </tr>
+      `;
+      
+      // Tasks for this department
+      deptData.tasks.forEach(task => {
+        const startTime = new Date(task.TimeStarted);
+        const endTime = new Date(task.TimeFinished);
+        const duration = Math.round((endTime - startTime) / (1000 * 60)); // minutes
+        
+        const delay = parseInt(task.Delay) || 0;
+        const delayClass = delay === 0 ? 'on-time' : 'delayed';
+        const delayText = delay === 0 ? 'On Time' : `${delay} days`;
+
+        const priorityClass = task.Priority === 1 ? 'priority-high' : 
+                             task.Priority === 2 ? 'priority-medium' : 'priority-low';
+        const priorityText = task.Priority === 1 ? 'High' : 
+                            task.Priority === 2 ? 'Medium' : 'Low';
+
+        html += `
+          <tr class="task-row">
+            <td><span class="task-name">${task.TaskName}</span></td>
+            <td><span class="dept-badge">${task.DeptName || 'N/A'}</span></td>
+            <td><span class="payment-badge payment-${paymentStep}">Payment ${paymentStep}</span></td>
+            <td><span class="time-cell">${formatDateTime(task.TimeStarted)}</span></td>
+            <td><span class="time-cell">${formatDateTime(task.TimeFinished)}</span></td>
+            <td>${duration} min</td>
+            <td>
+              <span class="delay-cell ${delayClass}">
+                ${delayText}
+              </span>
+              ${task.DelayReason ? `<div class="delay-reason">${task.DelayReason}</div>` : ''}
+            </td>
+            <td><span class="priority-badge ${priorityClass}">${priorityText}</span></td>
+          </tr>
+        `;
+      });
     });
   });
 

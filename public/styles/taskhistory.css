@@ -226,6 +226,46 @@
   padding: 0 !important;
 }
 
+.dept-header-row {
+  background-color: #f3f4f6 !important;
+  border-left: 3px solid #9ca3af !important;
+}
+
+.dept-header-row td {
+  padding: 0.875rem 1.25rem !important;
+}
+
+.dept-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text-light);
+}
+
+.dept-header i {
+  font-size: 0.95rem;
+}
+
+.dept-column-header {
+  background: linear-gradient(135deg, #f8fafc, #f1f5f9) !important;
+  border-top: 1px solid var(--border) !important;
+  border-bottom: 1px solid var(--border) !important;
+}
+
+.dept-column-header th {
+  padding: 0.875rem 1.25rem !important;
+  text-align: left;
+  font-weight: 500;
+  color: var(--text-light);
+  font-size: 0.85rem;
+  background: transparent !important;
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
 .payment-column-header {
   background: linear-gradient(135deg, #f8fafc, #f1f5f9) !important;
   border-top: 1px solid var(--border) !important;
