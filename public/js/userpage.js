@@ -116,9 +116,12 @@ document.addEventListener('DOMContentLoaded', function() {
     ? JSON.parse(localStorage.getItem('savedPaymentDates')) 
     : {}; // Store dates for next payments before completion
   
+  console.log('📅 Loaded saved payment dates from localStorage:', savedPaymentDates);
+  
   // Helper to save payment dates to localStorage
   const savePaymentDatesToStorage = () => {
     localStorage.setItem('savedPaymentDates', JSON.stringify(savedPaymentDates));
+    console.log('💾 Saved payment dates to localStorage:', savedPaymentDates);
   };
   
   // Handle payment start date modal confirm
@@ -139,6 +142,38 @@ document.addEventListener('DOMContentLoaded', function() {
       if (nextPaymentDateToSet) {
         savedPaymentDates[nextPaymentDateToSet] = selectedDate;
         savePaymentDatesToStorage();
+        
+        // Update PlannedDate for first task of this payment
+        const paymentTasks = taskList.filter(t => t.PaymentStep === nextPaymentDateToSet);
+        if (paymentTasks.length > 0) {
+          const firstTask = paymentTasks[0];
+          const workFlowHdrId = firstTask.workFlowHdrId;
+          
+          try {
+            const updateResponse = await fetch('/api/update-task-planned-date', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                taskId: firstTask.TaskID,
+                workFlowHdrId: workFlowHdrId,
+                plannedDate: selectedDate
+              })
+            });
+            
+            if (updateResponse.ok) {
+              console.log('✅ PlannedDate updated for task:', firstTask.TaskID);
+              // Update the task in taskList
+              firstTask.PlannedDate = selectedDate;
+              // Refresh the table
+              location.reload();
+            } else {
+              console.warn('Failed to update PlannedDate');
+            }
+          } catch (err) {
+            console.error('Error updating PlannedDate:', err);
+          }
+        }
+        
         showSuccess(`Start date for Payment ${nextPaymentDateToSet} set to ${selectedDate}`);
         nextPaymentDateToSet = null;
         return;
@@ -879,9 +914,9 @@ const renderTaskRow = (task) => {
 
     let actionButton = '';
     if (isOwnDepartment && task.IsTaskSelected) {
-        if (!task.TimeStarted) {
+        if (!task.TimeStarted && task.PlannedDate) {
             actionButton = `<button class="task-start-btn" data-task-id="${task.TaskID}"> Start</button>`;
-        } else if (!task.TimeFinished) {
+        } else if (!task.TimeFinished && task.PlannedDate) {
             actionButton = `<button class="task-finish-btn" data-task-id="${task.TaskID}"> Finish</button>`;
         }
     }
@@ -1008,10 +1043,27 @@ const updatePaymentStatus = () => {
             const nextPaymentStep = window.paymentSteps.find(s => s.stepNumber > activePayment.stepNumber);
             const dateIsSet = savedPaymentDates[nextPaymentStep.stepNumber];
             
+            console.log('🔍 Checking payment date requirement:');
+            console.log('  - Has more payments:', hasMorePayments);
+            console.log('  - Active payment:', activePayment?.stepNumber);
+            console.log('  - Next payment step:', nextPaymentStep?.stepNumber);
+            console.log('  - Next payment from DB:', nextPaymentStep);
+            console.log('  - Saved dates:', savedPaymentDates);
+            console.log('  - Date for step', nextPaymentStep?.stepNumber, ':', dateIsSet);
+            
             if (!dateIsSet) {
-                console.log('❌ Waiting for user to set next payment date...');
-                showError('📅 Set the start date for Payment ' + nextPaymentStep.stepNumber + ' before completing Payment ' + activePayment.stepNumber);
-                return; // STOP HERE - do not proceed with any completion logic
+                console.log('❌ Date NOT in localStorage. Checking database for StepStartDate...');
+                console.log('   - nextPaymentStep.StepStartDate =', nextPaymentStep?.StepStartDate);
+                // Check if next payment has StepStartDate in database
+                if (!nextPaymentStep?.StepStartDate) {
+                    console.log('❌ Database also shows StepStartDate is NULL - BLOCKING completion');
+                    showError('📅 Set the start date for Payment ' + nextPaymentStep.stepNumber + ' before completing this payment');
+                    return; // STOP HERE
+                } else {
+                    console.log('✅ Database HAS StepStartDate:', nextPaymentStep.StepStartDate);
+                }
+            } else {
+                console.log('✅ Date IS in localStorage for payment', nextPaymentStep?.stepNumber, ':', dateIsSet);
             }
         }
         
@@ -1074,8 +1126,9 @@ const updatePaymentStatus = () => {
                             nextPaymentStartDate: savedDate
                         })
                     })
-                    .then(res => {
-                        if (res.ok) {
+                    .then(res => res.json().then(data => ({ ok: res.ok, status: res.status, data })))
+                    .then(({ ok, status, data }) => {
+                        if (ok) {
                             console.log('✅ Payment step marked as complete with pre-set date');
                             showSuccess('Payment marked as complete with pre-set start date!');
                             
@@ -1087,10 +1140,15 @@ const updatePaymentStatus = () => {
                                 detail: { workFlowHdrId: workFlowHdrId }
                             }));
                         } else {
-                            showError('Failed to update payment step');
+                            const errorMsg = data?.error || `Failed to update payment step (Status: ${status})`;
+                            console.error('❌ Payment completion error:', errorMsg);
+                            showError('❌ ' + errorMsg);
                         }
                     })
-                    .catch(err => console.error('Error updating payment step:', err));
+                    .catch(err => {
+                        console.error('Error updating payment step:', err);
+                        showError('Error: ' + err.message);
+                    });
                   } else {
                     // Do not auto-show modal - require user to click the button
                     console.log('Waiting for user to set payment date using the Set Start Date button');
@@ -1107,8 +1165,9 @@ const updatePaymentStatus = () => {
                           workFlowHdrId: workFlowHdrId
                       })
                   })
-                  .then(res => {
-                      if (res.ok) {
+                  .then(res => res.json().then(data => ({ ok: res.ok, status: res.status, data })))
+                  .then(({ ok, status, data }) => {
+                      if (ok) {
                           console.log('✅ Payment step marked as complete in database');
                           activePayment.isActive = false;
                           showSuccess('All payments completed successfully!');
@@ -1117,10 +1176,15 @@ const updatePaymentStatus = () => {
                               detail: { workFlowHdrId: workFlowHdrId }
                           }));
                       } else {
-                          showError('Failed to update payment step');
+                          const errorMsg = data?.error || `Failed to update payment step (Status: ${status})`;
+                          console.error('❌ Payment completion error:', errorMsg);
+                          showError('❌ ' + errorMsg);
                       }
                   })
-                  .catch(err => console.error('Error updating payment step:', err));
+                  .catch(err => {
+                      console.error('Error updating payment step:', err);
+                      showError('Error: ' + err.message);
+                  });
                 }
             }
         }
@@ -1254,24 +1318,31 @@ const handleClickEvents = async (e) => {
         const activePayment = getActivePayment();
         const isLastPayment = activePayment && activePayment.stepNumber === window.paymentSteps[window.paymentSteps.length - 1].stepNumber;
         
-        // Check if all other tasks are finished
+        // Check if all other tasks are finished IN THIS PAYMENT
         const isPayment1 = getIsPayment1();
         const visibleTasks = taskList.filter(t => {
             if (t.DepId === 9 && !isPayment1) return false;
+            // Only include tasks from current active payment
+            if (t.PaymentStep !== activePayment?.stepNumber) return false;
             return true;
         });
+        
+        console.log('🔍 Button click check:');
+        console.log('  - Current task:', task?.TaskName, 'PaymentStep:', task?.PaymentStep);
+        console.log('  - Active payment step:', activePayment?.stepNumber);
+        console.log('  - Visible tasks in this payment:', visibleTasks.length);
+        console.log('  - Visible tasks:', visibleTasks.map(t => ({ id: t.TaskID, finished: !!t.TimeFinished })));
+        
         const otherFinishedTasks = visibleTasks.filter(t => t.TimeFinished && t.TaskID !== task.TaskID).length;
         const isLastTask = otherFinishedTasks === visibleTasks.length - 1;
         
+        console.log('  - Other finished tasks:', otherFinishedTasks);
+        console.log('  - Is last task:', isLastTask);
+        
         if (isLastTask && !isLastPayment) {
             // This is the last task and there are more payments
-            const nextPaymentStep = window.paymentSteps.find(s => s.stepNumber > activePayment.stepNumber);
-            const dateIsSet = savedPaymentDates[nextPaymentStep.stepNumber];
-            
-            if (!dateIsSet) {
-                showError('📅 Please set the start date for Payment ' + nextPaymentStep.stepNumber + ' before finishing the last task');
-                return;
-            }
+            // Automatically advance to next payment without requiring start date
+            console.log('  - Last task of payment, will advance to next payment automatically');
         }
         
         // Only show spinner if we passed the date check

@@ -906,7 +906,7 @@ app.get("/api/workflow-steps/:workFlowID", ensureAuthenticated, async (req, res)
     const result = await pool.request()
       .input('workFlowID', sql.Int, workFlowID)
       .query(`
-        SELECT workflowStepID, workFlowID, supplierID, stepNumber, isActive, createdDate, StepFinished
+        SELECT workflowStepID, workFlowID, supplierID, stepNumber, isActive, createdDate, StepFinished, StepStartDate
         FROM tblWorkflowSteps
         WHERE workFlowID = @workFlowID
         ORDER BY stepNumber
@@ -988,6 +988,46 @@ app.put("/api/workflow-steps/mark-complete/:stepId", ensureAuthenticated, async 
     
     console.log(`Marking workflow step ${stepId} as complete...`, { completionDate, workFlowHdrId, nextPaymentStartDate });
 
+    // ✅ CHECK: If there's a nextPaymentStartDate but it's not provided, get it from the next step
+    if (workFlowHdrId && !nextPaymentStartDate) {
+      // Get current step's step number and workflow details
+      const currentStepResult = await pool.request()
+        .input('stepId', sql.Int, stepId)
+        .query(`
+          SELECT ws.stepNumber, ws.workFlowID
+          FROM tblWorkflowSteps ws
+          WHERE ws.workflowStepID = @stepId
+        `);
+      
+      if (currentStepResult.recordset.length > 0) {
+        const currentStep = currentStepResult.recordset[0];
+        const nextStepNumber = currentStep.stepNumber + 1;
+        
+        // Check if there's a next step
+        const nextStepResult = await pool.request()
+          .input('workFlowID', sql.Int, currentStep.workFlowID)
+          .input('nextStepNumber', sql.Int, nextStepNumber)
+          .query(`
+            SELECT workflowStepID, StepStartDate
+            FROM tblWorkflowSteps
+            WHERE workFlowID = @workFlowID AND stepNumber = @nextStepNumber
+          `);
+        
+        if (nextStepResult.recordset.length > 0) {
+          const nextStep = nextStepResult.recordset[0];
+          
+          // ❌ BLOCK: Next step exists but has no start date set
+          if (!nextStep.StepStartDate) {
+            console.log(`❌ Next payment step ${nextStepNumber} has no StepStartDate set`);
+            return res.status(400).json({ 
+              error: "Cannot complete payment: Start date not set for next payment step",
+              nextStepNumber: nextStepNumber
+            });
+          }
+        }
+      }
+    }
+
     // 📦 SAVE completed tasks to history BEFORE marking step as complete
     if (workFlowHdrId) {
       try {
@@ -1039,9 +1079,36 @@ app.put("/api/workflow-steps/mark-complete/:stepId", ensureAuthenticated, async 
 
     // If nextPaymentStartDate is provided, reset PlannedDate for all tasks
     if (workFlowHdrId && nextPaymentStartDate) {
-      console.log(`📅 Resetting PlannedDate for workflow ${workFlowHdrId} with next payment start date: ${nextPaymentStartDate}`);
+      console.log(`📅 Setting StepStartDate and resetting PlannedDate for workflow ${workFlowHdrId} with next payment start date: ${nextPaymentStartDate}`);
       
       const startDate = new Date(nextPaymentStartDate);
+      
+      // Get current step's step number
+      const currentStepResult = await pool.request()
+        .input('stepId', sql.Int, stepId)
+        .query(`
+          SELECT ws.stepNumber, ws.workFlowID
+          FROM tblWorkflowSteps ws
+          WHERE ws.workflowStepID = @stepId
+        `);
+      
+      if (currentStepResult.recordset.length > 0) {
+        const currentStep = currentStepResult.recordset[0];
+        const nextStepNumber = currentStep.stepNumber + 1;
+        
+        // Update StepStartDate for the next payment step
+        const nextStepResult = await pool.request()
+          .input('workFlowID', sql.Int, currentStep.workFlowID)
+          .input('nextStepNumber', sql.Int, nextStepNumber)
+          .input('stepStartDate', sql.DateTime2, startDate)
+          .query(`
+            UPDATE tblWorkflowSteps
+            SET StepStartDate = @stepStartDate
+            WHERE workFlowID = @workFlowID AND stepNumber = @nextStepNumber
+          `);
+        
+        console.log(`✅ Set StepStartDate for next payment step`, { rowsAffected: nextStepResult.rowsAffected });
+      }
       
       // Get all tasks for this workflow
       const tasksResult = await pool.request()
@@ -1154,7 +1221,7 @@ app.post("/api/workflow-steps/advance/:workFlowID", ensureAuthenticated, async (
           )
       `);
 
-    // Reset remaining tasks (reset times and deselect all)
+    // Reset remaining tasks (reset times, plan dates, and deselect all)
     await pool.request()
       .input('workFlowID', sql.Int, workFlowID)
       .query(`
@@ -1164,8 +1231,18 @@ app.post("/api/workflow-steps/advance/:workFlowID", ensureAuthenticated, async (
           TimeFinished = NULL,
           Delay = NULL,
           DelayReason = NULL,
+          PlannedDate = NULL,
           IsTaskSelected = 0
         WHERE workFlowHdrId = @workFlowID
+      `);
+
+    // Also reset PlannedDate in tblTasks
+    await pool.request()
+      .input('workFlowID', sql.Int, workFlowID)
+      .query(`
+        UPDATE tblTasks
+        SET PlannedDate = NULL
+        WHERE WorkFlowHdrID = @workFlowID
       `);
 
     // Reset all tasks' IsTaskSelected to 0
@@ -1436,7 +1513,7 @@ app.get("/userpage/:hdrId", async (req, res) => {
       pool.request()
         .input('workFlowID', sql.Int, hdrId)
         .query(`
-          SELECT workflowStepID, workFlowID, supplierID, stepNumber, isActive, createdDate, StepFinished
+          SELECT workflowStepID, workFlowID, supplierID, stepNumber, isActive, createdDate, StepFinished, StepStartDate
           FROM tblWorkflowSteps
           WHERE workFlowID = @workFlowID
           ORDER BY stepNumber ASC
@@ -1453,6 +1530,18 @@ app.get("/userpage/:hdrId", async (req, res) => {
     }, department);
 
     const paymentSteps = paymentStepsResult.recordset;
+
+    console.log(`🔍 Loaded ${tasks.length} tasks for workflow ${hdrId}`);
+    console.log(`📋 Payment Steps loaded:`, paymentSteps.map(p => ({ 
+      stepNumber: p.stepNumber, 
+      isActive: p.isActive, 
+      StepStartDate: p.StepStartDate,
+      StepFinished: p.StepFinished 
+    })));
+    if (tasks.length > 0) {
+      console.log(`   First task PaymentStep: ${tasks[0].PaymentStep}`);
+      console.log(`   Sample task:`, tasks[0]);
+    }
 
     res.render("userpage.ejs", {
       tasks,
@@ -4297,8 +4386,45 @@ app.post('/start-task/:taskId', async (req, res) => {
   }
 });
 
-
-
+// Update planned date for a task
+app.post('/api/update-task-planned-date', async (req, res) => {
+  const { taskId, workFlowHdrId, plannedDate } = req.body;
+  
+  if (!taskId || !workFlowHdrId || !plannedDate) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+  
+  try {
+    const pool = await sql.connect();
+    
+    // Update PlannedDate in tblTasks
+    await pool.request()
+      .input('taskId', sql.Int, taskId)
+      .input('plannedDate', sql.Date, plannedDate)
+      .query(`
+        UPDATE tblTasks
+        SET PlannedDate = @plannedDate
+        WHERE TaskID = @taskId
+      `);
+    
+    // Update PlannedDate in tblWorkflowDtl
+    await pool.request()
+      .input('taskId', sql.Int, taskId)
+      .input('workFlowHdrId', sql.Int, workFlowHdrId)
+      .input('plannedDate', sql.Date, plannedDate)
+      .query(`
+        UPDATE tblWorkflowDtl
+        SET PlannedDate = @plannedDate
+        WHERE TaskID = @taskId AND workFlowHdrId = @workFlowHdrId
+      `);
+    
+    console.log('✅ Updated PlannedDate for task:', taskId, 'to', plannedDate);
+    res.json({ success: true, message: 'PlannedDate updated successfully' });
+  } catch (err) {
+    console.error('Error updating PlannedDate:', err);
+    res.status(500).json({ error: 'Failed to update PlannedDate: ' + err.message });
+  }
+});
 
 app.post('/finish-task/:taskId', async (req, res) => {
   const { taskId } = req.params;
@@ -4754,7 +4880,7 @@ Engineering Project Dashboard`,
             .input('workFlowHdrId', workFlowHdrId)
             .input('currentStep', currentStepNumber)
             .query(`
-              SELECT TOP 1 stepNumber FROM tblWorkflowSteps
+              SELECT TOP 1 workflowStepID, stepNumber, StepStartDate FROM tblWorkflowSteps
               WHERE workFlowID = @workFlowHdrId AND stepNumber > @currentStep
               ORDER BY stepNumber ASC
             `);
@@ -4763,6 +4889,7 @@ Engineering Project Dashboard`,
           
           if (nextStepResult.recordset.length > 0) {
             const nextStepNumber = nextStepResult.recordset[0].stepNumber;
+            
             console.log(`✅ Found next step: ${nextStepNumber}`);
 
             // Deactivate current step and mark as finished
@@ -4792,10 +4919,20 @@ Engineering Project Dashboard`,
               .input('workFlowHdrId', workFlowHdrId)
               .query(`
                 UPDATE tblWorkflowDtl
-                SET TimeStarted = NULL, TimeFinished = NULL, Delay = NULL, DelayReason = NULL
+                SET TimeStarted = NULL, TimeFinished = NULL, Delay = NULL, DelayReason = NULL, PlannedDate = NULL
                 WHERE workFlowHdrId = @workFlowHdrId
               `);
-            console.log(`   ✓ Reset workflow detail records (TimeStarted, TimeFinished, Delay, DelayReason)`);
+            
+            // Also reset PlannedDate in tblTasks
+            await pool.request()
+              .input('workFlowHdrId', workFlowHdrId)
+              .query(`
+                UPDATE tblTasks
+                SET PlannedDate = NULL
+                WHERE WorkFlowHdrID = @workFlowHdrId
+              `);
+            
+            console.log(`   ✓ Reset workflow detail records (TimeStarted, TimeFinished, Delay, DelayReason, PlannedDate)`);
 
             // Get all tasks that will be reset
             const tasksToReset = await pool.request()

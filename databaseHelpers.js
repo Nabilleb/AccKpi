@@ -120,6 +120,7 @@ export async function getWorkflowTasks(pool, workflowId) {
         pk.PkgeName,
         dp.DeptName,
         pd.StepOrder,
+        ISNULL(ws.stepNumber, 0) AS PaymentStep,
         (SELECT COUNT(*) FROM tblWorkflowSteps WHERE workFlowID = @workflowId) AS PaymentCount
       FROM tblWorkflowDtl d
       INNER JOIN tblTasks t ON d.TaskID = t.TaskID
@@ -128,7 +129,8 @@ export async function getWorkflowTasks(pool, workflowId) {
       INNER JOIN tblProject pj ON hdr.ProjectID = pj.ProjectID
       INNER JOIN tblPackages pk ON pk.PkgeId = hdr.packageID
       INNER JOIN tblDepartments dp ON dp.DepartmentID = t.DepId
-      INNER JOIN tblProcessDepartment pd ON pd.DepartmentID = t.DepId AND pd.ProcessID = pr.NumberOfProccessID 
+      INNER JOIN tblProcessDepartment pd ON pd.DepartmentID = t.DepId AND pd.ProcessID = pr.NumberOfProccessID
+      LEFT JOIN tblWorkflowSteps ws ON ws.workFlowID = @workflowId AND ws.isActive = 1
       WHERE d.workFlowHdrId = @workflowId
       ORDER BY pd.StepOrder ASC, t.Priority ASC
     `);

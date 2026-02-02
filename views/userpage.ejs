@@ -236,6 +236,11 @@
                       <span class="status-badge in-process">
                         <i class="fas fa-play-circle"></i> In Process
                       </span>
+                      <% if (step.stepNumber > 1) { %>
+                        <button class="set-payment-date-btn" data-payment-step="<%= step.stepNumber %>">
+                          <i class="fas fa-calendar-plus"></i> Set Start Date
+                        </button>
+                      <% } %>
                     <% } else if (allCompleted || (activeIndex >= 0 && index < activeIndex)) { %>
                       <span class="status-badge completed">
                         <i class="fas fa-check"></i> Completed
@@ -244,11 +249,6 @@
                       <span class="status-badge waiting">
                         <i class="fas fa-hourglass-half"></i> Waiting
                       </span>
-                      <% if (activeIndex >= 0 && index === activeIndex + 1) { %>
-                        <button class="set-payment-date-btn" data-payment-step="<%= step.stepNumber %>">
-                          <i class="fas fa-calendar-plus"></i> Set Start Date
-                        </button>
-                      <% } %>
                     <% } %>
                   </div>
                 </div>
