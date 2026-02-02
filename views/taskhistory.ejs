@@ -29,10 +29,10 @@
         </div>
         
         <div class="header-actions">
-          <button class="back-button" onclick="window.location.href='/userpage'">
+          <a href="/userpage/<%= workFlowID %>" class="back-button">
             <i class="fas fa-arrow-left"></i>
             Back to Tasks
-          </button>
+          </a>
           <a href="/logout">
             <i class="fas fa-sign-out-alt"></i>
             Logout
@@ -48,7 +48,7 @@
             Task History
           </h2>
           <div class="history-actions">
-            <button class="export-btn" onclick="exportToCSV()">
+            <button class="export-btn" id="export-csv-btn">
               <i class="fas fa-download"></i>
               Export to CSV
             </button>
@@ -92,7 +92,7 @@
         <div class="filter-section">
           <div class="filter-group">
             <label for="payment-filter">Filter by Payment:</label>
-            <select id="payment-filter" onchange="filterHistory()">
+            <select id="payment-filter">
               <option value="">All Payments</option>
               <option value="1">Payment Step 1</option>
               <option value="2">Payment Step 2</option>
@@ -102,7 +102,7 @@
             </select>
 
             <label for="search-history" style="margin-left: 2rem;">Search:</label>
-            <input type="text" id="search-history" placeholder="Task name or department..." onkeyup="filterHistory()">
+            <input type="text" id="search-history" placeholder="Task name or department...">
           </div>
         </div>
 
@@ -110,7 +110,7 @@
         <div class="history-table-wrapper">
           <div class="table-responsive">
             <table class="history-table">
-              <thead>
+              <thead style="display: none;">
                 <tr>
                   <th>Task Name</th>
                   <th>Department</th>

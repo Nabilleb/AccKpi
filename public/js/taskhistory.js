@@ -8,7 +8,26 @@ let currentPage = 1;
 const workFlowID = document.body.getAttribute('data-workflow-id');
 
 // Load history on page load
-document.addEventListener('DOMContentLoaded', loadHistory);
+document.addEventListener('DOMContentLoaded', () => {
+  loadHistory();
+  
+  // Add event listeners
+  const paymentFilter = document.getElementById('payment-filter');
+  const searchHistory = document.getElementById('search-history');
+  const exportBtn = document.getElementById('export-csv-btn');
+  
+  if (paymentFilter) {
+    paymentFilter.addEventListener('change', filterHistory);
+  }
+  
+  if (searchHistory) {
+    searchHistory.addEventListener('keyup', filterHistory);
+  }
+  
+  if (exportBtn) {
+    exportBtn.addEventListener('click', exportToCSV);
+  }
+});
 
 async function loadHistory() {
   try {
@@ -35,7 +54,7 @@ async function loadHistory() {
     document.getElementById('on-time-count').textContent = onTimeCount;
     
     filteredData = [...allHistoryData];
-    renderTable();
+    renderGroupedTable();
   } catch (error) {
     console.error('Error loading history:', error);
     showError('Failed to load task history: ' + error.message);
@@ -56,10 +75,27 @@ function filterHistory() {
   });
   
   currentPage = 1;
-  renderTable();
+  renderGroupedTable();
 }
 
-function renderTable() {
+function groupByPayment(data) {
+  const grouped = {};
+  
+  data.forEach(task => {
+    const paymentKey = `payment-${task.PaymentStep}`;
+    if (!grouped[paymentKey]) {
+      grouped[paymentKey] = {
+        paymentStep: task.PaymentStep,
+        tasks: []
+      };
+    }
+    grouped[paymentKey].tasks.push(task);
+  });
+  
+  return grouped;
+}
+
+function renderGroupedTable() {
   const tbody = document.getElementById('history-tbody');
   
   if (filteredData.length === 0) {
@@ -77,44 +113,85 @@ function renderTable() {
     return;
   }
 
-  const start = (currentPage - 1) * ITEMS_PER_PAGE;
-  const end = start + ITEMS_PER_PAGE;
-  const paginatedData = filteredData.slice(start, end);
+  const grouped = groupByPayment(filteredData);
+  let html = '';
+  let isFirst = true;
 
-  tbody.innerHTML = paginatedData.map(task => {
-    const startTime = new Date(task.TimeStarted);
-    const endTime = new Date(task.TimeFinished);
-    const duration = Math.round((endTime - startTime) / (1000 * 60)); // minutes
+  // Sort payments by step number
+  Object.keys(grouped).sort((a, b) => {
+    return grouped[a].paymentStep - grouped[b].paymentStep;
+  }).forEach(paymentKey => {
+    const paymentData = grouped[paymentKey];
+    const paymentStep = paymentData.paymentStep;
     
-    const delay = parseInt(task.Delay) || 0;
-    const delayClass = delay === 0 ? 'on-time' : 'delayed';
-    const delayText = delay === 0 ? 'On Time' : `${delay} days`;
-
-    const priorityClass = task.Priority === 1 ? 'priority-high' : 
-                         task.Priority === 2 ? 'priority-medium' : 'priority-low';
-    const priorityText = task.Priority === 1 ? 'High' : 
-                        task.Priority === 2 ? 'Medium' : 'Low';
-
-    return `
-      <tr>
-        <td><span class="task-name">${task.TaskName}</span></td>
-        <td><span class="dept-badge">${task.DeptName || 'N/A'}</span></td>
-        <td><span class="payment-badge payment-${task.PaymentStep}">Payment ${task.PaymentStep}</span></td>
-        <td><span class="time-cell">${formatDateTime(task.TimeStarted)}</span></td>
-        <td><span class="time-cell">${formatDateTime(task.TimeFinished)}</span></td>
-        <td>${duration} min</td>
-        <td>
-          <span class="delay-cell ${delayClass}">
-            ${delayText}
-          </span>
-          ${task.DelayReason ? `<div class="delay-reason">${task.DelayReason}</div>` : ''}
+    // Add gap between payment sections (not before first one)
+    if (!isFirst) {
+      html += `<tr class="payment-gap-row"><td colspan="8"></td></tr>`;
+    }
+    isFirst = false;
+    
+    // Payment header
+    html += `
+      <tr class="payment-header-row">
+        <td colspan="8">
+          <div class="payment-header">
+            <i class="fas fa-credit-card"></i>
+            Payment Step ${paymentStep}
+          </div>
         </td>
-        <td><span class="priority-badge ${priorityClass}">${priorityText}</span></td>
       </tr>
     `;
-  }).join('');
+    
+    // Table header for this payment
+    html += `
+      <tr class="payment-column-header">
+        <th>Task Name</th>
+        <th>Department</th>
+        <th>Payment Step</th>
+        <th>Started</th>
+        <th>Finished</th>
+        <th>Duration</th>
+        <th>Delay</th>
+        <th>Priority</th>
+      </tr>
+    `;
+    
+    // Tasks for this payment
+    paymentData.tasks.forEach(task => {
+      const startTime = new Date(task.TimeStarted);
+      const endTime = new Date(task.TimeFinished);
+      const duration = Math.round((endTime - startTime) / (1000 * 60)); // minutes
+      
+      const delay = parseInt(task.Delay) || 0;
+      const delayClass = delay === 0 ? 'on-time' : 'delayed';
+      const delayText = delay === 0 ? 'On Time' : `${delay} days`;
 
-  renderPagination();
+      const priorityClass = task.Priority === 1 ? 'priority-high' : 
+                           task.Priority === 2 ? 'priority-medium' : 'priority-low';
+      const priorityText = task.Priority === 1 ? 'High' : 
+                          task.Priority === 2 ? 'Medium' : 'Low';
+
+      html += `
+        <tr class="task-row">
+          <td><span class="task-name">${task.TaskName}</span></td>
+          <td><span class="dept-badge">${task.DeptName || 'N/A'}</span></td>
+          <td><span class="payment-badge payment-${paymentStep}">Payment ${paymentStep}</span></td>
+          <td><span class="time-cell">${formatDateTime(task.TimeStarted)}</span></td>
+          <td><span class="time-cell">${formatDateTime(task.TimeFinished)}</span></td>
+          <td>${duration} min</td>
+          <td>
+            <span class="delay-cell ${delayClass}">
+              ${delayText}
+            </span>
+            ${task.DelayReason ? `<div class="delay-reason">${task.DelayReason}</div>` : ''}
+          </td>
+          <td><span class="priority-badge ${priorityClass}">${priorityText}</span></td>
+        </tr>
+      `;
+    });
+  });
+
+  tbody.innerHTML = html;
 }
 
 function renderPagination() {
