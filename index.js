@@ -4495,16 +4495,20 @@ Engineering Project Dashboard`,
     // ========== AUTO-ADVANCE WORKFLOW STEPS IF ALL TASKS COMPLETE ==========
     try {
       // Check if ALL tasks in this workflow are now finished (across all departments)
+      // Exclude Contract tasks (DepId = 9) from the count since they're only done in Payment 1
       const allTasksFinishedResult = await pool.request()
         .input('workFlowHdrId', workFlowHdrId)
         .query(`
           SELECT COUNT(*) AS UnfinishedCount
-          FROM tblWorkflowDtl
-          WHERE workFlowHdrId = @workFlowHdrId AND TimeFinished IS NULL
+          FROM tblWorkflowDtl wd
+          JOIN tblTasks t ON wd.TaskID = t.TaskID
+          WHERE wd.workFlowHdrId = @workFlowHdrId 
+            AND wd.TimeFinished IS NULL
+            AND t.DepId != 9
         `);
 
       const unfinishedCount = allTasksFinishedResult.recordset[0].UnfinishedCount;
-      console.log(`All tasks finished check: Unfinished count = ${unfinishedCount}`);
+      console.log(`All tasks finished check: Unfinished count = ${unfinishedCount} (excluding DepId 9 Contract tasks)`);
 
       if (unfinishedCount === 0) {
         // Check if this workflow has multiple steps (multi-payment workflow)
@@ -4525,6 +4529,8 @@ Engineering Project Dashboard`,
 
         if (stepCount > 1 && currentStepNumber) {
           // Multi-step workflow - advance to next step
+          console.log(`🔍 Looking for next step after step ${currentStepNumber} out of ${stepCount} total steps`);
+          
           const nextStepResult = await pool.request()
             .input('workFlowHdrId', workFlowHdrId)
             .input('currentStep', currentStepNumber)
@@ -4534,6 +4540,8 @@ Engineering Project Dashboard`,
               ORDER BY stepNumber ASC
             `);
 
+          console.log(`Next step query result:`, nextStepResult.recordset);
+          
           if (nextStepResult.recordset.length > 0) {
             const nextStepNumber = nextStepResult.recordset[0].stepNumber;
             console.log(`✅ Found next step: ${nextStepNumber}`);
@@ -4656,6 +4664,7 @@ Engineering Project Dashboard`,
             console.log(`✅ Workflow ${workFlowHdrId} auto-advanced from step ${currentStepNumber} to ${nextStepNumber}`);
           } else {
             // No next step found - this is the last payment, mark workflow as complete
+            console.log(`❌ No next step found. Query looked for stepNumber > ${currentStepNumber} in workflow ${workFlowHdrId}`);
             console.log(`✅ Workflow ${workFlowHdrId} completed all payments (last step was ${currentStepNumber})`);
           }
         } else {
