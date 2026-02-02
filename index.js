@@ -984,24 +984,53 @@ app.delete("/api/workflow-steps/delete/:stepId", ensureAuthenticated, async (req
 app.put("/api/workflow-steps/mark-complete/:stepId", ensureAuthenticated, async (req, res) => {
   try {
     const { stepId } = req.params;
+    const { completionDate, workFlowHdrId } = req.body;
     
-    console.log(`Marking workflow step ${stepId} as complete...`);
+    console.log(`Marking workflow step ${stepId} as complete...`, { completionDate, workFlowHdrId });
     
-    // Update the step to mark as inactive (complete)
-    await pool.request()
+    // Update the step to mark as inactive (complete) with optional completion date
+    const request = pool.request()
       .input('stepId', sql.Int, stepId)
-      .input('isActive', sql.Bit, 0)  // false = not active = complete
-      .query(`
-        UPDATE tblWorkflowSteps
-        SET isActive = @isActive
-        WHERE workflowStepID = @stepId
-      `);
+      .input('isActive', sql.Bit, 0);  // false = not active = complete
     
-    console.log(`✅ Workflow step ${stepId} marked as complete`);
+    let query = `
+      UPDATE tblWorkflowSteps
+      SET isActive = @isActive`;
+    
+    // If completion date is provided, also update the StepFinished date
+    if (completionDate) {
+      request.input('completionDate', sql.DateTime2, new Date(completionDate));
+      query += `, StepFinished = @completionDate`;
+    }
+    
+    query += `
+      WHERE workflowStepID = @stepId`;
+    
+    const result = await request.query(query);
+    
+    console.log(`✅ Workflow step ${stepId} marked as complete`, { rowsAffected: result.rowsAffected });
+    
+    // If workFlowHdrId is provided and we have a completion date, also update tblWorkflowHdr
+    if (workFlowHdrId && completionDate) {
+      console.log(`📝 Updating tblWorkflowHdr ${workFlowHdrId} with completion date: ${completionDate}`);
+      
+      const hdrRequest = pool.request()
+        .input('workFlowHdrId', sql.Int, workFlowHdrId)
+        .input('completionDate', sql.DateTime2, new Date(completionDate));
+      
+      const hdrResult = await hdrRequest.query(`
+        UPDATE tblWorkflowHdr
+        SET completionDate = @completionDate
+        WHERE workFlowID = @workFlowHdrId
+      `);
+      
+      console.log(`✅ Workflow header ${workFlowHdrId} updated with completion date`, { rowsAffected: hdrResult.rowsAffected });
+    }
     
     res.json({
       success: true,
-      message: `Payment step marked as complete`
+      message: `Payment step marked as complete`,
+      completionDate: completionDate || null
     });
   } catch (err) {
     console.error("Error marking workflow step as complete:", err);
@@ -4129,16 +4158,21 @@ app.post('/start-task/:taskId', async (req, res) => {
 app.post('/finish-task/:taskId', async (req, res) => {
   const { taskId } = req.params;
   const { finishTime, workFlowHdrId, processID } = req.body;
-  console.log(req.body)
+  console.log('📝 Finish Task Request:', { taskId, finishTime, workFlowHdrId, processID });
+  
   if (!workFlowHdrId) {
     return res.status(400).json({ error: 'Missing workFlowHdrId' });
   }
 
   try {
-    // Use the date string directly without JavaScript Date conversion to avoid timezone issues
-    const finishTimeFormatted = finishTime.includes('-') && !finishTime.includes(':')
+    // Parse finishTime as YYYY-MM-DD format
+    const finishTimeFormatted = finishTime.includes('T') 
+      ? finishTime.split('T')[0] + ' 00:00:00'  // ISO format, extract date part
+      : finishTime.includes('-') && !finishTime.includes(':')
       ? finishTime + ' 00:00:00'  // YYYY-MM-DD format, just add time
       : finishTime;  // Otherwise use as is
+
+    console.log('📝 Formatted Finish Time:', finishTimeFormatted);
 
     // Get task info
     const taskResult = await pool.request()
@@ -4155,7 +4189,6 @@ app.post('/finish-task/:taskId', async (req, res) => {
     const { PlannedDate, DepId, DaysRequired } = taskResult.recordset[0];
 
     // Calculate delay in days using UTC to avoid timezone issues
-    // PlannedDate from DB might be ISO format already, just parse it directly
     const plannedDateObj = new Date(PlannedDate);
 
     // Parse finishTime date string (YYYY-MM-DD) as UTC
@@ -4175,16 +4208,19 @@ app.post('/finish-task/:taskId', async (req, res) => {
     console.log('=========================================');
 
     // Mark workflow detail as finished
-    await pool.request()
+    console.log('🔄 Updating task with:', { taskId, finishTimeFormatted, delay, workFlowHdrId });
+    const updateResult = await pool.request()
       .input('taskId', taskId)
       .input('finishTime', sql.DateTime2, finishTimeFormatted)
-      .input('delay', delay)
+      .input('delay', sql.Int, delay)
       .input('workFlowHdrId', workFlowHdrId)
       .query(`
         UPDATE tblWorkflowDtl
         SET TimeFinished = @finishTime, Delay = @delay
         WHERE TaskID = @taskId AND workFlowHdrId = @workFlowHdrId
       `);
+    
+    console.log('✅ Update Result:', updateResult.rowsAffected);
 
     // Unselect the completed task
     await pool.request()

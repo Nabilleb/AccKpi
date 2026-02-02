@@ -862,6 +862,16 @@ const updatePaymentStatus = () => {
         
         if (isLastPayment) {
             console.log('Marking last payment as completed...');
+            
+            // Get the latest finish date from all completed tasks
+            const finishedTasks = visibleTasks.filter(t => t.TimeFinished);
+            const latestFinishDate = finishedTasks.reduce((latest, task) => {
+                if (!latest) return task.TimeFinished;
+                return new Date(task.TimeFinished) > new Date(latest) ? task.TimeFinished : latest;
+            }, null);
+            
+            console.log('Latest finish date from tasks:', latestFinishDate);
+            
             // Mark the active payment step as completed
             const activePaymentStep = document.querySelector('.payment-step.active');
             if (activePaymentStep) {
@@ -879,13 +889,20 @@ const updatePaymentStatus = () => {
                 console.log('Payment step updated to completed');
             }
             
-            // Also update the database to mark payment as inactive
+            // Also update the database to mark payment as inactive with the finish date
             if (activePayment) {
-                console.log(`Saving payment step ${activePayment.workflowStepID} as complete to database...`);
+                // Get workFlowHdrId from first visible task
+                const workFlowHdrId = visibleTasks[0]?.workFlowHdrId;
+                
+                console.log(`Saving payment step ${activePayment.workflowStepID} as complete with finish date: ${latestFinishDate}, workFlowHdrId: ${workFlowHdrId}`);
                 fetch(`/api/workflow-steps/mark-complete/${activePayment.workflowStepID}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ isActive: false })
+                    body: JSON.stringify({ 
+                        isActive: false,
+                        completionDate: latestFinishDate,  // Send the last task's finish date
+                        workFlowHdrId: workFlowHdrId  // Send workflow header ID
+                    })
                 })
                 .then(res => {
                     if (res.ok) {
