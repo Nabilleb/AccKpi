@@ -878,6 +878,25 @@ const updatePaymentStatus = () => {
                 }
                 console.log('Payment step updated to completed');
             }
+            
+            // Also update the database to mark payment as inactive
+            if (activePayment) {
+                console.log(`Saving payment step ${activePayment.workflowStepID} as complete to database...`);
+                fetch(`/api/workflow-steps/mark-complete/${activePayment.workflowStepID}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ isActive: false })
+                })
+                .then(res => {
+                    if (res.ok) {
+                        console.log('✅ Payment step marked as complete in database');
+                        activePayment.isActive = false;
+                    } else {
+                        console.error('❌ Failed to update payment step');
+                    }
+                })
+                .catch(err => console.error('Error updating payment step:', err));
+            }
         }
     }
 };

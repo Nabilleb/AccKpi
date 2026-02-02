@@ -980,6 +980,35 @@ app.delete("/api/workflow-steps/delete/:stepId", ensureAuthenticated, async (req
   }
 });
 
+// API: Mark Workflow Step as Complete
+app.put("/api/workflow-steps/mark-complete/:stepId", ensureAuthenticated, async (req, res) => {
+  try {
+    const { stepId } = req.params;
+    
+    console.log(`Marking workflow step ${stepId} as complete...`);
+    
+    // Update the step to mark as inactive (complete)
+    await pool.request()
+      .input('stepId', sql.Int, stepId)
+      .input('isActive', sql.Bit, 0)  // false = not active = complete
+      .query(`
+        UPDATE tblWorkflowSteps
+        SET isActive = @isActive
+        WHERE workflowStepID = @stepId
+      `);
+    
+    console.log(`✅ Workflow step ${stepId} marked as complete`);
+    
+    res.json({
+      success: true,
+      message: `Payment step marked as complete`
+    });
+  } catch (err) {
+    console.error("Error marking workflow step as complete:", err);
+    res.status(500).json({ error: "Failed to mark payment as complete: " + err.message });
+  }
+});
+
 // API: Advance Workflow to Next Step
 app.post("/api/workflow-steps/advance/:workFlowID", ensureAuthenticated, async (req, res) => {
   try {
