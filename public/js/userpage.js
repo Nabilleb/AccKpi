@@ -923,6 +923,12 @@ const updatePaymentStatus = () => {
                     if (res.ok) {
                         console.log('✅ Payment step marked as complete in database');
                         activePayment.isActive = false;
+                        
+                        // Trigger dashboard refresh by sending a message
+                        window.dispatchEvent(new CustomEvent('paymentCompleted', {
+                            detail: { workFlowHdrId: workFlowHdrId }
+                        }));
+                        console.log('📢 Notified dashboard to refresh payment steps');
                     } else {
                         console.error('❌ Failed to update payment step');
                     }

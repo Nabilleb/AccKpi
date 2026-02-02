@@ -55,6 +55,45 @@ document.addEventListener("DOMContentLoaded", async () => {
     // Show/hide mobile add button based on screen size
     toggleMobileAddButton();
     window.addEventListener('resize', toggleMobileAddButton);
+    
+    // Listen for payment completion events from userpage.js
+    window.addEventListener('paymentCompleted', async (event) => {
+        const { workFlowHdrId } = event.detail;
+        console.log(`📡 Received paymentCompleted event for workflow ${workFlowHdrId}`);
+        
+        // Refresh the specific workflow's payment steps
+        const workflow = allWorkflows.find(w => w.HdrID === workFlowHdrId);
+        if (workflow) {
+            try {
+                const paymentRes = await fetch(`/api/workflow-steps/${workFlowHdrId}`);
+                if (paymentRes.ok) {
+                    const freshPaymentSteps = await paymentRes.json();
+                    workflow.paymentSteps = freshPaymentSteps;
+                    
+                    // Log the fresh data
+                    const completedCount = freshPaymentSteps.filter(step => !step.isActive).length;
+                    const totalCount = freshPaymentSteps.length;
+                    console.log(`🔄 Refreshed payment steps for workflow ${workFlowHdrId}`);
+                    console.log(`   Total payments: ${totalCount}`);
+                    console.log(`   Completed payments: ${completedCount}`);
+                    console.log(`   Payment steps data:`, freshPaymentSteps);
+                    
+                    // Re-render the table to show updated payment status
+                    console.log(`🎨 Re-rendering table...`);
+                    updateTable();
+                    updateStats();
+                    updatePagination();
+                    console.log(`✅ Dashboard fully updated with new payment status`);
+                } else {
+                    console.error(`❌ Payment steps response not ok:`, paymentRes.status);
+                }
+            } catch (err) {
+                console.error(`❌ Failed to refresh payment steps:`, err);
+            }
+        } else {
+            console.warn(`⚠️ Workflow ${workFlowHdrId} not found in allWorkflows`);
+        }
+    });
 });
 
 // Toggle mobile add button visibility
@@ -624,8 +663,8 @@ function updateTable() {
             
             // Check if workflow has payment steps and all are complete
             if (workflow.paymentSteps && Array.isArray(workflow.paymentSteps) && workflow.paymentSteps.length > 0) {
-                // Count completed payments (those that are not active)
-                const completedPayments = workflow.paymentSteps.filter(step => !step.isActive).length;
+                // Count completed payments (those that have StepFinished set)
+                const completedPayments = workflow.paymentSteps.filter(step => step.StepFinished).length;
                 const totalPayments = workflow.paymentSteps.length;
                 
                 console.log(`   Total: ${totalPayments}, Completed: ${completedPayments}`);

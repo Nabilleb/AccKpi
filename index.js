@@ -906,7 +906,7 @@ app.get("/api/workflow-steps/:workFlowID", ensureAuthenticated, async (req, res)
     const result = await pool.request()
       .input('workFlowID', sql.Int, workFlowID)
       .query(`
-        SELECT workflowStepID, workFlowID, supplierID, stepNumber, isActive, createdDate
+        SELECT workflowStepID, workFlowID, supplierID, stepNumber, isActive, createdDate, StepFinished
         FROM tblWorkflowSteps
         WHERE workFlowID = @workFlowID
         ORDER BY stepNumber
@@ -1392,7 +1392,7 @@ app.get("/userpage/:hdrId", async (req, res) => {
       pool.request()
         .input('workFlowID', sql.Int, hdrId)
         .query(`
-          SELECT workflowStepID, workFlowID, supplierID, stepNumber, isActive, createdDate
+          SELECT workflowStepID, workFlowID, supplierID, stepNumber, isActive, createdDate, StepFinished
           FROM tblWorkflowSteps
           WHERE workFlowID = @workFlowID
           ORDER BY stepNumber ASC
@@ -4538,16 +4538,16 @@ Engineering Project Dashboard`,
             const nextStepNumber = nextStepResult.recordset[0].stepNumber;
             console.log(`✅ Found next step: ${nextStepNumber}`);
 
-            // Deactivate current step
+            // Deactivate current step and mark as finished
             await pool.request()
               .input('workFlowHdrId', workFlowHdrId)
               .input('currentStep', currentStepNumber)
               .query(`
                 UPDATE tblWorkflowSteps
-                SET isActive = 0
+                SET isActive = 0, StepFinished = GETDATE()
                 WHERE workFlowID = @workFlowHdrId AND stepNumber = @currentStep
               `);
-            console.log(`   ✓ Deactivated step ${currentStepNumber}`);
+            console.log(`   ✓ Deactivated step ${currentStepNumber} and marked as finished`);
 
             // Activate next step
             await pool.request()
@@ -4568,10 +4568,25 @@ Engineering Project Dashboard`,
                 SET TimeStarted = NULL, TimeFinished = NULL, Delay = NULL, DelayReason = NULL
                 WHERE workFlowHdrId = @workFlowHdrId
               `);
-            console.log(`   ✓ Reset workflow detail records`);
+            console.log(`   ✓ Reset workflow detail records (TimeStarted, TimeFinished, Delay, DelayReason)`);
+
+            // Get all tasks that will be reset
+            const tasksToReset = await pool.request()
+              .input('workFlowHdrId', workFlowHdrId)
+              .query(`
+                SELECT t.TaskID, t.TaskName, t.DepId
+                FROM tblTasks t
+                JOIN tblWorkflowDtl w ON t.TaskID = w.TaskID
+                WHERE w.workFlowHdrId = @workFlowHdrId
+              `);
+            
+            console.log(`   📋 Tasks to reset (${tasksToReset.recordset.length} total):`);
+            tasksToReset.recordset.forEach(task => {
+              console.log(`      - Task ${task.TaskID}: ${task.TaskName} (DepId: ${task.DepId})`);
+            });
 
             // Reset all tasks as unselected for next payment cycle
-            await pool.request()
+            const resetResult = await pool.request()
               .input('workFlowHdrId', workFlowHdrId)
               .query(`
                 UPDATE tblTasks
@@ -4583,13 +4598,41 @@ Engineering Project Dashboard`,
                   WHERE w.workFlowHdrId = @workFlowHdrId
                 )
               `);
-            console.log(`   ✓ Reset all tasks as unselected`);
+            console.log(`   ✓ Reset ${resetResult.rowsAffected[0] || 0} tasks as unselected`);
 
             // Reset first task as selected for the next payment cycle
+            // First, get ALL tasks to show filtering logic
+            const allTasksForWorkflow = await pool.request()
+              .input('workFlowHdrId', workFlowHdrId)
+              .query(`
+                SELECT t.TaskID, t.TaskName, t.DepId, t.Priority
+                FROM tblTasks t
+                JOIN tblWorkflowDtl w ON t.TaskID = w.TaskID
+                WHERE w.workFlowHdrId = @workFlowHdrId
+                ORDER BY t.DepId ASC, t.Priority ASC, t.TaskID ASC
+              `);
+            
+            console.log(`   📋 Available tasks for next payment selection (${allTasksForWorkflow.recordset.length} total):`);
+            const contractTasks = [];
+            const nonContractTasks = [];
+            
+            allTasksForWorkflow.recordset.forEach(task => {
+              if (task.DepId === 9) {
+                contractTasks.push(task);
+                console.log(`      ❌ SKIPPED Task ${task.TaskID}: ${task.TaskName} (DepId: 9 - Contract)`);
+              } else {
+                nonContractTasks.push(task);
+                console.log(`      ✅ AVAILABLE Task ${task.TaskID}: ${task.TaskName} (DepId: ${task.DepId})`);
+              }
+            });
+            
+            console.log(`   Filter results: Skipped ${contractTasks.length} Contract tasks, ${nonContractTasks.length} non-Contract tasks available`);
+
+            // Now select the first non-Contract task
             const firstTaskResult = await pool.request()
               .input('workFlowHdrId', workFlowHdrId)
               .query(`
-                SELECT TOP 1 t.TaskID, t.DepId
+                SELECT TOP 1 t.TaskID, t.DepId, t.TaskName
                 FROM tblTasks t
                 JOIN tblWorkflowDtl w ON t.TaskID = w.TaskID
                 WHERE w.workFlowHdrId = @workFlowHdrId
@@ -4598,12 +4641,16 @@ Engineering Project Dashboard`,
               `);
 
             if (firstTaskResult.recordset.length > 0) {
-              const firstTaskId = firstTaskResult.recordset[0].TaskID;
-              const firstTaskDepId = firstTaskResult.recordset[0].DepId;
+              const firstTask = firstTaskResult.recordset[0];
+              const firstTaskId = firstTask.TaskID;
+              const firstTaskDepId = firstTask.DepId;
+              const firstTaskName = firstTask.TaskName;
+              
               await pool.request()
                 .input('taskId', firstTaskId)
                 .query(`UPDATE tblTasks SET IsTaskSelected = 1 WHERE TaskID = @taskId`);
-              console.log(`   ✓ Selected first task ${firstTaskId} (DepId: ${firstTaskDepId}) for next payment (DepId != 9)`);
+              
+              console.log(`   ✓ Selected first task ${firstTaskId}: ${firstTaskName} (DepId: ${firstTaskDepId}) for next payment`);
             }
 
             console.log(`✅ Workflow ${workFlowHdrId} auto-advanced from step ${currentStepNumber} to ${nextStepNumber}`);
