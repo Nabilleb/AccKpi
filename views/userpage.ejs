@@ -244,6 +244,11 @@
                       <span class="status-badge waiting">
                         <i class="fas fa-hourglass-half"></i> Waiting
                       </span>
+                      <% if (activeIndex >= 0 && index === activeIndex + 1) { %>
+                        <button class="set-payment-date-btn" data-payment-step="<%= step.stepNumber %>">
+                          <i class="fas fa-calendar-plus"></i> Set Start Date
+                        </button>
+                      <% } %>
                     <% } %>
                   </div>
                 </div>

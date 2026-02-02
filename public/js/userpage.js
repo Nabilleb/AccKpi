@@ -112,6 +112,14 @@ document.addEventListener('DOMContentLoaded', function() {
   const paymentDateCancelBtn = document.getElementById('payment-date-cancel-btn');
   
   let pendingPaymentCompletion = null;
+  let savedPaymentDates = localStorage.getItem('savedPaymentDates') 
+    ? JSON.parse(localStorage.getItem('savedPaymentDates')) 
+    : {}; // Store dates for next payments before completion
+  
+  // Helper to save payment dates to localStorage
+  const savePaymentDatesToStorage = () => {
+    localStorage.setItem('savedPaymentDates', JSON.stringify(savedPaymentDates));
+  };
   
   // Handle payment start date modal confirm
   if (paymentDateConfirmBtn) {
@@ -122,7 +130,19 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
       }
       
-      paymentStartDateModal.style.display = 'none';
+      paymentStartDateModal.classList.remove('show');
+      setTimeout(() => {
+        paymentStartDateModal.style.display = 'none';
+      }, 200);
+      
+      // If this was for pre-setting a payment date (before completion)
+      if (nextPaymentDateToSet) {
+        savedPaymentDates[nextPaymentDateToSet] = selectedDate;
+        savePaymentDatesToStorage();
+        showSuccess(`Start date for Payment ${nextPaymentDateToSet} set to ${selectedDate}`);
+        nextPaymentDateToSet = null;
+        return;
+      }
       
       if (pendingPaymentCompletion) {
         // Send the request with the start date
@@ -159,10 +179,58 @@ document.addEventListener('DOMContentLoaded', function() {
   
   if (paymentDateCancelBtn) {
     paymentDateCancelBtn.addEventListener('click', () => {
-      paymentStartDateModal.style.display = 'none';
+      paymentStartDateModal.classList.remove('show');
+      setTimeout(() => {
+        paymentStartDateModal.style.display = 'none';
+      }, 200); // Wait for opacity transition
       pendingPaymentCompletion = null;
     });
   }
+
+  // Add event listener for set payment date buttons
+  let nextPaymentDateToSet = null;
+  
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('.set-payment-date-btn')) {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      const btn = e.target.closest('.set-payment-date-btn');
+      const paymentStep = btn.dataset.paymentStep;
+      
+      console.log('Set payment date button clicked for payment:', paymentStep);
+      console.log('Modal element:', paymentStartDateModal);
+      console.log('Modal input element:', paymentStartDateInput);
+      
+      // Find the first task of this payment step
+      const paymentTasks = taskList.filter(t => t.PaymentStep === parseInt(paymentStep));
+      let defaultDate = new Date().toISOString().split('T')[0]; // Default to today
+      
+      if (paymentTasks.length > 0) {
+        const firstTaskPlanDate = paymentTasks[0].PlannedDate;
+        if (firstTaskPlanDate) {
+          defaultDate = firstTaskPlanDate.split('T')[0];
+        }
+      }
+      
+      // Store which payment we're setting the date for
+      nextPaymentDateToSet = parseInt(paymentStep);
+      
+      console.log('Setting modal with date:', defaultDate);
+      
+      paymentStartDateInput.value = defaultDate;
+      // Ensure modal is visible - add class and make sure display is flex
+      paymentStartDateModal.style.display = 'flex';
+      paymentStartDateModal.classList.add('show');
+      
+      // Force browser to recognize the display change before opacity transition
+      setTimeout(() => {
+        paymentStartDateInput.focus();
+      }, 10);
+      
+      console.log('Modal should be visible now');
+    }
+  });
 
   // Button event listeners
   const sidebarLogoutBtn = document.getElementById('sidebarLogoutBtn');
@@ -931,11 +999,25 @@ const updatePaymentStatus = () => {
     
     if (allTasksFinished && window.paymentSteps && window.paymentSteps.length > 0) {
         const isLastPayment = activePayment && activePayment.stepNumber === window.paymentSteps[window.paymentSteps.length - 1].stepNumber;
+        const hasMorePayments = activePayment && !isLastPayment;
         
-        console.log(`activeStepNumber: ${activeStepNumber}, isLastPayment: ${isLastPayment}`);
+        console.log(`activeStepNumber: ${activeStepNumber}, isLastPayment: ${isLastPayment}, hasMorePayments: ${hasMorePayments}`);
         
-        if (isLastPayment) {
-            console.log('Marking last payment as completed...');
+        // CRITICAL: Check if more payments exist and date not set BEFORE doing anything else
+        if (hasMorePayments) {
+            const nextPaymentStep = window.paymentSteps.find(s => s.stepNumber > activePayment.stepNumber);
+            const dateIsSet = savedPaymentDates[nextPaymentStep.stepNumber];
+            
+            if (!dateIsSet) {
+                console.log('❌ Waiting for user to set next payment date...');
+                showError('📅 Set the start date for Payment ' + nextPaymentStep.stepNumber + ' before completing Payment ' + activePayment.stepNumber);
+                return; // STOP HERE - do not proceed with any completion logic
+            }
+        }
+        
+        // Only reach here if: (1) it's the last payment OR (2) there are more payments AND date is set
+        if (isLastPayment || hasMorePayments) {
+            console.log('✅ All requirements met. Processing payment completion...');
             
             // Get the latest finish date from all completed tasks
             const finishedTasks = visibleTasks.filter(t => t.TimeFinished);
@@ -974,21 +1056,46 @@ const updatePaymentStatus = () => {
                 const remainingSteps = paymentSteps.filter(step => step.stepNumber > activePayment.stepNumber);
                 
                 if (remainingSteps.length > 0) {
-                  // Show modal to get start date for next payment
-                  pendingPaymentCompletion = {
-                    url: `/api/workflow-steps/mark-complete/${activePayment.workflowStepID}`,
-                    body: {
-                      isActive: false,
-                      completionDate: latestFinishDate,
-                      workFlowHdrId: workFlowHdrId
-                    }
-                  };
+                  // Get the next payment step number
+                  const nextPaymentStep = remainingSteps[0];
                   
-                  // Set today as default date
-                  const today = new Date().toISOString().split('T')[0];
-                  paymentStartDateInput.value = today;
-                  paymentStartDateModal.style.display = 'flex';
-                  paymentStartDateInput.focus();
+                  // Check if user already set a date for this payment
+                  const savedDate = savedPaymentDates[nextPaymentStep.stepNumber];
+                  
+                  if (savedDate) {
+                    // Use the pre-set date
+                    fetch(`/api/workflow-steps/mark-complete/${activePayment.workflowStepID}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            isActive: false,
+                            completionDate: latestFinishDate,
+                            workFlowHdrId: workFlowHdrId,
+                            nextPaymentStartDate: savedDate
+                        })
+                    })
+                    .then(res => {
+                        if (res.ok) {
+                            console.log('✅ Payment step marked as complete with pre-set date');
+                            showSuccess('Payment marked as complete with pre-set start date!');
+                            
+                            // Clear the saved date for this payment
+                            delete savedPaymentDates[nextPaymentStep.stepNumber];
+                            savePaymentDatesToStorage();
+                            
+                            window.dispatchEvent(new CustomEvent('paymentCompleted', {
+                                detail: { workFlowHdrId: workFlowHdrId }
+                            }));
+                        } else {
+                            showError('Failed to update payment step');
+                        }
+                    })
+                    .catch(err => console.error('Error updating payment step:', err));
+                  } else {
+                    // Do not auto-show modal - require user to click the button
+                    console.log('Waiting for user to set payment date using the Set Start Date button');
+                    return;
+                  }
                 } else {
                   // No more payment steps, proceed without modal
                   fetch(`/api/workflow-steps/mark-complete/${activePayment.workflowStepID}`, {
@@ -1141,6 +1248,33 @@ const handleClickEvents = async (e) => {
     if (e.target.classList.contains('task-finish-btn')) {
         const taskId = e.target.dataset.taskId;
         const buttonElement = e.target;
+        
+        // Check if date is required BEFORE showing spinner
+        const task = taskList.find(t => t.TaskID === Number(taskId));
+        const activePayment = getActivePayment();
+        const isLastPayment = activePayment && activePayment.stepNumber === window.paymentSteps[window.paymentSteps.length - 1].stepNumber;
+        
+        // Check if all other tasks are finished
+        const isPayment1 = getIsPayment1();
+        const visibleTasks = taskList.filter(t => {
+            if (t.DepId === 9 && !isPayment1) return false;
+            return true;
+        });
+        const otherFinishedTasks = visibleTasks.filter(t => t.TimeFinished && t.TaskID !== task.TaskID).length;
+        const isLastTask = otherFinishedTasks === visibleTasks.length - 1;
+        
+        if (isLastTask && !isLastPayment) {
+            // This is the last task and there are more payments
+            const nextPaymentStep = window.paymentSteps.find(s => s.stepNumber > activePayment.stepNumber);
+            const dateIsSet = savedPaymentDates[nextPaymentStep.stepNumber];
+            
+            if (!dateIsSet) {
+                showError('📅 Please set the start date for Payment ' + nextPaymentStep.stepNumber + ' before finishing the last task');
+                return;
+            }
+        }
+        
+        // Only show spinner if we passed the date check
         const originalHTML = buttonElement.innerHTML;
         buttonElement.innerHTML = '<i class="fas fa-spinner spinner"></i> Finishing...';
         buttonElement.disabled = true;

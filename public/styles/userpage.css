@@ -957,7 +957,9 @@ body {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
   background-color: rgba(0,0,0,0.5);
-  display: flex; justify-content: center; align-items: center;
+  display: none;
+  justify-content: center;
+  align-items: center;
   z-index: 1000;
   backdrop-filter: blur(4px);
   opacity: 0;
@@ -968,6 +970,7 @@ body {
 .modal.show {
   opacity: 1;
   pointer-events: auto;
+  display: flex;
 }
 
 .modal-content {
@@ -1925,6 +1928,31 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   background: rgba(107, 114, 128, 0.05);
   color: var(--text-light);
   border: 1px solid rgba(107, 114, 128, 0.1);
+}
+
+.set-payment-date-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: 0.75rem;
+  padding: 0.5rem 1rem;
+  background: linear-gradient(135deg, #0366a6, #0284c7);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.set-payment-date-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(3, 102, 166, 0.3);
+}
+
+.set-payment-date-btn:active {
+  transform: translateY(0);
 }
 
 .payment-connector {
