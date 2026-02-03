@@ -144,9 +144,21 @@ document.addEventListener('DOMContentLoaded', function() {
         savePaymentDatesToStorage();
         
         // Update PlannedDate for first task of this payment
-        const paymentTasks = taskList.filter(t => t.PaymentStep === nextPaymentDateToSet);
+        // Only exclude Proc/Contract (8,9) for Payment 2+, include all for Payment 1
+        let paymentTasks = taskList.filter(t => t.PaymentStep === nextPaymentDateToSet);
+        
+        if (nextPaymentDateToSet > 1) {
+          // For Payment 2+, exclude Procurement and Contract
+          paymentTasks = paymentTasks.filter(t => t.DepId !== 9 && t.DepId !== 8);
+        }
+        
+        console.log('🔍 Updating tasks for payment', nextPaymentDateToSet, ':', paymentTasks.length, 'tasks found');
+        
         if (paymentTasks.length > 0) {
-          const firstTask = paymentTasks[0];
+          // Sort by StepOrder then TaskID to get first eligible task
+          const sortedTasks = paymentTasks.sort((a, b) => (a.StepOrder - b.StepOrder) || (a.TaskID - b.TaskID));
+          const firstTask = sortedTasks[0];
+          console.log('   Updating first task (by StepOrder):', firstTask.TaskID, '-', firstTask.TaskName, '(DepId:', firstTask.DepId + ')');
           const workFlowHdrId = firstTask.workFlowHdrId;
           
           try {
@@ -237,15 +249,32 @@ document.addEventListener('DOMContentLoaded', function() {
       console.log('Modal element:', paymentStartDateModal);
       console.log('Modal input element:', paymentStartDateInput);
       
-      // Find the first task of this payment step
-      const paymentTasks = taskList.filter(t => t.PaymentStep === parseInt(paymentStep));
+      // Find the first task of this payment step (excluding Contract/DepId 9 and Procurement/DepId 8)
+      const paymentStep_num = parseInt(paymentStep);
+      const paymentTasks = taskList.filter(t => t.PaymentStep === paymentStep_num && t.DepId !== 9 && t.DepId !== 8);
+      
+      console.log('🔍 Found tasks for payment', paymentStep_num, ':', paymentTasks.length, 'tasks (excluding DepId 9)');
+      console.log('   Task details:', paymentTasks.map(t => ({ TaskID: t.TaskID, TaskName: t.TaskName, DepId: t.DepId, PaymentStep: t.PaymentStep })));
+      
+      // Show visible alert
+      alert(`Found ${paymentTasks.length} tasks for Payment ${paymentStep_num}\n(excluding Contract tasks - DepId 9)\n\nTasks: ${paymentTasks.map(t => `${t.TaskID}:${t.TaskName}(Dept${t.DepId})`).join(', ')}`);
+      
       let defaultDate = new Date().toISOString().split('T')[0]; // Default to today
       
       if (paymentTasks.length > 0) {
-        const firstTaskPlanDate = paymentTasks[0].PlannedDate;
-        if (firstTaskPlanDate) {
-          defaultDate = firstTaskPlanDate.split('T')[0];
+        // Sort by TaskID to ensure consistent ordering
+        const sortedTasks = paymentTasks.sort((a, b) => a.TaskID - b.TaskID);
+        const firstTask = sortedTasks[0];
+        console.log('   First task (by TaskID):', firstTask.TaskID, '-', firstTask.TaskName, '(DepId:', firstTask.DepId + ')');
+        alert(`First task selected: ${firstTask.TaskID} - ${firstTask.TaskName} (Dept ${firstTask.DepId})`);
+        
+        if (firstTask.PlannedDate) {
+          defaultDate = firstTask.PlannedDate.split('T')[0];
+          console.log('   Using existing PlannedDate:', defaultDate);
         }
+      } else {
+        console.warn('⚠️  No tasks found for payment', paymentStep_num);
+        alert('⚠️ No tasks found for Payment ' + paymentStep_num + '\n(All tasks might be Contract tasks)');
       }
       
       // Store which payment we're setting the date for
@@ -540,8 +569,8 @@ const renderTaskTimeline = (tasks) => {
             (a.TaskID - b.TaskID)
         )
         .filter(task => {
-            // Filter out Contract department (DepId = 9) if not in Payment 1
-            if (task.DepId === 9 && !isPayment1) {
+            // Filter out Contract (DepId = 9) and Procurement (DepId = 8) if not in Payment 1
+            if ((task.DepId === 9 || task.DepId === 8) && !isPayment1) {
                 return false;
             }
             return true;
@@ -763,11 +792,25 @@ const renderTasks = async (tasks) => {
     // Determine if we should skip Contract tasks (DepId=9)
     const isPayment1 = getIsPayment1();
     
-    if (activeIndex !== -1) {
-        for (let i = activeIndex + 1; i < sortedTasks.length; i++) {
+    // First: Deselect Proc/Contract tasks if they're filtered out in Payment 2+
+    if (!isPayment1) {
+        sortedTasks.forEach(t => {
+            if (t.IsTaskSelected && (t.DepId === 9 || t.DepId === 8)) {
+                console.log(`🔄 Deselecting filtered task ${t.TaskID} (${t.TaskName}) - DepId: ${t.DepId}`);
+                t.IsTaskSelected = false;
+            }
+        });
+    }
+    
+    // Second: Re-calculate activeIndex after potential deselects
+    const activeIndex2 = sortedTasks.findIndex(t => t.IsTaskSelected);
+    
+    // First, look for unselected unfinished tasks from same department
+    if (activeIndex2 !== -1) {
+        for (let i = activeIndex2 + 1; i < sortedTasks.length; i++) {
             const candidate = sortedTasks[i];
-            // Skip Contract tasks (DepId=9) when not in Payment 1
-            if (!isPayment1 && candidate.DepId === 9) {
+            // Skip Contract/Procurement tasks when not in Payment 1
+            if (!isPayment1 && (candidate.DepId === 9 || candidate.DepId === 8)) {
                 continue;
             }
             // Ensure next task is from same workflow and not selected/finished
@@ -778,16 +821,75 @@ const renderTasks = async (tasks) => {
         }
     }
     
+    // If no next task found, pick first unselected unfinished task
     if (!nextTask) {
         nextTask = sortedTasks.find(t => {
-            // Skip Contract tasks (DepId=9) when not in Payment 1
-            if (!isPayment1 && t.DepId === 9) {
+            // Skip Contract/Procurement tasks when not in Payment 1
+            if (!isPayment1 && (t.DepId === 9 || t.DepId === 8)) {
                 return false;
             }
             return !t.IsTaskSelected && !t.TimeFinished && t.workFlowHdrId === hdrId;
         });
     }
-    if (activeIndex !== -1 && activeIndex !== sortedTasks.length - 1) await loadUsers(nextTask?.DepId);
+    
+    // Auto-select first task if no task is selected in CURRENT PAYMENT
+    // Check if any task in this payment step is selected (excluding filtered-out Contract/Procurement)
+    const hasSelectedInPayment = sortedTasks.some(t => {
+        if (!isPayment1 && (t.DepId === 9 || t.DepId === 8)) {
+            return false; // These shouldn't count as "selected" for this payment
+        }
+        return t.IsTaskSelected;
+    });
+    
+    if (!nextTask && !hasSelectedInPayment) {
+        // Use backend API to get the first eligible task based on process step order
+        const processId = sortedTasks[0]?.NumberOfProccessID;
+        const paymentStep = window.paymentSteps?.find(p => p.isActive)?.stepNumber;
+        
+        if (processId && paymentStep) {
+            try {
+                const response = await fetch(`/api/first-task-to-select/${processId}/${paymentStep}`);
+                if (response.ok) {
+                    nextTask = await response.json();
+                    console.log('🔄 Auto-selecting task:', nextTask.TaskID, nextTask.TaskName);
+                    
+                    // Mark as selected in database
+                    const selectResponse = await fetch(`/select-task/${nextTask.TaskID}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            plannedDate: nextTask.PlannedDate || new Date().toISOString().split('T')[0]
+                        })
+                    });
+                    
+                    if (selectResponse.ok) {
+                        nextTask.IsTaskSelected = true;
+                        // Update in taskList
+                        const taskInList = taskList.find(t => t.TaskID === nextTask.TaskID);
+                        if (taskInList) {
+                            taskInList.IsTaskSelected = true;
+                        }
+                        console.log('✅ Auto-selected task saved:', nextTask.TaskID);
+                    }
+                }
+            } catch (err) {
+                console.error('Error getting first task:', err);
+            }
+        }
+    }
+    
+    // Console log for task selected in current payment
+    const visibleSelected = sortedTasks.find(t => {
+        if (!isPayment1 && (t.DepId === 9 || t.DepId === 8)) return false;
+        return t.IsTaskSelected;
+    });
+    
+    if (visibleSelected) {
+        const currentPaymentStep = window.paymentSteps?.find(p => p.isActive)?.stepNumber || 'Unknown';
+        console.log(`✅ Task selected in Payment ${currentPaymentStep}:`, visibleSelected.TaskID, visibleSelected.TaskName);
+    }
+    
+    if (activeIndex2 !== -1 && activeIndex2 !== sortedTasks.length - 1) await loadUsers(nextTask?.DepId);
 
     // Handle empty tasks
     if (tasks.length === 0) {
@@ -811,9 +913,9 @@ const renderTasks = async (tasks) => {
     });
     
     tasks.forEach(task => {
-        // Filter out Contract department (DepId = 9) if not in Payment 1
-        if (task.DepId === 9) {
-            console.log(`Contract task ${task.TaskID} (${task.TaskName}): isPayment1=${isPayment1}, will ${isPayment1 ? 'SHOW' : 'HIDE'}`);
+        // Filter out Contract (DepId = 9) and Procurement (DepId = 8) if not in Payment 1
+        if (task.DepId === 9 || task.DepId === 8) {
+            console.log(`${task.DepId === 9 ? 'Contract' : 'Procurement'} task ${task.TaskID} (${task.TaskName}): isPayment1=${isPayment1}, will ${isPayment1 ? 'SHOW' : 'HIDE'}`);
             if (!isPayment1) {
                 return; // Skip this task
             }
@@ -903,7 +1005,9 @@ const renderTaskRow = (task) => {
     let status = '';
     if (task.TimeStarted && !task.TimeFinished) {
         status = '<span class="status-badge status-inprogress"><i class="fas fa-spinner"></i> In Progress</span>';
-
+    } else if (!task.TimeFinished && task.IsTaskSelected && !task.PlannedDate) {
+        // Show waiting for start date when no PlannedDate is set
+        status = '<span class="status-badge status-waiting-date"><i class="fas fa-calendar"></i> Waiting for Payment ' + task.PaymentStep + ' start date</span>';
     } else if (!task.TimeFinished && task.IsTaskSelected) {
         status = '<span class="status-badge status-pending"><i class="fas fa-clock"></i> Pending</span>';
     } else if (task.TimeFinished && task.Delay > 0) {
@@ -913,11 +1017,16 @@ const renderTaskRow = (task) => {
     }
 
     let actionButton = '';
-    if (isOwnDepartment && task.IsTaskSelected) {
+    // Allow Procurement (DepId 8) to access action buttons in all departments
+    const canAccessActions = isOwnDepartment || deptId === 8;
+    if (canAccessActions && task.IsTaskSelected) {
         if (!task.TimeStarted && task.PlannedDate) {
             actionButton = `<button class="task-start-btn" data-task-id="${task.TaskID}"> Start</button>`;
         } else if (!task.TimeFinished && task.PlannedDate) {
             actionButton = `<button class="task-finish-btn" data-task-id="${task.TaskID}"> Finish</button>`;
+        } else if (!task.TimeStarted && !task.PlannedDate) {
+            // Show waiting message when PlannedDate is not set
+            actionButton = `<span class="waiting-date-message">⏳ Waiting to set start date for Payment ${task.PaymentStep}</span>`;
         }
     }
 
@@ -1013,14 +1122,14 @@ const updatePaymentStatus = () => {
     console.log('taskList:', taskList);
     console.log('paymentSteps:', window.paymentSteps);
     
-    // Filter tasks: exclude Contract tasks (DepId=9) when in Payment 2+
+    // Filter tasks: exclude Contract (DepId=9) and Procurement (DepId=8) tasks when in Payment 2+
     const activePayment = getActivePayment();
     const activeStepNumber = activePayment ? activePayment.stepNumber : null;
     const isPayment1 = getIsPayment1();
     
     const visibleTasks = taskList.filter(t => {
-        // Show Contract tasks only in Payment 1
-        if (t.DepId === 9 && !isPayment1) {
+        // Show Contract and Procurement tasks only in Payment 1
+        if ((t.DepId === 9 || t.DepId === 8) && !isPayment1) {
             return false;
         }
         return true;

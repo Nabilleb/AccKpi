@@ -508,6 +508,13 @@ body {
   border: 1px solid rgba(59, 130, 246, 0.2);
 }
 
+.status-waiting-date {
+  background-color: rgba(168, 85, 247, 0.1);
+  color: #a855f7;
+  border: 1px solid rgba(168, 85, 247, 0.2);
+  font-weight: 600;
+}
+
 /* Delay Badge Styles - Color coding based on delay percentage of DaysRequired */
 .delay-badge {
   display: inline-flex;
@@ -829,6 +836,19 @@ body {
 
 .task-start-btn:active {
   transform: translateY(0);
+}
+
+.waiting-date-message {
+  color: var(--warning-text);
+  font-size: 0.85rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background-color: var(--warning-bg);
+  border-radius: var(--radius-sm);
+  border-left: 4px solid var(--warning);
 }
 
 .task-finish-btn {

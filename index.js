@@ -4964,7 +4964,6 @@ Engineering Project Dashboard`,
               `);
             console.log(`   ✓ Reset ${resetResult.rowsAffected[0] || 0} tasks as unselected`);
 
-            // Reset first task as selected for the next payment cycle
             // First, get ALL tasks to show filtering logic
             const allTasksForWorkflow = await pool.request()
               .input('workFlowHdrId', workFlowHdrId)
@@ -4977,22 +4976,23 @@ Engineering Project Dashboard`,
               `);
             
             console.log(`   📋 Available tasks for next payment selection (${allTasksForWorkflow.recordset.length} total):`);
-            const contractTasks = [];
-            const nonContractTasks = [];
+            const filteredTasks = [];
+            const skippedTasks = [];
             
             allTasksForWorkflow.recordset.forEach(task => {
-              if (task.DepId === 9) {
-                contractTasks.push(task);
-                console.log(`      ❌ SKIPPED Task ${task.TaskID}: ${task.TaskName} (DepId: 9 - Contract)`);
+              if (task.DepId === 9 || task.DepId === 8) {
+                skippedTasks.push(task);
+                const deptName = task.DepId === 9 ? 'Contract' : 'Procurement';
+                console.log(`      ❌ SKIPPED Task ${task.TaskID}: ${task.TaskName} (DepId: ${task.DepId} - ${deptName})`);
               } else {
-                nonContractTasks.push(task);
+                filteredTasks.push(task);
                 console.log(`      ✅ AVAILABLE Task ${task.TaskID}: ${task.TaskName} (DepId: ${task.DepId})`);
               }
             });
             
-            console.log(`   Filter results: Skipped ${contractTasks.length} Contract tasks, ${nonContractTasks.length} non-Contract tasks available`);
+            console.log(`   Filter results: Skipped ${skippedTasks.length} tasks (Proc/Contract), ${filteredTasks.length} tasks available`);
 
-            // Now select the first non-Contract task
+            // Now select the first non-Contract, non-Procurement task
             const firstTaskResult = await pool.request()
               .input('workFlowHdrId', workFlowHdrId)
               .query(`
@@ -5000,7 +5000,7 @@ Engineering Project Dashboard`,
                 FROM tblTasks t
                 JOIN tblWorkflowDtl w ON t.TaskID = w.TaskID
                 WHERE w.workFlowHdrId = @workFlowHdrId
-                  AND t.DepId != 9
+                  AND t.DepId NOT IN (8, 9)
                 ORDER BY t.DepId ASC, t.Priority ASC, t.TaskID ASC
               `);
 
@@ -5073,6 +5073,54 @@ app.get('/is-first-task/:taskId', async (req, res) => {
   }
 });
 
+
+app.get('/api/first-task-to-select/:processId/:paymentStep', async (req, res) => {
+  const { processId, paymentStep } = req.params;
+
+  try {
+    // 1. Get first non-Proc, non-Contract department from tblProcess for this ProcessID
+    const processResult = await pool.request()
+      .input('processId', processId)
+      .query(`
+        SELECT TOP 1 DepartmentID
+        FROM tblProcess
+        WHERE ProcessID = @processId
+          AND DepartmentID NOT IN (8, 9)
+          AND IsActive = 1
+        ORDER BY StepOrder ASC
+      `);
+
+    if (processResult.recordset.length === 0) {
+      return res.status(404).json({ error: 'No eligible department found in process' });
+    }
+
+    const eligibleDepId = processResult.recordset[0].DepartmentID;
+
+    // 2. Get first unfinished task with that ProcessID and DepId for this payment step
+    const taskResult = await pool.request()
+      .input('processId', processId)
+      .input('depId', eligibleDepId)
+      .input('paymentStep', paymentStep)
+      .query(`
+        SELECT TOP 1 TaskID, TaskName, DepId, PlannedDate
+        FROM tblTasks
+        WHERE NumberOfProccessID = @processId
+          AND DepId = @depId
+          AND PaymentStep = @paymentStep
+          AND TimeFinished IS NULL
+        ORDER BY TaskID ASC
+      `);
+
+    if (taskResult.recordset.length === 0) {
+      return res.status(404).json({ error: 'No eligible task found' });
+    }
+
+    res.json(taskResult.recordset[0]);
+  } catch (err) {
+    console.error('Error getting first task to select:', err);
+    res.status(500).json({ error: 'Failed to get first task' });
+  }
+});
 
 app.post('/select-task/:taskId', async (req, res) => {
   const { taskId } = req.params;

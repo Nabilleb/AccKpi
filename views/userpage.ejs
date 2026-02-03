@@ -236,11 +236,21 @@
                       <span class="status-badge in-process">
                         <i class="fas fa-play-circle"></i> In Process
                       </span>
-                      <% if (step.stepNumber > 1) { %>
+                      <% 
+                        if (step.stepNumber > 1) {
+                          // Check if any task for this payment step has a PlannedDate
+                          const paymentTasks = tasks.filter(t => t.PaymentStep === step.stepNumber && t.DepId !== 9);
+                          const hasPlannedDate = paymentTasks.some(t => t.PlannedDate);
+                          
+                          if (!hasPlannedDate) {
+                      %>
                         <button class="set-payment-date-btn" data-payment-step="<%= step.stepNumber %>">
                           <i class="fas fa-calendar-plus"></i> Set Start Date
                         </button>
-                      <% } %>
+                      <%
+                          }
+                        }
+                      %>
                     <% } else if (allCompleted || (activeIndex >= 0 && index < activeIndex)) { %>
                       <span class="status-badge completed">
                         <i class="fas fa-check"></i> Completed
