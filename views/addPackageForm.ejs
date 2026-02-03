@@ -42,16 +42,6 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="project-id">Project</label>
-                        <select id="project-id" class="form-control" required>
-                            <option value="">Select Project</option>
-                            <% projects.forEach(project => { %>
-                                <option value="<%= project.projectID %>"><%= project.projectName %></option>
-                            <% }) %>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
                         <label for="package-id">Package</label>
                         <select id="package-id" class="form-control" required>
                             <option value="">Select Package</option>

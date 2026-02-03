@@ -156,9 +156,13 @@ locationRadios.forEach(radio => {
 form.addEventListener('submit', async (e) => {
     e.preventDefault();
 
+    // Get projectID from the hidden input (set during login)
+    const selectedProjectIdInput = document.getElementById('selectedProjectID');
+    const projectID = selectedProjectIdInput ? selectedProjectIdInput.value : null;
+
     const formData = {
         processID: document.getElementById('process-id').value,
-        projectID: document.getElementById('project-id').value,
+        projectID: projectID,  // Use the project ID from login session
         packageID: document.getElementById('package-id').value,
         startDate: document.getElementById('startDate').value,
         status: document.getElementById('status').value,
