@@ -933,6 +933,20 @@ const renderTasks = async (tasks) => {
 
     // Create and append sections in batch
     const fragment = document.createDocumentFragment();
+    
+    // Add master toggle button at the top
+    const masterToggleDiv = document.createElement('div');
+    masterToggleDiv.className = 'master-toggle-container';
+    masterToggleDiv.innerHTML = `
+        <div class="department-label" id="toggle-all-departments-btn" style="cursor: pointer;">
+            <i class="fas fa-layer-group"></i>
+            All Departments
+            <span class="badge" id="total-departments-badge">0 departments</span>
+            <i class="fas fa-chevron-down toggle-icon"></i>
+        </div>
+    `;
+    fragment.appendChild(masterToggleDiv);
+    
     Object.values(grouped)
         .sort((a, b) => a.stepOrder - b.stepOrder)
         .forEach(group => {
@@ -974,6 +988,45 @@ const renderTasks = async (tasks) => {
         });
     
     container.appendChild(fragment);
+    
+    // Update department count badge
+    const deptCount = container.querySelectorAll('.department-section').length;
+    const deptBadge = document.getElementById('total-departments-badge');
+    if (deptBadge) {
+        deptBadge.textContent = `${deptCount} departments`;
+    }
+    
+    // Add event listener for master toggle
+    const toggleAllBtn = document.getElementById('toggle-all-departments-btn');
+    if (toggleAllBtn) {
+        toggleAllBtn.addEventListener('click', () => {
+            const allSections = container.querySelectorAll('.department-section');
+            const allCollapsed = Array.from(allSections).every(s => s.classList.contains('collapsed'));
+            const toggleIcon = toggleAllBtn.querySelector('.toggle-icon');
+            
+            allSections.forEach(section => {
+                const label = section.querySelector('.department-label');
+                if (allCollapsed) {
+                    // Expand all
+                    section.classList.remove('collapsed');
+                    label.classList.remove('collapsed');
+                } else {
+                    // Collapse all
+                    section.classList.add('collapsed');
+                    label.classList.add('collapsed');
+                }
+            });
+            
+            // Update icon rotation
+            if (toggleIcon) {
+                if (allCollapsed) {
+                    toggleIcon.classList.remove('collapsed');
+                } else {
+                    toggleIcon.classList.add('collapsed');
+                }
+            }
+        });
+    }
 };
 
 // Optimized task row rendering
@@ -1626,4 +1679,342 @@ const taskSearch = document.getElementById('task-search');
     sortFilter?.addEventListener('change', (e) => sortTasks(e.target.value));
     searchBtn?.addEventListener('click', () => searchTasks(taskSearch?.value));
     taskSearch?.addEventListener('keyup', (e) => e.key === 'Enter' && searchTasks(e.target.value));
+
+    // Load task history after a short delay to ensure DOM is ready
+    setTimeout(() => loadTaskHistory(), 100);
 });
+
+// Load and render completed task history
+async function loadTaskHistory() {
+    try {
+        // Get workFlowID from URL path (e.g., /userpage/63) or query parameters
+        let workFlowID = null;
+        
+        // Try to get from URL path
+        const pathMatch = window.location.pathname.match(/\/userpage\/(\d+)/);
+        if (pathMatch && pathMatch[1]) {
+            workFlowID = pathMatch[1];
+        }
+        
+        // Fallback to query parameter
+        if (!workFlowID) {
+            const urlParams = new URLSearchParams(window.location.search);
+            workFlowID = urlParams.get('workFlowID');
+        }
+        
+        if (!workFlowID) {
+            console.log('No workFlowID found in URL path or query parameters');
+            return;
+        }
+
+        console.log(`Loading task history for workFlowID: ${workFlowID}`);
+
+        const response = await fetch(`/api/task-history?workFlowID=${workFlowID}`);
+        if (!response.ok) throw new Error('Failed to load history');
+
+        const data = await response.json();
+        let historyData = data.history || [];
+        
+        console.log(`Task history loaded: ${historyData.length} records`);
+
+        // Filter: Only show tasks from PREVIOUS payments (not current payment)
+        const activePayment = window.paymentSteps?.find(p => p.isActive);
+        
+        // If there IS an active payment: only show history from previous payments
+        // If NO active payment (all complete): show ALL history
+        if (activePayment) {
+            const currentPaymentStep = activePayment.stepNumber;
+            console.log(`Current payment step: ${currentPaymentStep}`);
+            historyData = historyData.filter(t => t.PaymentStep < currentPaymentStep);
+            console.log(`After filtering for previous payments: ${historyData.length} records`);
+        } else {
+            console.log('All payments complete - showing ALL history');
+        }
+
+        if (historyData.length === 0) {
+            const historySection = document.querySelector('.task-history-section');
+            if (historySection) {
+                historySection.style.display = 'none';
+            }
+            console.log('No history data available, hiding section');
+            return;
+        }
+
+        // Show history section and filters
+        const historySection = document.querySelector('.task-history-section');
+        if (historySection) {
+            historySection.style.display = 'block';
+        }
+        const historyFilters = document.getElementById('history-filters');
+        if (historyFilters) {
+            historyFilters.style.display = 'flex';
+        }
+
+        // Populate payment filter
+        const paymentSelect = document.getElementById('history-payment-filter');
+        const paymentSteps = Array.from(new Set(historyData.map(t => t.PaymentStep))).sort((a, b) => a - b);
+        const options = ['<option value="">All Payments</option>'];
+        paymentSteps.forEach(step => {
+            options.push(`<option value="${step}">Payment ${step}</option>`);
+        });
+        paymentSelect.innerHTML = options.join('');
+        paymentSelect.addEventListener('change', () => renderTaskHistory(historyData));
+
+        renderTaskHistory(historyData);
+    } catch (error) {
+        console.error('Error loading task history:', error);
+    }
+}
+
+function renderTaskHistory(historyData) {
+    const container = document.getElementById('history-container');
+    const paymentFilter = document.getElementById('history-payment-filter')?.value;
+
+    // Filter by payment if selected
+    let filteredData = historyData;
+    if (paymentFilter) {
+        filteredData = historyData.filter(t => t.PaymentStep == paymentFilter);
+    }
+
+    if (filteredData.length === 0) {
+        container.innerHTML = '<div style="padding: 2rem; text-align: center; color: #999;"><i class="fas fa-inbox"></i><p>No completed tasks</p></div>';
+        return;
+    }
+
+    // Group by payment and department
+    const grouped = {};
+    filteredData.forEach(task => {
+        const paymentKey = `payment-${task.PaymentStep}`;
+        const deptKey = `dept-${task.DepId}`;
+
+        if (!grouped[paymentKey]) {
+            grouped[paymentKey] = {
+                paymentStep: task.PaymentStep,
+                departments: {}
+            };
+        }
+
+        if (!grouped[paymentKey].departments[deptKey]) {
+            grouped[paymentKey].departments[deptKey] = {
+                depId: task.DepId,
+                deptName: task.DeptName,
+                tasks: []
+            };
+        }
+
+        grouped[paymentKey].departments[deptKey].tasks.push(task);
+    });
+
+    const fragment = document.createDocumentFragment();
+
+    // Sort and render payments
+    Object.keys(grouped).sort((a, b) => {
+        return grouped[a].paymentStep - grouped[b].paymentStep;
+    }).forEach((paymentKey) => {
+        const paymentData = grouped[paymentKey];
+        
+        // Create payment header section
+        const paymentHeaderSection = document.createElement('div');
+        paymentHeaderSection.className = 'payment-header-section';
+        paymentHeaderSection.innerHTML = `
+            <div class="payment-header" style="cursor: pointer;">
+                <i class="fas fa-credit-card"></i>
+                <span>Payment ${paymentData.paymentStep}</span>
+                <i class="fas fa-chevron-down payment-toggle-icon" style="margin-left: auto;"></i>
+            </div>
+        `;
+        fragment.appendChild(paymentHeaderSection);
+
+        // Create a container for all departments in this payment
+        const departmentGroupWrapper = document.createElement('div');
+        departmentGroupWrapper.className = 'payment-departments-group';
+        
+        // Add toggle functionality to payment header
+        const paymentHeader = paymentHeaderSection.querySelector('.payment-header');
+        const deptSections = [];
+
+        // Sort departments by DepId
+        Object.keys(paymentData.departments).sort((a, b) => {
+            const deptA = paymentData.departments[a].depId;
+            const deptB = paymentData.departments[b].depId;
+            return deptA - deptB;
+        }).forEach(deptKey => {
+            const deptData = paymentData.departments[deptKey];
+            
+            // Sort tasks by priority (ascending: 1, 2, 3...)
+            deptData.tasks.sort((a, b) => {
+                return (parseInt(a.Priority) || 999) - (parseInt(b.Priority) || 999);
+            });
+
+            const section = document.createElement('div');
+            section.className = 'department-section';
+            
+            let tableHtml = `
+                <div class="department-label">
+                    <i class="fas fa-building"></i> 
+                    ${deptData.deptName}
+                    <span class="badge">${deptData.tasks.length}</span>
+                    <i class="fas fa-chevron-down toggle-icon"></i>
+                </div>
+                <div class="table-container">
+                    <table class="department-table">
+                        <thead>
+                            <tr>
+                                <th>Task Name</th>
+                                <th>Planned Date</th>
+                                <th>Start Date</th>
+                                <th>Finished Date</th>
+                                <th>Status</th>
+                                <th>Delay</th>
+                                <th>Priority</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            deptData.tasks.forEach(task => {
+                const planDate = task.PlannedDate ? new Date(task.PlannedDate).toLocaleDateString() : '-';
+                const startDate = task.TimeStarted ? new Date(task.TimeStarted).toLocaleDateString() : '-';
+                const finishDate = task.TimeFinished ? new Date(task.TimeFinished).toLocaleDateString() : 
+                                   task.CompletionDate ? new Date(task.CompletionDate).toLocaleDateString() : '-';
+                const delay = parseInt(task.Delay) || 0;
+                
+                // Determine delay status and styling
+                let delayBadge = '';
+                let rowClass = '';
+                if (delay > 0) {
+                    delayBadge = `<span class="delay-badge delay-red"><i class="fas fa-exclamation-circle"></i> ${delay} days late</span>`;
+                    rowClass = 'row-delayed';
+                } else if (delay === 0) {
+                    delayBadge = `<span class="delay-badge delay-green"><i class="fas fa-check-circle"></i> On time</span>`;
+                    rowClass = 'row-ontime';
+                } else {
+                    delayBadge = `<span class="delay-badge delay-green"><i class="fas fa-star"></i> Early</span>`;
+                    rowClass = 'row-early';
+                }
+
+                tableHtml += `
+                    <tr class="${rowClass}">
+                        <td><strong>${task.TaskName}</strong></td>
+                        <td>${planDate}</td>
+                        <td>${startDate}</td>
+                        <td>${finishDate}</td>
+                        <td><span class="status-badge"><i class="fas fa-check-circle"></i> Completed</span></td>
+                        <td>${delayBadge}</td>
+                        <td>${task.Priority || '-'}</td>
+                    </tr>
+                `;
+            });
+
+            tableHtml += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            
+            section.innerHTML = tableHtml;
+            deptSections.push(section);
+            departmentGroupWrapper.appendChild(section);
+        });
+        
+        // Append the grouped departments to the main fragment
+        fragment.appendChild(departmentGroupWrapper);
+        
+        // Add click handler to payment header to toggle all departments under it
+        paymentHeader.addEventListener('click', function() {
+            departmentGroupWrapper.classList.toggle('collapsed');
+            paymentHeader.querySelector('.payment-toggle-icon').style.transform = 
+                departmentGroupWrapper.classList.contains('collapsed') ? 'rotate(-90deg)' : 'rotate(0deg)';
+        });
+
+    });
+
+    container.innerHTML = '';
+    container.appendChild(fragment);
+    
+    // Add master toggle for history sections
+    const historySection = document.querySelector('.task-history-section');
+    if (historySection) {
+        let masterToggle = historySection.querySelector('.history-master-toggle');
+        
+        if (!masterToggle) {
+            // Create master toggle if it doesn't exist
+            masterToggle = document.createElement('div');
+            masterToggle.className = 'history-master-toggle';
+            masterToggle.innerHTML = `
+                <div class="department-label" id="toggle-all-history-btn" style="cursor: pointer;">
+                    <i class="fas fa-layer-group"></i>
+                    All Payments
+                    <span class="badge" id="history-payment-count">0 payments</span>
+                    <i class="fas fa-chevron-down toggle-icon"></i>
+                </div>
+            `;
+            historySection.insertBefore(masterToggle, container);
+        }
+        
+        // Update payment count
+        const paymentCount = Object.keys(grouped).length;
+        const badge = historySection.querySelector('#history-payment-count');
+        if (badge) {
+            badge.textContent = `${paymentCount} payments`;
+        }
+        
+        // Add toggle functionality
+        const toggleBtn = historySection.querySelector('#toggle-all-history-btn');
+        if (toggleBtn) {
+            toggleBtn.addEventListener('click', () => {
+                const allPaymentGroups = container.querySelectorAll('.payment-departments-group');
+                const allSections = container.querySelectorAll('.department-section');
+                const allCollapsed = Array.from(allPaymentGroups).every(g => g.classList.contains('collapsed'));
+                const toggleIcon = toggleBtn.querySelector('.toggle-icon');
+                
+                // Toggle all payment groups
+                allPaymentGroups.forEach(group => {
+                    if (allCollapsed) {
+                        // Expand all
+                        group.classList.remove('collapsed');
+                    } else {
+                        // Collapse all
+                        group.classList.add('collapsed');
+                    }
+                });
+                
+                // Update payment header icons
+                const paymentHeaders = container.querySelectorAll('.payment-header');
+                paymentHeaders.forEach(header => {
+                    const icon = header.querySelector('.payment-toggle-icon');
+                    if (icon) {
+                        if (allCollapsed) {
+                            icon.style.transform = 'rotate(0deg)';
+                        } else {
+                            icon.style.transform = 'rotate(-90deg)';
+                        }
+                    }
+                });
+                
+                // Also toggle all individual department sections
+                allSections.forEach(section => {
+                    const label = section.querySelector('.department-label');
+                    if (allCollapsed) {
+                        // Expand all
+                        section.classList.remove('collapsed');
+                        label.classList.remove('collapsed');
+                    } else {
+                        // Collapse all
+                        section.classList.add('collapsed');
+                        label.classList.add('collapsed');
+                    }
+                });
+                
+                // Update icon rotation
+                if (toggleIcon) {
+                    if (allCollapsed) {
+                        toggleIcon.classList.remove('collapsed');
+                    } else {
+                        toggleIcon.classList.add('collapsed');
+                    }
+                }
+            });
+        }
+    }
+}

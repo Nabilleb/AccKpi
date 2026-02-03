@@ -1783,32 +1783,28 @@ app.get('/api/task-history', ensureAuthenticated, async (req, res) => {
         const result = await pool.request()
             .input('workFlowID', sql.Int, parseInt(workFlowID))
             .query(`
-                WITH ProcessInfo AS (
-                    SELECT ProcessID FROM tblWorkflowHdr WHERE workFlowID = @workFlowID
-                )
-                SELECT 
-                    h.TaskHistoryID,
-                    h.workFlowID,
-                    h.PaymentStep,
-                    h.TaskID,
-                    h.TaskName,
-                    h.DepId,
-                    h.DeptName,
-                    h.IsTaskSelected,
-                    h.TimeStarted,
-                    h.TimeFinished,
-                    h.Delay,
-                    h.DelayReason,
-                    h.Priority,
-                    h.PlannedDate,
-                    h.CompletionDate,
-                    COALESCE(pd.StepOrder, 999) AS StepOrder
-                FROM tblWorkflowTaskHistory h
-                LEFT JOIN tblProcessDepartment pd ON h.DepId = pd.DepartmentID 
-                    AND pd.ProcessID = (SELECT ProcessID FROM ProcessInfo)
-                WHERE h.workFlowID = @workFlowID
-                ORDER BY h.TimeFinished DESC
+                SELECT TOP (1000)
+                    [TaskHistoryID],
+                    [workFlowID],
+                    [PaymentStep],
+                    [TaskID],
+                    [TaskName],
+                    [DepId],
+                    [DeptName],
+                    [IsTaskSelected],
+                    [TimeStarted],
+                    [TimeFinished],
+                    [Delay],
+                    [DelayReason],
+                    [Priority],
+                    [PlannedDate],
+                    [CompletionDate]
+                FROM [AccDBF].[dbo].[tblWorkflowTaskHistory]
+                WHERE [workFlowID] = @workFlowID
+                ORDER BY [PaymentStep] ASC, [DepId] ASC, [TimeFinished] DESC
             `);
+
+        console.log(`Task history query for workFlowID ${workFlowID}: found ${result.recordset?.length || 0} records`);
 
         return res.json({
             success: true,

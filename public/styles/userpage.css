@@ -359,6 +359,18 @@ body {
   background-color: var(--white);
 }
 
+.master-toggle-container {
+  display: flex;
+  justify-content: flex-start;
+  padding: 1rem 0;
+  margin-bottom: 0;
+}
+
+.master-toggle-container .department-label {
+  flex: 0 1 auto;
+  min-width: 300px;
+}
+
 .department-section:hover {
   box-shadow: var(--shadow-md);
 }
@@ -2031,3 +2043,367 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     margin: 0 -0.25rem;
   }
 }
+
+/* Task History Section */
+.task-history-section {
+  margin-top: 3rem;
+  margin-bottom: 2rem;
+  padding-top: 2.5rem;
+  border-top: 3px solid var(--primary);
+  display: block;
+}
+
+.history-master-toggle {
+  display: flex;
+  justify-content: flex-start;
+  padding: 0 0 2rem 0;
+  margin-bottom: 0;
+}
+
+.history-master-toggle .department-label {
+  flex: 0 1 auto;
+  min-width: 320px;
+  box-shadow: var(--shadow);
+  border-radius: 0.5rem;
+}
+
+.history-master-toggle .department-label:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+  transition: all 0.2s ease;
+}
+
+/* Payment Departments Group */
+.payment-departments-group {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  transition: all 0.4s ease;
+  max-height: 10000px;
+  overflow: hidden;
+  opacity: 1;
+}
+
+.payment-departments-group.collapsed {
+  max-height: 0;
+  gap: 0;
+  opacity: 0;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+/* Payment Header */
+.payment-header-section {
+  margin-top: 2.5rem;
+  margin-bottom: 1rem;
+}
+
+.payment-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem 1.75rem;
+  background-color: #dbeafe;
+  color: #1e40af;
+  border-radius: 0.75rem;
+  font-size: 1.3rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.2);
+  transition: all 0.3s ease;
+  user-select: none;
+}
+
+.payment-header:hover {
+  background-color: #bfdbfe;
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.25);
+  transform: translateY(-2px);
+}
+
+.payment-header i {
+  font-size: 1.5rem;
+  opacity: 0.9;
+}
+
+.payment-toggle-icon {
+  transition: transform 0.3s ease !important;
+}
+
+.section-divider {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  padding: 0 0.5rem;
+}
+
+.section-divider i {
+  font-size: 1.8rem;
+  color: var(--primary);
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.section-divider h3 {
+  font-size: 1.4rem;
+  color: var(--primary-dark);
+  margin: 0;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+}
+
+.history-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* History section styling */
+.history-container .department-section {
+  background-color: var(--white);
+  border-radius: 0.75rem;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s ease;
+  border: 1px solid #f0f0f0;
+  margin-left: 1rem;
+}
+
+.history-container .department-section:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.history-container .department-section .department-label {
+  background: linear-gradient(135deg, var(--primary-light), #e0e7ff);
+  border-bottom: 2px solid var(--primary);
+  padding: 1.25rem 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+}
+
+.history-container .department-section .department-label:hover {
+  background: linear-gradient(135deg, #d0e1ff, #cde9ff);
+}
+
+.history-container .department-section .badge {
+  background-color: var(--primary);
+  color: white;
+  padding: 0.4rem 0.9rem;
+  border-radius: 1rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin: 0 0.75rem;
+}
+
+/* Table Styling */
+.history-container .department-table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: #ffffff;
+}
+
+.history-container .department-table thead {
+  background: linear-gradient(90deg, #f8f9fa, #f0f1f3);
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.history-container .department-table th {
+  padding: 1rem 1.25rem;
+  text-align: left;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #4b5563;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  background-color: transparent;
+}
+
+.history-container .department-table tbody tr {
+  border-bottom: 1px solid #f0f0f0;
+  transition: all 0.2s ease;
+}
+
+.history-container .department-table tbody tr:hover {
+  background-color: #f9fafb;
+  border-left: 3px solid var(--primary);
+  padding-left: 0;
+}
+
+.history-container .department-table td {
+  padding: 1rem 1.25rem;
+  font-size: 0.95rem;
+  color: #555;
+}
+
+.history-container .department-table td:first-child {
+  font-weight: 600;
+  color: var(--primary-dark);
+}
+
+.history-container .department-table td strong {
+  color: var(--text-dark);
+  font-weight: 700;
+}
+
+/* Row Status Highlighting */
+.history-container .department-section tr.row-delayed {
+  background-color: #fef2f2;
+  border-left: 4px solid #ef4444;
+}
+
+.history-container .department-section tr.row-delayed:hover {
+  background-color: #fee2e2;
+}
+
+.history-container .department-section tr.row-ontime {
+  background-color: #f0fdf4;
+  border-left: 4px solid #10b981;
+}
+
+.history-container .department-section tr.row-ontime:hover {
+  background-color: #dcfce7;
+}
+
+.history-container .department-section tr.row-early {
+  background-color: #f0f9fa;
+  border-left: 4px solid #06b6d4;
+}
+
+.history-container .department-section tr.row-early:hover {
+  background-color: #cffafe;
+}
+
+/* Delay Badges - Enhanced */
+.delay-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 1.2rem;
+  border-radius: 0.6rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  white-space: nowrap;
+  letter-spacing: 0.3px;
+  transition: all 0.2s ease;
+}
+
+.delay-badge.delay-green {
+  background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+  color: #166534;
+  border: 1px solid #86efac;
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.1);
+}
+
+.delay-badge.delay-green:hover {
+  box-shadow: 0 4px 8px rgba(16, 185, 129, 0.15);
+}
+
+.delay-badge.delay-red {
+  background: linear-gradient(135deg, #fee2e2, #fecaca);
+  color: #991b1b;
+  border: 1px solid #fca5a5;
+  box-shadow: 0 2px 4px rgba(239, 68, 68, 0.1);
+  font-weight: 700;
+}
+
+.delay-badge.delay-red:hover {
+  box-shadow: 0 4px 8px rgba(239, 68, 68, 0.15);
+}
+
+.delay-badge i {
+  font-size: 1rem;
+}
+
+/* Status Badge - Enhanced */
+.history-container .status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+  color: #166534;
+  border-radius: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border: 1px solid #86efac;
+  box-shadow: 0 1px 3px rgba(16, 185, 129, 0.1);
+}
+
+.history-container .status-badge i {
+  font-size: 0.95rem;
+}
+
+/* Collapsed State */
+.history-container .department-section.collapsed .table-container {
+  display: none;
+}
+
+.history-container .department-section.collapsed .department-label .toggle-icon {
+  transform: rotate(-90deg);
+}
+
+/* History Filters */
+#history-filters {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+  border-radius: 0.75rem;
+  border: 1px solid #bae6fd;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.08);
+}
+
+#history-filters .filter-group {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+#history-filters label {
+  font-weight: 600;
+  color: #1e40af;
+  font-size: 0.95rem;
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+#history-filters select {
+  padding: 0.7rem 1rem;
+  border: 2px solid #bae6fd;
+  border-radius: 0.5rem;
+  background-color: white;
+  color: #1e40af;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 200px;
+}
+
+#history-filters select:hover {
+  border-color: #0ea5e9;
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+}
+
+#history-filters select:focus {
+  outline: none;
+  border-color: #0284c7;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.1);
+}
+
+#history-filters select option {
+  color: #1e40af;
+  background-color: white;
+  padding: 0.5rem;
+}
+
+
+
+
+
+

@@ -275,6 +275,27 @@
         <div id="department-tables-container">
           <!-- Department tables will be inserted here by JavaScript -->
         </div>
+
+        <!-- Task History Section (At Bottom) -->
+        <div class="task-history-section">
+          <div class="section-divider">
+            <i class="fas fa-history"></i>
+            <h3>Completed Task History</h3>
+          </div>
+          
+          <div id="history-filters" class="task-filters" style="display: none;">
+            <div class="filter-group">
+              <label for="history-payment-filter">Payment:</label>
+              <select id="history-payment-filter">
+                <option value="">All Payments</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="history-container" class="history-container">
+            <!-- Task history grouped by payment and department will be inserted here -->
+          </div>
+        </div>
       </section>
     </div>
   </main>
