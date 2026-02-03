@@ -256,9 +256,6 @@ document.addEventListener('DOMContentLoaded', function() {
       console.log('🔍 Found tasks for payment', paymentStep_num, ':', paymentTasks.length, 'tasks (excluding DepId 9)');
       console.log('   Task details:', paymentTasks.map(t => ({ TaskID: t.TaskID, TaskName: t.TaskName, DepId: t.DepId, PaymentStep: t.PaymentStep })));
       
-      // Show visible alert
-      alert(`Found ${paymentTasks.length} tasks for Payment ${paymentStep_num}\n(excluding Contract tasks - DepId 9)\n\nTasks: ${paymentTasks.map(t => `${t.TaskID}:${t.TaskName}(Dept${t.DepId})`).join(', ')}`);
-      
       let defaultDate = new Date().toISOString().split('T')[0]; // Default to today
       
       if (paymentTasks.length > 0) {
@@ -266,7 +263,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const sortedTasks = paymentTasks.sort((a, b) => a.TaskID - b.TaskID);
         const firstTask = sortedTasks[0];
         console.log('   First task (by TaskID):', firstTask.TaskID, '-', firstTask.TaskName, '(DepId:', firstTask.DepId + ')');
-        alert(`First task selected: ${firstTask.TaskID} - ${firstTask.TaskName} (Dept ${firstTask.DepId})`);
         
         if (firstTask.PlannedDate) {
           defaultDate = firstTask.PlannedDate.split('T')[0];
@@ -274,7 +270,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
       } else {
         console.warn('⚠️  No tasks found for payment', paymentStep_num);
-        alert('⚠️ No tasks found for Payment ' + paymentStep_num + '\n(All tasks might be Contract tasks)');
       }
       
       // Store which payment we're setting the date for
